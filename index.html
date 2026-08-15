@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Game matematik kanak-kanak untuk belajar mengira harga, kuantiti, wang dan baki melalui permainan kedai.">
+  <meta name="theme-color" content="#6546c7">
+  <meta name="application-name" content="Kedai Matematik">
+  <meta name="application-version" content="1.0.0">
+  <title>Kedai Matematik</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="game-shell">
+    <header class="top-bar hidden" id="game-header">
+      <div class="brand">
+        <span class="brand-icon" aria-hidden="true">🏪</span>
+        <div>
+          <p class="eyebrow">Mari mengira di</p>
+          <h1>KEDAI MATEMATIK</h1>
+        </div>
+      </div>
+
+      <div class="game-stats" aria-label="Status permainan">
+        <div class="stat-card stars-card">
+          <span aria-hidden="true">⭐</span>
+          <div><small>Bintang</small><strong id="star-count">0</strong></div>
+        </div>
+        <div class="stat-card progress-card">
+          <span aria-hidden="true">🧑‍🤝‍🧑</span>
+          <div><small>Kemajuan</small><strong id="customer-progress">Pelanggan 1 / 10</strong></div>
+        </div>
+      </div>
+    </header>
+
+    <section class="menu-screen" id="main-menu-screen" aria-labelledby="main-menu-title">
+      <div class="menu-clouds" aria-hidden="true">
+        <span class="menu-cloud cloud-one"></span>
+        <span class="menu-cloud cloud-two"></span>
+        <span class="menu-cloud cloud-three"></span>
+      </div>
+      <div class="menu-card">
+        <div class="menu-tools" aria-label="Tetapan menu">
+          <button class="menu-tool-button" id="sound-toggle-button" type="button" aria-label="Tutup bunyi" aria-pressed="false">🔊</button>
+          <button class="menu-tool-button" id="fullscreen-button" type="button" aria-label="Buka skrin penuh" aria-pressed="false">⛶</button>
+        </div>
+        <div class="menu-decor menu-decor-star-one" aria-hidden="true">⭐</div>
+        <div class="menu-decor menu-decor-star-two" aria-hidden="true">✦</div>
+        <div class="menu-decor menu-decor-tag" aria-hidden="true">🏷️</div>
+        <div class="menu-decor menu-decor-cart" aria-hidden="true">🛒</div>
+        <div class="menu-shop-icon" aria-hidden="true">🏪</div>
+        <p class="eyebrow">Mari mengira di</p>
+        <h2 id="main-menu-title">KEDAI MATEMATIK</h2>
+        <p class="menu-tagline">Pelanggan dah menunggu! Jom buka kedai dan kira dengan pantas.</p>
+        <button class="primary-menu-button" id="start-menu-button" type="button">BUKA KEDAI!</button>
+        <div class="menu-status" aria-label="Progress permainan">
+          <div class="menu-status-chip">
+            <span aria-hidden="true">🚩</span>
+            <small>Misi tertinggi</small>
+            <strong id="menu-highest-mission">Misi 1</strong>
+          </div>
+          <div class="menu-status-chip">
+            <span aria-hidden="true">🏆</span>
+            <small>Rekod terbaik</small>
+            <strong id="menu-best-score">0/10</strong>
+          </div>
+        </div>
+        <button class="how-to-button" id="how-to-button" type="button" aria-expanded="false" aria-controls="how-to-card">❔ Cara Main</button>
+        <div class="how-to-card hidden" id="how-to-card">
+          Lihat barang, kira dengan teliti, kemudian pilih jawapan yang betul!
+        </div>
+        <div class="menu-helper" aria-hidden="true">
+          <div class="helper-bubble" id="helper-message">Pelanggan dah menunggu!</div>
+          <div class="helper-mascot"><span>🐻</span><i></i></div>
+        </div>
+        <div class="mini-shelf" aria-hidden="true">
+          <span>🍞</span><span>🍎</span><span>🥛</span><span>🍪</span><span>🧃</span><span>🛒</span>
+        </div>
+        <small class="app-version">v1.0.0</small>
+      </div>
+    </section>
+
+    <section class="level-screen hidden" id="level-screen" aria-labelledby="level-screen-title">
+      <div class="screen-heading">
+        <button class="back-button" id="back-to-menu-button" type="button" aria-label="Kembali ke menu utama">← Menu Utama</button>
+        <div>
+          <p class="eyebrow">Pilih cabaran kamu</p>
+          <h2 id="level-screen-title">PILIH MISI</h2>
+        </div>
+      </div>
+      <p class="level-notice" id="level-notice" role="status" aria-live="polite"></p>
+      <div class="level-grid" id="level-grid"></div>
+    </section>
+
+    <section class="shop-scene hidden" id="game-screen" aria-labelledby="customer-title">
+      <div class="shop-decoration" aria-hidden="true">
+        <span>🍎</span><span>🍞</span><span>🥛</span><span>🍪</span><span>🧃</span>
+      </div>
+
+      <div class="customer-panel">
+        <div class="customer-avatar">
+          <img id="customer-avatar" src="assets/customers/aynaa.png" alt="Avatar Aynaa">
+          <span class="avatar-fallback hidden" id="avatar-fallback" aria-hidden="true">👤</span>
+        </div>
+        <div class="speech-bubble">
+          <p class="customer-label">Pelanggan hari ini</p>
+          <h2 id="customer-title"><span id="customer-name">Aina</span> membeli:</h2>
+        </div>
+      </div>
+
+      <div class="items-and-question">
+        <div class="items-list" id="items-list" aria-live="polite"></div>
+
+        <div class="question-card">
+          <div class="question-timer hidden" id="question-timer" aria-label="Masa menjawab">
+            <div class="timer-label">⏱️ Masa: <strong id="timer-seconds">20s</strong></div>
+            <div class="timer-track" aria-hidden="true"><span id="timer-bar"></span></div>
+          </div>
+          <div class="transaction-summary hidden" id="transaction-summary">
+            <span>Jumlah: <strong id="purchase-total">?</strong></span>
+            <span>Bayar: <strong id="payment-amount">RM10</strong></span>
+          </div>
+          <p id="question-text">Semua sekali berapa?</p>
+          <div class="answers" id="answers" aria-label="Pilihan jawapan"></div>
+          <p class="feedback" id="feedback" role="status" aria-live="assertive"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="game-over hidden" id="game-over-screen" aria-labelledby="game-over-title">
+      <div class="game-over-card">
+        <div class="game-over-icon" aria-hidden="true">🏪</div>
+        <p class="eyebrow">Terima kasih kerana membantu!</p>
+        <h2 id="game-over-title">KEDAI TUTUP SEKEJAP!</h2>
+        <p class="result-level" id="result-level">Misi 1</p>
+        <p class="final-label">Keputusan kamu</p>
+        <p class="final-score">⭐ <span id="final-score">0 / 10</span></p>
+        <p class="final-accuracy">Ketepatan: <span id="final-accuracy">0%</span></p>
+        <p class="final-best">Rekod Terbaik: <span id="final-best">0 / 10</span></p>
+        <p class="final-rating" id="final-rating">Cuba Lagi!</p>
+        <p class="level-unlocked hidden" id="level-unlocked">🎉 Misi Baru Dibuka!</p>
+        <div class="result-actions">
+          <button class="play-again-button" id="play-again-button" type="button">Main Lagi</button>
+          <button class="secondary-button" id="choose-level-button" type="button">Pilih Misi</button>
+          <button class="next-level-button hidden" id="next-level-button" type="button">Misi Seterusnya</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>
