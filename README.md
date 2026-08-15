@@ -65,10 +65,10 @@ Game direka untuk:
 ![Menu Utama](screenshots/menu.png)
 
 ### Pilih Misi
-![Pilih Misi](screenshots/missions.png)
+![Pilih Misi](screenshots/misi.png)
 
 ### Gameplay
-![Gameplay](screenshots/gameplay.png)
+![Gameplay](screenshots/gmeplay.png)
 
 ## 📦 Versi
 
