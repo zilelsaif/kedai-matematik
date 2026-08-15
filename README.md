@@ -59,6 +59,17 @@ Game direka untuk:
 - Laptop
 - Tablet landscape
 
+- ## 📸 Screenshot
+
+### Menu Utama
+![Menu Utama](screenshots/menu.png)
+
+### Pilih Misi
+![Pilih Misi](screenshots/missions.png)
+
+### Gameplay
+![Gameplay](screenshots/gameplay.png)
+
 ## 📦 Versi
 
 **v1.0.0**
