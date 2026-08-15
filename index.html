@@ -6,7 +6,7 @@
   <meta name="description" content="Game matematik kanak-kanak untuk belajar mengira harga, kuantiti, wang dan baki melalui permainan kedai.">
   <meta name="theme-color" content="#6546c7">
   <meta name="application-name" content="Kedai Matematik">
-  <meta name="application-version" content="1.0.0">
+  <meta name="application-version" content="">
   <title>Kedai Matematik</title>
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
   <link rel="stylesheet" href="style.css">
@@ -23,6 +23,7 @@
       </div>
 
       <div class="game-stats" aria-label="Status permainan">
+        <button class="home-game-button" id="home-game-button" type="button" aria-label="Menu Utama">🏠</button>
         <div class="stat-card stars-card">
           <span aria-hidden="true">⭐</span>
           <div><small>Bintang</small><strong id="star-count">0</strong></div>
@@ -53,6 +54,10 @@
         <p class="eyebrow">Mari mengira di</p>
         <h2 id="main-menu-title">KEDAI MATEMATIK</h2>
         <p class="menu-tagline">Pelanggan dah menunggu! Jom buka kedai dan kira dengan pantas.</p>
+        <div class="menu-player-greeting" aria-label="Profil pemain">
+          <span id="menu-player-avatar" aria-hidden="true">🐻</span>
+          <strong id="menu-player-greeting">Hai, Pemain!</strong>
+        </div>
         <button class="primary-menu-button" id="start-menu-button" type="button">BUKA KEDAI!</button>
         <div class="menu-status" aria-label="Progress permainan">
           <div class="menu-status-chip">
@@ -66,19 +71,106 @@
             <strong id="menu-best-score">0/10</strong>
           </div>
         </div>
-        <button class="how-to-button" id="how-to-button" type="button" aria-expanded="false" aria-controls="how-to-card">❔ Cara Main</button>
+        <div class="menu-secondary-actions">
+          <button class="how-to-button" id="how-to-button" type="button" aria-expanded="false" aria-controls="how-to-card">❔ Cara Main</button>
+          <button class="how-to-button" id="statistics-button" type="button">📊 STATISTIK</button>
+          <button class="how-to-button practice-menu-button" id="practice-menu-button" type="button">🎯 MOD LATIHAN</button>
+          <button class="how-to-button" id="profile-menu-button" type="button">🙂 PROFIL</button>
+          <button class="how-to-button" id="achievements-menu-button" type="button">🏆 PENCAPAIAN</button>
+          <button class="how-to-button daily-menu-button" id="daily-menu-button" type="button">☀️ CABARAN HARIAN</button>
+        </div>
         <div class="how-to-card hidden" id="how-to-card">
           Lihat barang, kira dengan teliti, kemudian pilih jawapan yang betul!
         </div>
-        <div class="menu-helper" aria-hidden="true">
-          <div class="helper-bubble" id="helper-message">Pelanggan dah menunggu!</div>
-          <div class="helper-mascot"><span>🐻</span><i></i></div>
+        <div class="menu-footer-zone" aria-hidden="true">
+          <div class="menu-helper">
+            <div class="helper-bubble" id="helper-message">Pelanggan dah menunggu!</div>
+            <div class="helper-mascot"><span>🐻</span><i></i></div>
+          </div>
+          <div class="mini-shelf">
+            <span>🍞</span><span>🍎</span><span>🥛</span><span>🍪</span><span>🧃</span><span>🛒</span>
+          </div>
         </div>
-        <div class="mini-shelf" aria-hidden="true">
-          <span>🍞</span><span>🍎</span><span>🥛</span><span>🍪</span><span>🧃</span><span>🛒</span>
-        </div>
-        <small class="app-version">v1.0.0</small>
+        <small class="app-version" id="app-version"></small>
       </div>
+    </section>
+
+    <section class="daily-screen hidden" id="daily-screen" aria-labelledby="daily-title">
+      <div class="daily-panel">
+        <div class="daily-sun" aria-hidden="true">☀️</div>
+        <p class="eyebrow">Cabaran baharu setiap hari</p>
+        <h2 id="daily-title">CABARAN HARIAN</h2>
+        <p class="daily-date" id="daily-date"></p>
+        <div class="daily-summary">
+          <div><span aria-hidden="true">🔥</span><small>Streak</small><strong id="daily-streak">0 hari</strong></div>
+          <div><span aria-hidden="true">⭐</span><small>Terbaik Hari Ini</small><strong id="daily-best">Belum dimainkan</strong></div>
+        </div>
+        <p class="daily-status" id="daily-status">10 soalan campuran menanti kamu!</p>
+        <div class="daily-actions">
+          <button class="play-again-button" id="daily-start-button" type="button">MULA CABARAN</button>
+          <button class="secondary-button" id="daily-back-button" type="button">← Menu Utama</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="achievements-screen hidden" id="achievements-screen" aria-labelledby="achievements-title">
+      <div class="achievements-panel">
+        <div class="screen-heading">
+          <button class="back-button" id="achievements-back-button" type="button">← Menu Utama</button>
+          <div><p class="eyebrow">Koleksi kejayaan kamu</p><h2 id="achievements-title">PENCAPAIAN</h2></div>
+        </div>
+        <div class="achievements-grid" id="achievements-grid"></div>
+      </div>
+    </section>
+
+    <section class="profile-screen hidden" id="profile-screen" aria-labelledby="profile-title">
+      <div class="profile-panel">
+        <p class="eyebrow">Ini kedai kamu</p>
+        <h2 id="profile-title">PROFIL PEMAIN</h2>
+        <div class="profile-preview" aria-live="polite">
+          <span id="profile-preview-avatar" aria-hidden="true">🐻</span>
+          <strong id="profile-preview-name">Pemain</strong>
+        </div>
+        <label class="profile-name-label" for="profile-name-input">Nama pemain</label>
+        <input id="profile-name-input" class="profile-name-input" type="text" maxlength="20" autocomplete="nickname" placeholder="Pemain">
+        <fieldset class="avatar-picker">
+          <legend>Pilih avatar</legend>
+          <div id="avatar-options" class="avatar-options"></div>
+        </fieldset>
+        <div class="profile-actions">
+          <button class="play-again-button" id="profile-save-button" type="button">Simpan</button>
+          <button class="secondary-button" id="profile-cancel-button" type="button">Batal</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="stats-screen hidden" id="stats-screen" aria-labelledby="stats-title">
+      <div class="stats-panel">
+        <p class="eyebrow">Prestasi juruwang</p>
+        <h2 id="stats-title">STATISTIK KEDAI</h2>
+        <div class="stats-grid">
+          <article class="stats-card stats-stars"><span aria-hidden="true">⭐</span><small>Jumlah Bintang</small><strong id="stats-total-stars">0 / 30</strong></article>
+          <article class="stats-card"><span aria-hidden="true">✅</span><small>Jawapan Betul</small><strong id="stats-total-correct">0</strong></article>
+          <article class="stats-card"><span aria-hidden="true">🧮</span><small>Soalan Dijawab</small><strong id="stats-total-questions">0</strong></article>
+          <article class="stats-card"><span aria-hidden="true">🎯</span><small>Ketepatan</small><strong id="stats-accuracy">0%</strong></article>
+          <article class="stats-card"><span aria-hidden="true">🔥</span><small>Rekod Berturut-turut</small><strong id="stats-best-streak">0</strong></article>
+          <article class="stats-card"><span aria-hidden="true">🏪</span><small>Sesi Dimainkan</small><strong id="stats-missions-played">0</strong></article>
+          <article class="stats-card"><span aria-hidden="true">🏆</span><small>Sesi Lulus</small><strong id="stats-missions-passed">0</strong></article>
+        </div>
+        <button class="secondary-button stats-back-button" id="stats-back-button" type="button">← Kembali</button>
+      </div>
+    </section>
+
+    <section class="practice-screen hidden" id="practice-screen" aria-labelledby="practice-title">
+      <div class="screen-heading">
+        <button class="back-button" id="practice-back-button" type="button">← Menu Utama</button>
+        <div>
+          <p class="eyebrow">Berlatih tanpa tekanan</p>
+          <h2 id="practice-title">PILIH LATIHAN</h2>
+        </div>
+      </div>
+      <p class="practice-note">Semua latihan terbuka dan tidak mengubah kemajuan misi.</p>
+      <div class="practice-grid" id="practice-grid"></div>
     </section>
 
     <section class="level-screen hidden" id="level-screen" aria-labelledby="level-screen-title">
@@ -94,13 +186,14 @@
     </section>
 
     <section class="shop-scene hidden" id="game-screen" aria-labelledby="customer-title">
+      <div class="practice-badge hidden" id="practice-badge">🎯 MOD LATIHAN</div>
       <div class="shop-decoration" aria-hidden="true">
         <span>🍎</span><span>🍞</span><span>🥛</span><span>🍪</span><span>🧃</span>
       </div>
 
       <div class="customer-panel">
         <div class="customer-avatar">
-          <img id="customer-avatar" src="assets/customers/aynaa.png" alt="Avatar Aynaa">
+          <img id="customer-avatar" src="assets/customers/Aynaa.png" alt="Avatar Aynaa">
           <span class="avatar-fallback hidden" id="avatar-fallback" aria-hidden="true">👤</span>
         </div>
         <div class="speech-bubble">
@@ -134,8 +227,10 @@
         <p class="eyebrow">Terima kasih kerana membantu!</p>
         <h2 id="game-over-title">KEDAI TUTUP SEKEJAP!</h2>
         <p class="result-level" id="result-level">Misi 1</p>
-        <p class="final-label">Keputusan kamu</p>
-        <p class="final-score">⭐ <span id="final-score">0 / 10</span></p>
+        <p class="final-label" id="final-label">Keputusan kamu</p>
+        <p class="final-score"><span id="final-score-icon" aria-hidden="true">⭐</span> <span id="final-score">0 / 10</span></p>
+        <p class="session-stars" id="session-stars" aria-label="0 daripada 3 bintang">☆☆☆</p>
+        <p class="new-star-record hidden" id="new-star-record">Rekod bintang baru!</p>
         <p class="final-accuracy">Ketepatan: <span id="final-accuracy">0%</span></p>
         <p class="final-best">Rekod Terbaik: <span id="final-best">0 / 10</span></p>
         <p class="final-rating" id="final-rating">Cuba Lagi!</p>
@@ -144,10 +239,29 @@
           <button class="play-again-button" id="play-again-button" type="button">Main Lagi</button>
           <button class="secondary-button" id="choose-level-button" type="button">Pilih Misi</button>
           <button class="next-level-button hidden" id="next-level-button" type="button">Misi Seterusnya</button>
+          <button class="secondary-button hidden" id="result-menu-button" type="button">Menu Utama</button>
         </div>
       </div>
     </section>
   </main>
+
+  <div class="home-modal hidden" id="home-modal" role="dialog" aria-modal="true" aria-labelledby="home-modal-title">
+    <div class="home-modal-card">
+      <div aria-hidden="true">🏠</div>
+      <h2 id="home-modal-title">Keluar ke Menu Utama?</h2>
+      <p>Sesi ini belum selesai dan tidak akan direkod.</p>
+      <div>
+        <button class="play-again-button" id="home-confirm-button" type="button">Ya</button>
+        <button class="secondary-button" id="home-continue-button" type="button">Teruskan Main</button>
+      </div>
+    </div>
+  </div>
+
+  <aside class="achievement-toast hidden" id="achievement-toast" role="status" aria-live="polite">
+    <strong>🏆 Pencapaian Baru!</strong>
+    <span id="achievement-toast-name"></span>
+    <small id="achievement-toast-description"></small>
+  </aside>
 
   <script src="game.js"></script>
 </body>
