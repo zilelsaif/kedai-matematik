@@ -1164,7 +1164,8 @@ html.visual-help-on .money-cents { text-decoration: underline 3px #ffd84d; text-
 
 @media (max-height: 600px) and (orientation: landscape) {
   .menu-secondary-actions { gap: 4px; }
-  .menu-secondary-actions .how-to-button { padding: 3px 7px; font-size: .7rem; }
+  .menu-secondary-actions { grid-template-columns: repeat(4, minmax(0, auto)); }
+  .menu-secondary-actions .how-to-button { min-height: 36px; padding: 4px 7px; font-size: .7rem; }
   .home-game-button { width: 38px; height: 38px; border-width: 2px; border-bottom-width: 4px; font-size: 1.1rem; }
   .home-modal-card { padding: 14px; }
   .home-modal-card > div:first-child { font-size: 2.2rem; }

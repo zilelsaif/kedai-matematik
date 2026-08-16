@@ -1,6 +1,6 @@
 "use strict";
 
-const GAME_VERSION = "1.1.0";
+const GAME_VERSION = "1.2.0";
 const STORAGE_KEY = "kedaiMatematikProgress";
 const SOUND_STORAGE_KEY = "kedaiMatematikSoundEnabled";
 const LEGACY_SOUND_STORAGE_KEY = "kedaiMatematikSound";
@@ -202,6 +202,22 @@ function preloadCustomerAvatars() {
     image.src = customer.avatar;
     customerAvatarPreloadCache.push(image);
   });
+}
+
+function scheduleAssetPreload() {
+  const preload = () => {
+    preloadItemImages();
+    preloadCustomerAvatars();
+  };
+  const startInBackground = () => window.setTimeout(preload, 250);
+
+  if (document.readyState === "complete") {
+    startInBackground();
+  } else if (typeof window.addEventListener === "function") {
+    window.addEventListener("load", startInBackground, { once: true });
+  } else {
+    startInBackground();
+  }
 }
 
 const praiseMessages = ["Betul! ⭐", "Hebat! 🎉", "Bagus! 🌟", "Tepat sekali!", "Pandainya! 👏", "Mantap!"];
@@ -2211,5 +2227,4 @@ if (!document.fullscreenEnabled) {
 updateFullscreenButton();
 renderLevelCards();
 showMainMenu();
-preloadItemImages();
-preloadCustomerAvatars();
+scheduleAssetPreload();

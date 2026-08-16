@@ -59,7 +59,7 @@ Game direka untuk:
 - Laptop
 - Tablet landscape
 
-- ## 📸 Screenshot
+## 📸 Screenshot
 
 ### Menu Utama
 ![Menu Utama](screenshots/menu.png)
@@ -72,7 +72,7 @@ Game direka untuk:
 
 ## 📦 Versi
 
-**v1.0.0**
+**v1.2.0**
 
 ## 👨‍💻 Pembangunan
 
