@@ -8,6 +8,23 @@
   <meta name="application-name" content="Kedai Matematik">
   <meta name="application-version" content="">
   <title>Kedai Matematik</title>
+  <script>
+    try {
+      const savedProgress = JSON.parse(localStorage.getItem("kedaiMatematikProgress"));
+      const savedTheme = savedProgress?.playerProfile?.theme;
+      if (["purple", "blue", "green", "orange"].includes(savedTheme)) {
+        document.documentElement.dataset.playerTheme = savedTheme;
+      }
+      const accessibility = savedProgress?.accessibilitySettings;
+      if (accessibility?.largeText === true) document.documentElement.classList.add("text-large");
+      if (accessibility?.visualHelp === true) document.documentElement.classList.add("visual-help-on");
+      if (accessibility?.reduceMotion === true || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        document.documentElement.classList.add("reduce-motion");
+      }
+    } catch (error) {
+      // Tema lalai kekal jika data lama rosak atau storage disekat.
+    }
+  </script>
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -56,7 +73,7 @@
         <p class="menu-tagline">Pelanggan dah menunggu! Jom buka kedai dan kira dengan pantas.</p>
         <div class="menu-player-greeting" aria-label="Profil pemain">
           <span id="menu-player-avatar" aria-hidden="true">🐻</span>
-          <strong id="menu-player-greeting">Hai, Pemain!</strong>
+          <span class="menu-player-copy"><strong id="menu-player-greeting">Hai, Pemain!</strong><small class="hidden" id="menu-player-badge"></small></span>
         </div>
         <button class="primary-menu-button" id="start-menu-button" type="button">BUKA KEDAI!</button>
         <div class="menu-status" aria-label="Progress permainan">
@@ -78,6 +95,7 @@
           <button class="how-to-button" id="profile-menu-button" type="button">🙂 PROFIL</button>
           <button class="how-to-button" id="achievements-menu-button" type="button">🏆 PENCAPAIAN</button>
           <button class="how-to-button daily-menu-button" id="daily-menu-button" type="button">☀️ CABARAN HARIAN</button>
+          <button class="how-to-button settings-menu-button" id="settings-menu-button" type="button">⚙️ TETAPAN</button>
         </div>
         <div class="how-to-card hidden" id="how-to-card">
           Lihat barang, kira dengan teliti, kemudian pilih jawapan yang betul!
@@ -95,16 +113,61 @@
       </div>
     </section>
 
+    <section class="settings-screen hidden" id="settings-screen" aria-labelledby="settings-title">
+      <div class="settings-panel">
+        <p class="eyebrow">Untuk pengalaman yang lebih selesa</p>
+        <h2 id="settings-title">TETAPAN</h2>
+        <form id="accessibility-form">
+          <fieldset class="settings-group">
+            <legend>Saiz Teks</legend>
+            <div class="settings-choice-row">
+              <label><input type="radio" name="text-size" value="normal"> <span>Biasa</span></label>
+              <label><input type="radio" name="text-size" value="large"> <span>Besar</span></label>
+            </div>
+          </fieldset>
+          <div class="settings-toggle-list">
+            <label class="settings-toggle"><span><strong>Kurangkan Animasi</strong><small>Gerakan lebih ringkas dan tenang.</small></span><input id="setting-reduce-motion" type="checkbox"><i aria-hidden="true"></i></label>
+            <label class="settings-toggle"><span><strong>Bantuan Visual</strong><small>Tunjukkan struktur operasi tanpa jawapan.</small></span><input id="setting-visual-help" type="checkbox"><i aria-hidden="true"></i></label>
+            <label class="settings-toggle"><span><strong>Bunyi Lembut</strong><small>Kurangkan kekuatan semua efek bunyi.</small></span><input id="setting-soft-sound" type="checkbox"><i aria-hidden="true"></i></label>
+          </div>
+          <p class="system-motion-note hidden" id="system-motion-note">Tetapan peranti anda turut meminta animasi dikurangkan.</p>
+          <aside class="parent-info">
+            <h3>Untuk Ibu Bapa / Guru</h3>
+            <ul>
+              <li>Progress disimpan pada browser ini dan tiada akaun diperlukan.</li>
+              <li>Mod Latihan tidak mengubah progression misi.</li>
+              <li>Statistik membantu mengenal pasti topik untuk lebih latihan.</li>
+            </ul>
+          </aside>
+          <div class="settings-actions">
+            <button class="play-again-button" id="settings-save-button" type="submit">Simpan</button>
+            <button class="secondary-button" id="settings-back-button" type="button">← Kembali</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
     <section class="daily-screen hidden" id="daily-screen" aria-labelledby="daily-title">
       <div class="daily-panel">
         <div class="daily-sun" aria-hidden="true">☀️</div>
         <p class="eyebrow">Cabaran baharu setiap hari</p>
         <h2 id="daily-title">CABARAN HARIAN</h2>
         <p class="daily-date" id="daily-date"></p>
+        <section class="daily-calendar-section" aria-labelledby="daily-calendar-title">
+          <h3 id="daily-calendar-title">7 HARI TERAKHIR</h3>
+          <div class="daily-calendar" id="daily-calendar"></div>
+        </section>
         <div class="daily-summary">
-          <div><span aria-hidden="true">🔥</span><small>Streak</small><strong id="daily-streak">0 hari</strong></div>
+          <div><span aria-hidden="true">🔥</span><small>Streak Semasa</small><strong id="daily-streak">0 hari</strong></div>
+          <div><span aria-hidden="true">🏆</span><small>Streak Terbaik</small><strong id="daily-longest-streak">0 hari</strong></div>
           <div><span aria-hidden="true">⭐</span><small>Terbaik Hari Ini</small><strong id="daily-best">Belum dimainkan</strong></div>
         </div>
+        <section class="daily-week-summary" aria-labelledby="daily-week-title">
+          <h3 id="daily-week-title">Prestasi 7 Hari</h3>
+          <div><span>Hari diselesaikan</span><strong id="daily-completed-count">0 / 7</strong></div>
+          <div><span>Purata skor</span><strong id="daily-average-score">—</strong></div>
+          <p id="daily-week-message">Belum cukup data. Jom mula hari ini!</p>
+        </section>
         <p class="daily-status" id="daily-status">10 soalan campuran menanti kamu!</p>
         <div class="daily-actions">
           <button class="play-again-button" id="daily-start-button" type="button">MULA CABARAN</button>
@@ -137,6 +200,22 @@
           <legend>Pilih avatar</legend>
           <div id="avatar-options" class="avatar-options"></div>
         </fieldset>
+        <div class="profile-customisation-row">
+          <fieldset class="theme-picker">
+            <legend>Tema warna</legend>
+            <div id="theme-options" class="theme-options"></div>
+          </fieldset>
+          <fieldset class="badge-picker">
+            <legend>Badge Utama</legend>
+            <select id="featured-badge-select" aria-label="Pilih badge utama">
+              <option value="">Tiada badge utama</option>
+            </select>
+          </fieldset>
+        </div>
+        <section class="profile-badge-section" aria-labelledby="profile-badges-title">
+          <h3 id="profile-badges-title">Badge Saya</h3>
+          <div class="profile-badges" id="profile-badges"></div>
+        </section>
         <div class="profile-actions">
           <button class="play-again-button" id="profile-save-button" type="button">Simpan</button>
           <button class="secondary-button" id="profile-cancel-button" type="button">Batal</button>
@@ -157,6 +236,12 @@
           <article class="stats-card"><span aria-hidden="true">🏪</span><small>Sesi Dimainkan</small><strong id="stats-missions-played">0</strong></article>
           <article class="stats-card"><span aria-hidden="true">🏆</span><small>Sesi Lulus</small><strong id="stats-missions-passed">0</strong></article>
         </div>
+        <section class="skill-performance" aria-labelledby="skill-performance-title">
+          <h3 id="skill-performance-title">PRESTASI MENGIKUT KEMAHIRAN</h3>
+          <div class="skill-stats-grid" id="skill-stats-grid"></div>
+          <p class="skill-recommendation" id="skill-recommendation">Main beberapa misi lagi untuk dapat cadangan latihan.</p>
+          <button class="secondary-button skill-recommendation-button hidden" id="skill-recommendation-button" type="button"></button>
+        </section>
         <button class="secondary-button stats-back-button" id="stats-back-button" type="button">← Kembali</button>
       </div>
     </section>
@@ -214,6 +299,7 @@
             <span>Jumlah: <strong id="purchase-total">?</strong></span>
             <span>Bayar: <strong id="payment-amount">RM10</strong></span>
           </div>
+          <div class="visual-help hidden" id="visual-help" aria-live="polite"></div>
           <p id="question-text">Semua sekali berapa?</p>
           <div class="answers" id="answers" aria-label="Pilihan jawapan"></div>
           <p class="feedback" id="feedback" role="status" aria-live="assertive"></p>

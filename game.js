@@ -41,7 +41,47 @@ const practiceTypes = [
   { id: 9, name: "Cabaran Campuran" }
 ];
 
-const playerAvatars = ["😀", "😎", "🐻", "🐱", "🦊", "⭐", "🧒", "👧"];
+const skillDefinitions = [
+  { id: "addition", name: "Tambah", icon: "➕", practiceId: 1 },
+  { id: "quantity", name: "Kuantiti", icon: "📦", practiceId: 3 },
+  { id: "change", name: "Baki", icon: "💰", practiceId: 4 },
+  { id: "moneyCents", name: "Wang & Sen", icon: "🪙", practiceId: 7 },
+  { id: "mixed", name: "Campuran", icon: "🎯", practiceId: 9 }
+];
+
+const levelSkillCategories = {
+  1: "addition",
+  2: "addition",
+  3: "quantity",
+  4: "change",
+  5: "change",
+  6: "change",
+  7: "moneyCents",
+  8: "moneyCents",
+  9: "mixed",
+  10: "mixed"
+};
+
+const playerAvatars = [
+  { id: "avatar-1", icon: "🐻", name: "Beruang Ceria" },
+  { id: "avatar-2", icon: "🐱", name: "Kucing Comel" },
+  { id: "avatar-3", icon: "🦊", name: "Musang Bijak" },
+  { id: "avatar-4", icon: "🐼", name: "Panda Rajin" },
+  { id: "avatar-5", icon: "🐰", name: "Arnab Pantas" },
+  { id: "avatar-6", icon: "🐯", name: "Harimau Berani" }
+];
+
+const playerThemes = [
+  { id: "purple", name: "Ungu", color: "#6546c7", dark: "#49319d", soft: "#eee8ff" },
+  { id: "blue", name: "Biru", color: "#2688c9", dark: "#17618f", soft: "#e5f6ff" },
+  { id: "green", name: "Hijau", color: "#2d9b61", dark: "#207044", soft: "#e8f9e9" },
+  { id: "orange", name: "Jingga", color: "#e47b25", dark: "#a95218", soft: "#fff0dc" }
+];
+
+const legacyAvatarMap = {
+  "😀": "avatar-1", "😎": "avatar-3", "🐻": "avatar-1", "🐱": "avatar-2",
+  "🦊": "avatar-3", "⭐": "avatar-4", "🧒": "avatar-5", "👧": "avatar-6"
+};
 
 const achievementDefinitions = [
   { id: "firstStar", icon: "⭐", name: "Bintang Pertama", description: "Dapat sekurang-kurangnya 1 bintang dalam misi." },
@@ -181,6 +221,7 @@ const elements = {
   profileScreen: document.querySelector("#profile-screen"),
   achievementsScreen: document.querySelector("#achievements-screen"),
   dailyScreen: document.querySelector("#daily-screen"),
+  settingsScreen: document.querySelector("#settings-screen"),
   levelScreen: document.querySelector("#level-screen"),
   gameScreen: document.querySelector("#game-screen"),
   gameOverScreen: document.querySelector("#game-over-screen"),
@@ -199,8 +240,12 @@ const elements = {
   profilePreviewName: document.querySelector("#profile-preview-name"),
   profilePreviewAvatar: document.querySelector("#profile-preview-avatar"),
   avatarOptions: document.querySelector("#avatar-options"),
+  themeOptions: document.querySelector("#theme-options"),
+  profileBadges: document.querySelector("#profile-badges"),
+  featuredBadgeSelect: document.querySelector("#featured-badge-select"),
   menuPlayerGreeting: document.querySelector("#menu-player-greeting"),
   menuPlayerAvatar: document.querySelector("#menu-player-avatar"),
+  menuPlayerBadge: document.querySelector("#menu-player-badge"),
   achievementsMenuButton: document.querySelector("#achievements-menu-button"),
   achievementsBackButton: document.querySelector("#achievements-back-button"),
   achievementsGrid: document.querySelector("#achievements-grid"),
@@ -217,8 +262,21 @@ const elements = {
   dailyBackButton: document.querySelector("#daily-back-button"),
   dailyDate: document.querySelector("#daily-date"),
   dailyStreak: document.querySelector("#daily-streak"),
+  dailyLongestStreak: document.querySelector("#daily-longest-streak"),
   dailyBest: document.querySelector("#daily-best"),
+  dailyCalendar: document.querySelector("#daily-calendar"),
+  dailyCompletedCount: document.querySelector("#daily-completed-count"),
+  dailyAverageScore: document.querySelector("#daily-average-score"),
+  dailyWeekMessage: document.querySelector("#daily-week-message"),
   dailyStatus: document.querySelector("#daily-status"),
+  settingsMenuButton: document.querySelector("#settings-menu-button"),
+  settingsForm: document.querySelector("#accessibility-form"),
+  settingsSaveButton: document.querySelector("#settings-save-button"),
+  settingsBackButton: document.querySelector("#settings-back-button"),
+  settingReduceMotion: document.querySelector("#setting-reduce-motion"),
+  settingVisualHelp: document.querySelector("#setting-visual-help"),
+  settingSoftSound: document.querySelector("#setting-soft-sound"),
+  systemMotionNote: document.querySelector("#system-motion-note"),
   statsBackButton: document.querySelector("#stats-back-button"),
   howToCard: document.querySelector("#how-to-card"),
   helperMessage: document.querySelector("#helper-message"),
@@ -241,6 +299,7 @@ const elements = {
   transactionSummary: document.querySelector("#transaction-summary"),
   purchaseTotal: document.querySelector("#purchase-total"),
   paymentAmount: document.querySelector("#payment-amount"),
+  visualHelp: document.querySelector("#visual-help"),
   questionText: document.querySelector("#question-text"),
   answers: document.querySelector("#answers"),
   feedback: document.querySelector("#feedback"),
@@ -269,10 +328,14 @@ const statElements = {
   accuracy: document.querySelector("#stats-accuracy"),
   bestStreak: document.querySelector("#stats-best-streak"),
   missionsPlayed: document.querySelector("#stats-missions-played"),
-  missionsPassed: document.querySelector("#stats-missions-passed")
+  missionsPassed: document.querySelector("#stats-missions-passed"),
+  skillGrid: document.querySelector("#skill-stats-grid"),
+  skillRecommendation: document.querySelector("#skill-recommendation"),
+  skillRecommendationButton: document.querySelector("#skill-recommendation-button")
 };
 
 let progress = loadProgress();
+applyPlayerTheme(progress.playerProfile.theme);
 let gameMode = "mission";
 let currentLevel = 1;
 let currentPracticeType = 1;
@@ -286,7 +349,9 @@ let questionLocked = true;
 let questionTimerId = null;
 let questionDeadline = 0;
 let currentStreak = 0;
-let selectedProfileAvatar = "🐻";
+let currentSkillCategory = "mixed";
+let selectedProfileAvatar = "avatar-1";
+let selectedProfileTheme = "purple";
 let randomSource = Math.random;
 let activeDailyDate = "";
 let sessionActive = false;
@@ -295,6 +360,7 @@ let homePausedMilliseconds = 0;
 let achievementToastTimer = null;
 const achievementToastQueue = [];
 const audioManager = createAudioManager();
+applyAccessibilitySettings(progress.accessibilitySettings);
 
 function defaultStats() {
   return {
@@ -307,8 +373,29 @@ function defaultStats() {
   };
 }
 
+function defaultSkillStats() {
+  return Object.fromEntries(
+    skillDefinitions.map((skill) => [skill.id, { answered: 0, correct: 0 }])
+  );
+}
+
+function defaultAccessibilitySettings() {
+  return { largeText: false, reduceMotion: false, visualHelp: false, softSound: false };
+}
+
 function defaultAchievements() {
   return Object.fromEntries(achievementDefinitions.map((achievement) => [achievement.id, false]));
+}
+
+function defaultDailyChallenge() {
+  return {
+    lastCompletedDate: "",
+    scoreDate: "",
+    bestScore: 0,
+    currentStreak: 0,
+    longestStreak: 0,
+    history: {}
+  };
 }
 
 function defaultProgress() {
@@ -317,21 +404,50 @@ function defaultProgress() {
     bestScores: {},
     stars: {},
     stats: defaultStats(),
-    playerProfile: { name: "Pemain", avatar: "🐻" },
+    skillStats: defaultSkillStats(),
+    accessibilitySettings: defaultAccessibilitySettings(),
+    playerProfile: { name: "Pemain", avatar: "avatar-1", theme: "purple", featuredBadge: "" },
     achievements: defaultAchievements(),
-    dailyChallenge: {
-      lastCompletedDate: "",
-      scoreDate: "",
-      bestScore: 0,
-      currentStreak: 0,
-      longestStreak: 0
-    }
+    dailyChallenge: defaultDailyChallenge()
   };
 }
 
 function sanitizePlayerName(value) {
   const normalized = typeof value === "string" ? value.trim().replace(/\s+/g, " ") : "";
   return normalized.slice(0, 20).trim() || "Pemain";
+}
+
+function getPlayerAvatar(avatarId) {
+  return playerAvatars.find((avatar) => avatar.id === avatarId) || playerAvatars[0];
+}
+
+function getPlayerTheme(themeId) {
+  return playerThemes.find((theme) => theme.id === themeId) || playerThemes[0];
+}
+
+function getAchievement(achievementId) {
+  return achievementDefinitions.find((achievement) => achievement.id === achievementId);
+}
+
+function applyPlayerTheme(themeId) {
+  const theme = getPlayerTheme(themeId);
+  const root = document.documentElement;
+  root.style.setProperty("--player-accent", theme.color);
+  root.style.setProperty("--player-accent-dark", theme.dark);
+  root.style.setProperty("--player-accent-soft", theme.soft);
+  root.dataset.playerTheme = theme.id;
+}
+
+function systemPrefersReducedMotion() {
+  return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
+}
+
+function applyAccessibilitySettings(settings) {
+  const root = document.documentElement;
+  root.classList.toggle("text-large", settings.largeText === true);
+  root.classList.toggle("visual-help-on", settings.visualHelp === true);
+  root.classList.toggle("reduce-motion", settings.reduceMotion === true || systemPrefersReducedMotion());
+  audioManager.setSoft(settings.softSound === true);
 }
 
 function loadProgress() {
@@ -346,20 +462,10 @@ function loadProgress() {
     const bestScores = {};
     const savedStars = {};
     const savedStats = defaultStats();
-    const playerProfile = {
-      name: sanitizePlayerName(saved.playerProfile?.name),
-      avatar: playerAvatars.includes(saved.playerProfile?.avatar)
-        ? saved.playerProfile.avatar
-        : "🐻"
-    };
+    const savedSkillStats = defaultSkillStats();
+    const accessibilitySettings = defaultAccessibilitySettings();
     const achievements = defaultAchievements();
-    const dailyChallenge = {
-      lastCompletedDate: "",
-      scoreDate: "",
-      bestScore: 0,
-      currentStreak: 0,
-      longestStreak: 0
-    };
+    const dailyChallenge = defaultDailyChallenge();
 
     if (saved.achievements && typeof saved.achievements === "object") {
       achievementDefinitions.forEach((achievement) => {
@@ -367,16 +473,79 @@ function loadProgress() {
       });
     }
 
+    const savedAvatar = saved.playerProfile?.avatar;
+    const avatarId = playerAvatars.some((avatar) => avatar.id === savedAvatar)
+      ? savedAvatar
+      : legacyAvatarMap[savedAvatar] || "avatar-1";
+    const themeId = playerThemes.some((theme) => theme.id === saved.playerProfile?.theme)
+      ? saved.playerProfile.theme
+      : "purple";
+    const requestedBadge = typeof saved.playerProfile?.featuredBadge === "string"
+      ? saved.playerProfile.featuredBadge
+      : "";
+    const playerProfile = {
+      name: sanitizePlayerName(saved.playerProfile?.name),
+      avatar: avatarId,
+      theme: themeId,
+      featuredBadge: achievementDefinitions.some((achievement) =>
+        achievement.id === requestedBadge && achievements[achievement.id] === true
+      ) ? requestedBadge : ""
+    };
+
     if (saved.dailyChallenge && typeof saved.dailyChallenge === "object") {
       const daily = saved.dailyChallenge;
-      if (/^\d{4}-\d{2}-\d{2}$/.test(daily.lastCompletedDate)) dailyChallenge.lastCompletedDate = daily.lastCompletedDate;
-      if (/^\d{4}-\d{2}-\d{2}$/.test(daily.scoreDate)) dailyChallenge.scoreDate = daily.scoreDate;
+      const legacyLastDate = isValidDateKey(daily.lastCompletedDate)
+        ? daily.lastCompletedDate
+        : (isValidDateKey(daily.lastDate) ? daily.lastDate : "");
+      const legacyScoreDate = isValidDateKey(daily.scoreDate)
+        ? daily.scoreDate
+        : (daily.playedToday === true ? legacyLastDate : "");
+      dailyChallenge.lastCompletedDate = legacyLastDate;
+      dailyChallenge.scoreDate = legacyScoreDate;
       ["bestScore", "currentStreak", "longestStreak"].forEach((key) => {
         const value = Number(daily[key]);
         if (Number.isInteger(value) && value >= 0) dailyChallenge[key] = value;
       });
       dailyChallenge.bestScore = Math.min(dailyChallenge.bestScore, totalCustomers);
       dailyChallenge.longestStreak = Math.max(dailyChallenge.longestStreak, dailyChallenge.currentStreak);
+
+      if (daily.history && typeof daily.history === "object") {
+        Object.entries(daily.history).forEach(([date, record]) => {
+          if (!isValidDateKey(date) || !record || typeof record !== "object") return;
+          const score = Number(record.bestScore);
+          if (!Number.isInteger(score) || score < 0 || score > totalCustomers) return;
+          dailyChallenge.history[date] = {
+            date,
+            bestScore: score,
+            completed: record.completed === true
+          };
+        });
+      }
+
+      // Migrasi v1: bina rekod tunggal daripada tarikh/skor lama jika sejarah belum wujud.
+      if (legacyScoreDate) {
+        const previous = dailyChallenge.history[legacyScoreDate];
+        dailyChallenge.history[legacyScoreDate] = {
+          date: legacyScoreDate,
+          bestScore: Math.max(previous?.bestScore || 0, dailyChallenge.bestScore),
+          completed: true
+        };
+      }
+      if (legacyLastDate && !dailyChallenge.history[legacyLastDate]) {
+        dailyChallenge.history[legacyLastDate] = {
+          date: legacyLastDate,
+          bestScore: legacyLastDate === legacyScoreDate ? dailyChallenge.bestScore : 0,
+          completed: true
+        };
+      }
+      dailyChallenge.history = trimDailyHistory(dailyChallenge.history);
+      const latestCompletedDate = Object.entries(dailyChallenge.history)
+        .filter(([, record]) => record.completed === true)
+        .map(([date]) => date)
+        .sort((dateA, dateB) => dateB.localeCompare(dateA))[0] || "";
+      if (latestCompletedDate && (!dailyChallenge.lastCompletedDate || latestCompletedDate > dailyChallenge.lastCompletedDate)) {
+        dailyChallenge.lastCompletedDate = latestCompletedDate;
+      }
       if (!dailyChallenge.scoreDate) dailyChallenge.bestScore = 0;
       if (!dailyChallenge.lastCompletedDate) dailyChallenge.currentStreak = 0;
     }
@@ -408,6 +577,29 @@ function loadProgress() {
       });
     }
 
+    if (saved.skillStats && typeof saved.skillStats === "object") {
+      skillDefinitions.forEach((skill) => {
+        const storedSkill = saved.skillStats[skill.id];
+        if (!storedSkill || typeof storedSkill !== "object") return;
+        const answered = Number(storedSkill.answered);
+        const correct = Number(storedSkill.correct);
+        if (Number.isInteger(answered) && answered >= 0) {
+          savedSkillStats[skill.id].answered = answered;
+        }
+        if (Number.isInteger(correct) && correct >= 0) {
+          savedSkillStats[skill.id].correct = Math.min(correct, savedSkillStats[skill.id].answered);
+        }
+      });
+    }
+
+    if (saved.accessibilitySettings && typeof saved.accessibilitySettings === "object") {
+      Object.keys(accessibilitySettings).forEach((key) => {
+        if (typeof saved.accessibilitySettings[key] === "boolean") {
+          accessibilitySettings[key] = saved.accessibilitySettings[key];
+        }
+      });
+    }
+
     savedStats.totalCorrect = Math.min(savedStats.totalCorrect, savedStats.totalQuestions);
     savedStats.totalStars = Object.values(savedStars).reduce((total, rating) => total + rating, 0);
 
@@ -421,12 +613,19 @@ function loadProgress() {
     achievements.storeExpert ||= Number(bestScores[10]) >= 8;
     achievements.starCollector ||= savedStats.totalStars >= 20;
     achievements.starKing ||= savedStats.totalStars >= 30;
+    if (!playerProfile.featuredBadge && achievementDefinitions.some((achievement) =>
+      achievement.id === requestedBadge && achievements[achievement.id] === true
+    )) {
+      playerProfile.featuredBadge = requestedBadge;
+    }
 
     return {
       highestUnlockedLevel,
       bestScores,
       stars: savedStars,
       stats: savedStats,
+      skillStats: savedSkillStats,
+      accessibilitySettings,
       playerProfile,
       achievements,
       dailyChallenge
@@ -503,9 +702,12 @@ function checkAchievements({ missionScore = null, missionLevel = null, missionPa
 
 function recordQuestionResult(isCorrect) {
   progress.stats.totalQuestions += 1;
+  const skillRecord = progress.skillStats[currentSkillCategory] || progress.skillStats.mixed;
+  skillRecord.answered += 1;
 
   if (isCorrect) {
     progress.stats.totalCorrect += 1;
+    skillRecord.correct += 1;
     currentStreak += 1;
     progress.stats.bestStreak = Math.max(progress.stats.bestStreak, currentStreak);
   } else {
@@ -531,12 +733,15 @@ function loadSoundPreference() {
 
 function createAudioManager() {
   const sounds = {};
+  const normalVolume = 0.55;
+  const softVolume = 0.27;
+  let soft = progress.accessibilitySettings.softSound === true;
 
   Object.entries(audioFiles).forEach(([name, source]) => {
     try {
       const audio = new Audio(source);
       audio.preload = "metadata";
-      audio.volume = 0.55;
+      audio.volume = soft ? softVolume : normalVolume;
       sounds[name] = audio;
     } catch (error) {
       // Audio mungkin tidak disokong; manager akan kekal senyap.
@@ -545,6 +750,14 @@ function createAudioManager() {
 
   return {
     enabled: loadSoundPreference(),
+
+    get soft() {
+      return soft;
+    },
+
+    get volume() {
+      return soft ? softVolume : normalVolume;
+    },
 
     play(name) {
       if (!this.enabled || !sounds[name]) return;
@@ -582,6 +795,13 @@ function createAudioManager() {
       } catch (error) {
         // State dalam memori masih berfungsi jika storage tidak tersedia.
       }
+    },
+
+    setSoft(value) {
+      soft = Boolean(value);
+      Object.values(sounds).forEach((sound) => {
+        sound.volume = soft ? softVolume : normalVolume;
+      });
     }
   };
 }
@@ -628,6 +848,10 @@ function resetProgress() {
   }
 
   progress = defaultProgress();
+  selectedProfileAvatar = progress.playerProfile.avatar;
+  selectedProfileTheme = progress.playerProfile.theme;
+  applyPlayerTheme(progress.playerProfile.theme);
+  applyAccessibilitySettings(progress.accessibilitySettings);
   gameMode = "mission";
   randomSource = Math.random;
   activeDailyDate = "";
@@ -649,6 +873,37 @@ function getLocalDateKey(date = new Date()) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function localDateFromKey(dateKey) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return null;
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const date = new Date(year, month - 1, day, 12, 0, 0, 0);
+  return getLocalDateKey(date) === dateKey ? date : null;
+}
+
+function isValidDateKey(dateKey) {
+  return typeof dateKey === "string" && localDateFromKey(dateKey) !== null;
+}
+
+function addLocalDays(date, amount) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + amount, 12, 0, 0, 0);
+}
+
+function getLastSevenLocalDays(referenceDate = new Date()) {
+  const localToday = new Date(
+    referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate(), 12, 0, 0, 0
+  );
+  return Array.from({ length: 7 }, (_, index) => addLocalDays(localToday, index - 6));
+}
+
+function trimDailyHistory(history, maximumDays = 14) {
+  return Object.fromEntries(
+    Object.entries(history)
+      .filter(([date]) => isValidDateKey(date))
+      .sort(([dateA], [dateB]) => dateB.localeCompare(dateA))
+      .slice(0, maximumDays)
+  );
 }
 
 function formatLocalDate(date = new Date()) {
@@ -931,7 +1186,10 @@ function createMixedQuestionPlan() {
 
 function generateMixedQuestion() {
   const generatorId = mixedQuestionPlan[currentCustomer - 1];
-  return questionGenerators[generatorId]();
+  return {
+    ...questionGenerators[generatorId](),
+    skillCategory: levelSkillCategories[generatorId] || "mixed"
+  };
 }
 
 const questionGenerators = {
@@ -957,6 +1215,7 @@ function showScreen(screenName) {
     profile: elements.profileScreen,
     achievements: elements.achievementsScreen,
     daily: elements.dailyScreen,
+    settings: elements.settingsScreen,
     levels: elements.levelScreen,
     game: elements.gameScreen,
     results: elements.gameOverScreen
@@ -967,15 +1226,86 @@ function showScreen(screenName) {
   screens[screenName].classList.remove("hidden");
 }
 
+function showSettings() {
+  const settings = progress.accessibilitySettings;
+  const textSize = settings.largeText ? "large" : "normal";
+  const textSizeInput = elements.settingsForm.querySelector(`input[name="text-size"][value="${textSize}"]`);
+  if (textSizeInput) textSizeInput.checked = true;
+  elements.settingReduceMotion.checked = settings.reduceMotion;
+  elements.settingVisualHelp.checked = settings.visualHelp;
+  elements.settingSoftSound.checked = settings.softSound;
+  elements.systemMotionNote.classList.toggle("hidden", !systemPrefersReducedMotion());
+  showScreen("settings");
+  textSizeInput?.focus();
+}
+
+function saveAccessibilitySettings(event) {
+  event.preventDefault();
+  progress.accessibilitySettings = {
+    largeText: elements.settingsForm.elements["text-size"].value === "large",
+    reduceMotion: elements.settingReduceMotion.checked,
+    visualHelp: elements.settingVisualHelp.checked,
+    softSound: elements.settingSoftSound.checked
+  };
+  applyAccessibilitySettings(progress.accessibilitySettings);
+  saveProgress();
+  showMainMenu();
+}
+
 function showDailyChallenge() {
   const today = getLocalDateKey();
   const daily = progress.dailyChallenge;
-  const playedToday = daily.lastCompletedDate === today;
-  const hasTodayScore = daily.scoreDate === today;
+  const todayRecord = daily.history[today];
+  const playedToday = todayRecord?.completed === true;
+  const sevenDays = getLastSevenLocalDays();
+  const completedRecords = sevenDays
+    .map((date) => daily.history[getLocalDateKey(date)])
+    .filter((record) => record?.completed === true);
+  const averageScore = completedRecords.length > 0
+    ? completedRecords.reduce((total, record) => total + record.bestScore, 0) / completedRecords.length
+    : 0;
+  const lastCompletedDifference = daily.lastCompletedDate
+    ? dateKeyOrdinal(today) - dateKeyOrdinal(daily.lastCompletedDate)
+    : Number.POSITIVE_INFINITY;
+  const visibleCurrentStreak = lastCompletedDifference === 0 || lastCompletedDifference === 1
+    ? daily.currentStreak
+    : 0;
 
   elements.dailyDate.textContent = formatLocalDate();
-  elements.dailyStreak.textContent = `${daily.currentStreak} hari`;
-  elements.dailyBest.textContent = hasTodayScore ? `${daily.bestScore}/${totalCustomers}` : "Belum dimainkan";
+  elements.dailyStreak.textContent = `${visibleCurrentStreak} hari`;
+  elements.dailyLongestStreak.textContent = `${daily.longestStreak} hari`;
+  elements.dailyBest.textContent = playedToday
+    ? `${todayRecord.bestScore}/${totalCustomers}`
+    : "Belum cuba hari ini";
+  elements.dailyCompletedCount.textContent = `${completedRecords.length} / 7`;
+  elements.dailyAverageScore.textContent = completedRecords.length > 0
+    ? `${averageScore.toFixed(1)} / ${totalCustomers}`
+    : "—";
+  elements.dailyWeekMessage.textContent = completedRecords.length > 0
+    ? `${completedRecords.length} hari sudah dicatat. Teruskan!`
+    : "Belum cukup data. Jom mula hari ini!";
+  elements.dailyCalendar.innerHTML = sevenDays.map((date) => {
+    const dateKey = getLocalDateKey(date);
+    const record = daily.history[dateKey];
+    const isToday = dateKey === today;
+    const completed = record?.completed === true;
+    const statusIcon = isToday ? (completed ? "🔥✅" : "🔥") : (completed ? "✅" : "—");
+    const statusText = isToday
+      ? (completed ? "Hari ini selesai" : "Hari ini belum dimainkan")
+      : (completed ? "Selesai" : "Tiada rekod");
+    const weekday = new Intl.DateTimeFormat("ms-MY", { weekday: "short" })
+      .format(date).replace(".", "").toUpperCase();
+    return `
+      <article class="daily-day${isToday ? " today" : ""}${completed ? " completed" : " missed"}"
+        aria-label="${weekday} ${date.getDate()}: ${statusText}${completed ? `, skor ${record.bestScore} daripada ${totalCustomers}` : ""}">
+        <strong>${weekday}</strong>
+        <small>${date.getDate()}</small>
+        <span aria-hidden="true">${statusIcon}</span>
+        <em>${statusText}</em>
+        ${completed ? `<b>${record.bestScore}/${totalCustomers}</b>` : "<b>—</b>"}
+      </article>
+    `;
+  }).join("");
   elements.dailyStatus.textContent = playedToday
     ? "Cabaran hari ini sudah selesai. Boleh cuba naikkan skor!"
     : "10 soalan campuran menanti kamu!";
@@ -993,7 +1323,8 @@ function completeDailyChallenge(score) {
   const daily = progress.dailyChallenge;
   const challengeDate = activeDailyDate || getLocalDateKey();
 
-  if (daily.lastCompletedDate !== challengeDate) {
+  const previousRecord = daily.history[challengeDate];
+  if (previousRecord?.completed !== true) {
     const dayDifference = daily.lastCompletedDate
       ? dateKeyOrdinal(challengeDate) - dateKeyOrdinal(daily.lastCompletedDate)
       : 0;
@@ -1002,12 +1333,11 @@ function completeDailyChallenge(score) {
     daily.lastCompletedDate = challengeDate;
   }
 
-  if (daily.scoreDate !== challengeDate) {
-    daily.scoreDate = challengeDate;
-    daily.bestScore = score;
-  } else {
-    daily.bestScore = Math.max(daily.bestScore, score);
-  }
+  const bestScore = Math.max(previousRecord?.bestScore || 0, score);
+  daily.history[challengeDate] = { date: challengeDate, bestScore, completed: true };
+  daily.history = trimDailyHistory(daily.history);
+  daily.scoreDate = challengeDate;
+  daily.bestScore = bestScore;
 
   saveProgress();
   return daily;
@@ -1046,9 +1376,14 @@ function showAchievements() {
 function updateProfilePreview() {
   const name = sanitizePlayerName(elements.profileNameInput.value);
   elements.profilePreviewName.textContent = name;
-  elements.profilePreviewAvatar.textContent = selectedProfileAvatar;
+  elements.profilePreviewAvatar.textContent = getPlayerAvatar(selectedProfileAvatar).icon;
   elements.avatarOptions.querySelectorAll(".avatar-option").forEach((button) => {
     const selected = button.dataset.avatar === selectedProfileAvatar;
+    button.classList.toggle("selected", selected);
+    button.setAttribute("aria-pressed", String(selected));
+  });
+  elements.themeOptions.querySelectorAll(".theme-option").forEach((button) => {
+    const selected = button.dataset.theme === selectedProfileTheme;
     button.classList.toggle("selected", selected);
     button.setAttribute("aria-pressed", String(selected));
   });
@@ -1056,14 +1391,43 @@ function updateProfilePreview() {
 
 function renderAvatarOptions() {
   elements.avatarOptions.innerHTML = playerAvatars.map((avatar) => `
-    <button class="avatar-option" type="button" data-avatar="${avatar}" aria-label="Pilih avatar ${avatar}" aria-pressed="false">${avatar}</button>
+    <button class="avatar-option" type="button" data-avatar="${avatar.id}" aria-label="Pilih avatar ${avatar.name}" aria-pressed="false">
+      <span aria-hidden="true">${avatar.icon}</span><small>${avatar.name}</small>
+    </button>
   `).join("");
+}
+
+function renderThemeOptions() {
+  elements.themeOptions.innerHTML = playerThemes.map((theme) => `
+    <button class="theme-option" type="button" data-theme="${theme.id}" aria-label="Pilih tema ${theme.name}" aria-pressed="false">
+      <span style="--theme-swatch: ${theme.color}" aria-hidden="true"></span>${theme.name}
+    </button>
+  `).join("");
+}
+
+function renderProfileBadges() {
+  const unlocked = achievementDefinitions.filter((achievement) => progress.achievements[achievement.id] === true);
+  elements.profileBadges.innerHTML = unlocked.length
+    ? unlocked.map((achievement) => `<span class="profile-badge-chip">${achievement.icon} ${achievement.name}</span>`).join("")
+    : "<p>Belum ada badge. Jom main lagi!</p>";
+
+  elements.featuredBadgeSelect.innerHTML = [
+    '<option value="">Tiada badge utama</option>',
+    ...unlocked.map((achievement) => `<option value="${achievement.id}">${achievement.icon} ${achievement.name}</option>`)
+  ].join("");
+  elements.featuredBadgeSelect.value = unlocked.some((achievement) =>
+    achievement.id === progress.playerProfile.featuredBadge
+  ) ? progress.playerProfile.featuredBadge : "";
 }
 
 function showPlayerProfile() {
   selectedProfileAvatar = progress.playerProfile.avatar;
+  selectedProfileTheme = progress.playerProfile.theme;
   elements.profileNameInput.value = progress.playerProfile.name;
   renderAvatarOptions();
+  renderThemeOptions();
+  renderProfileBadges();
+  applyPlayerTheme(selectedProfileTheme);
   updateProfilePreview();
   showScreen("profile");
   elements.profileNameInput.focus();
@@ -1071,16 +1435,31 @@ function showPlayerProfile() {
 
 function handleAvatarSelection(event) {
   const button = event.target.closest(".avatar-option");
-  if (!button || !playerAvatars.includes(button.dataset.avatar)) return;
+  if (!button || !playerAvatars.some((avatar) => avatar.id === button.dataset.avatar)) return;
   selectedProfileAvatar = button.dataset.avatar;
   updateProfilePreview();
 }
 
+function handleThemeSelection(event) {
+  const button = event.target.closest(".theme-option");
+  if (!button || !playerThemes.some((theme) => theme.id === button.dataset.theme)) return;
+  selectedProfileTheme = button.dataset.theme;
+  applyPlayerTheme(selectedProfileTheme);
+  updateProfilePreview();
+}
+
 function savePlayerProfile() {
+  const requestedBadge = elements.featuredBadgeSelect.value;
+  const featuredBadge = achievementDefinitions.some((achievement) =>
+    achievement.id === requestedBadge && progress.achievements[achievement.id] === true
+  ) ? requestedBadge : "";
   progress.playerProfile = {
     name: sanitizePlayerName(elements.profileNameInput.value),
-    avatar: playerAvatars.includes(selectedProfileAvatar) ? selectedProfileAvatar : "🐻"
+    avatar: playerAvatars.some((avatar) => avatar.id === selectedProfileAvatar) ? selectedProfileAvatar : "avatar-1",
+    theme: playerThemes.some((theme) => theme.id === selectedProfileTheme) ? selectedProfileTheme : "purple",
+    featuredBadge
   };
+  applyPlayerTheme(progress.playerProfile.theme);
   saveProgress();
   showMainMenu();
 }
@@ -1124,8 +1503,67 @@ function showStatistics() {
   statElements.bestStreak.textContent = stats.bestStreak;
   statElements.missionsPlayed.textContent = stats.missionsPlayed;
   statElements.missionsPassed.textContent = stats.missionsPassed;
+  renderSkillStatistics();
   showScreen("stats");
   elements.statsBackButton.focus();
+}
+
+function getSkillAccuracy(skillRecord) {
+  return skillRecord.answered > 0
+    ? Math.round((skillRecord.correct / skillRecord.answered) * 100)
+    : 0;
+}
+
+function getSkillStatus(accuracy, answered) {
+  if (answered === 0) return "Belum ada data";
+  if (accuracy >= 90) return "Hebat!";
+  if (accuracy >= 75) return "Bagus";
+  if (accuracy >= 60) return "Teruskan berlatih";
+  return "Jom latihan lagi";
+}
+
+function renderSkillStatistics() {
+  statElements.skillGrid.replaceChildren();
+
+  skillDefinitions.forEach((skill) => {
+    const record = progress.skillStats[skill.id];
+    const accuracy = getSkillAccuracy(record);
+    const card = document.createElement("article");
+    card.className = "skill-stat-card";
+    card.innerHTML = `
+      <div class="skill-stat-heading"><span aria-hidden="true">${skill.icon}</span><strong>${skill.name}</strong></div>
+      <div class="skill-stat-score">${accuracy}%</div>
+      <div class="skill-progress" role="progressbar" aria-label="Ketepatan ${skill.name}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${accuracy}">
+        <span style="width: ${accuracy}%"></span>
+      </div>
+      <small>${record.correct} betul / ${record.answered} soalan</small>
+      <em>${getSkillStatus(accuracy, record.answered)}</em>
+    `;
+    statElements.skillGrid.append(card);
+  });
+
+  const recommendation = skillDefinitions
+    .map((skill) => ({ ...skill, ...progress.skillStats[skill.id], accuracy: getSkillAccuracy(progress.skillStats[skill.id]) }))
+    .filter((skill) => skill.answered >= 5)
+    .sort((a, b) => a.accuracy - b.accuracy || b.answered - a.answered)[0];
+
+  if (!recommendation) {
+    statElements.skillRecommendation.textContent = "Main beberapa misi lagi untuk dapat cadangan latihan.";
+    statElements.skillRecommendationButton.classList.add("hidden");
+    statElements.skillRecommendationButton.removeAttribute("data-practice");
+    return;
+  }
+
+  statElements.skillRecommendation.textContent = `Cadangan hari ini: Latihan ${recommendation.name}`;
+  statElements.skillRecommendationButton.textContent = `Latihan ${recommendation.name}`;
+  statElements.skillRecommendationButton.dataset.practice = recommendation.practiceId;
+  statElements.skillRecommendationButton.classList.remove("hidden");
+}
+
+function startRecommendedPractice() {
+  const practiceId = Number(statElements.skillRecommendationButton.dataset.practice);
+  if (!practiceTypes.some((practice) => practice.id === practiceId)) return;
+  startGame(practiceId, "practice");
 }
 
 function showMainMenu() {
@@ -1134,8 +1572,13 @@ function showMainMenu() {
   const bestScore = savedScores.length > 0 ? Math.max(...savedScores) : 0;
   elements.menuHighestMission.textContent = `Misi ${progress.highestUnlockedLevel}`;
   elements.menuBestScore.textContent = `${bestScore}/${totalCustomers}`;
-  elements.menuPlayerAvatar.textContent = progress.playerProfile.avatar;
+  applyPlayerTheme(progress.playerProfile.theme);
+  elements.menuPlayerAvatar.textContent = getPlayerAvatar(progress.playerProfile.avatar).icon;
   elements.menuPlayerGreeting.textContent = `Hai, ${progress.playerProfile.name}!`;
+  const featuredBadge = getAchievement(progress.playerProfile.featuredBadge);
+  const badgeIsValid = featuredBadge && progress.achievements[featuredBadge.id] === true;
+  elements.menuPlayerBadge.textContent = badgeIsValid ? `${featuredBadge.icon} ${featuredBadge.name}` : "";
+  elements.menuPlayerBadge.classList.toggle("hidden", !badgeIsValid);
   elements.howToCard.classList.add("hidden");
   elements.howToButton.setAttribute("aria-expanded", "false");
   showScreen("menu");
@@ -1218,8 +1661,27 @@ function renderItems(items) {
         : `RM${item.price}`}${item.quantity
         ? ` <span class="item-quantity">× ${item.quantity}</span>`
         : ""}</p>
+      ${item.quantity ? `<span class="visual-unit-label">${item.quantity} unit</span>` : ""}
     </article>
   `).join("");
+}
+
+function renderVisualHelp(question) {
+  const hints = [];
+  if (question.items.some((item) => item.quantity)) {
+    hints.push("📦 Darab harga seunit dengan bilangan unit.");
+  }
+  if (question.transaction) {
+    hints.push("💳 Bayar → kira Jumlah sendiri → cari Baki.");
+  }
+  if (question.usesCents) {
+    hints.push("🪙 RM ialah Ringgit; dua angka selepas titik ialah sen.");
+  }
+  elements.visualHelp.textContent = hints.join("  ");
+  elements.visualHelp.classList.toggle(
+    "hidden",
+    !progress.accessibilitySettings.visualHelp || hints.length === 0
+  );
 }
 
 function handleItemImageError(event) {
@@ -1321,6 +1783,7 @@ function newQuestion() {
   const question = generator();
   correctAnswer = question.answer;
   answersUseCents = Boolean(question.usesCents);
+  currentSkillCategory = question.skillCategory || levelSkillCategories[currentLevel] || "mixed";
 
   elements.questionText.textContent = question.questionType === "change"
     ? `Berapa baki ${customer.name}?`
@@ -1339,6 +1802,7 @@ function newQuestion() {
   elements.customerAvatar.alt = `Avatar ${customer.name}`;
   elements.customerAvatar.src = customer.avatar;
   renderItems(question.items);
+  renderVisualHelp(question);
   renderAnswers(createAnswerChoices(
     correctAnswer,
     question.distractors,
@@ -1673,6 +2137,7 @@ elements.startMenuButton.addEventListener("click", () => showLevelSelect());
 elements.howToButton.addEventListener("click", toggleHowTo);
 elements.statisticsButton.addEventListener("click", showStatistics);
 elements.statsBackButton.addEventListener("click", showMainMenu);
+statElements.skillRecommendationButton.addEventListener("click", startRecommendedPractice);
 elements.practiceMenuButton.addEventListener("click", showPracticeSelect);
 elements.practiceBackButton.addEventListener("click", showMainMenu);
 elements.profileMenuButton.addEventListener("click", showPlayerProfile);
@@ -1680,6 +2145,7 @@ elements.profileSaveButton.addEventListener("click", savePlayerProfile);
 elements.profileCancelButton.addEventListener("click", showMainMenu);
 elements.profileNameInput.addEventListener("input", updateProfilePreview);
 elements.avatarOptions.addEventListener("click", handleAvatarSelection);
+elements.themeOptions.addEventListener("click", handleThemeSelection);
 elements.achievementsMenuButton.addEventListener("click", showAchievements);
 elements.achievementsBackButton.addEventListener("click", showMainMenu);
 elements.homeGameButton.addEventListener("click", openHomeConfirmation);
@@ -1688,6 +2154,9 @@ elements.homeContinueButton.addEventListener("click", continueCurrentSession);
 elements.dailyMenuButton.addEventListener("click", showDailyChallenge);
 elements.dailyStartButton.addEventListener("click", startDailyChallenge);
 elements.dailyBackButton.addEventListener("click", showMainMenu);
+elements.settingsMenuButton.addEventListener("click", showSettings);
+elements.settingsForm.addEventListener("submit", saveAccessibilitySettings);
+elements.settingsBackButton.addEventListener("click", showMainMenu);
 elements.soundToggleButton.addEventListener("click", toggleSound);
 elements.fullscreenButton.addEventListener("click", toggleFullscreen);
 document.addEventListener("fullscreenchange", updateFullscreenButton);
@@ -1698,6 +2167,8 @@ document.addEventListener("click", (event) => {
     "#achievements-menu-button, #achievements-back-button, #home-game-button, " +
     "#home-confirm-button, #home-continue-button, " +
     "#daily-menu-button, #daily-start-button, #daily-back-button, " +
+    "#settings-menu-button, #settings-save-button, #settings-back-button, " +
+    "#skill-recommendation-button, " +
     "#result-menu-button, #back-to-menu-button, #play-again-button, #choose-level-button, " +
     "#next-level-button, .level-card:not(:disabled), .practice-card, .avatar-option"
   );
