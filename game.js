@@ -1,6 +1,6 @@
 "use strict";
 
-const GAME_VERSION = "1.2.0";
+const GAME_VERSION = "1.3.0";
 const STORAGE_KEY = "kedaiMatematikProgress";
 const SOUND_STORAGE_KEY = "kedaiMatematikSoundEnabled";
 const LEGACY_SOUND_STORAGE_KEY = "kedaiMatematikSound";
@@ -38,7 +38,16 @@ const practiceTypes = [
   { id: 6, name: "Kuantiti & Baki" },
   { id: 7, name: "Wang dan Sen" },
   { id: 8, name: "Sen & Baki" },
-  { id: 9, name: "Cabaran Campuran" }
+  { id: 9, name: "Cabaran Campuran" },
+  { id: "time-1", name: "Baca Jam Tepat", category: "time" }
+];
+
+const timeMissions = [
+  { id: 1, name: "Pukul Berapa?", implemented: true },
+  { id: 2, name: "Setengah Jam", implemented: false },
+  { id: 3, name: "Suku Jam", implemented: false },
+  { id: 4, name: "Berapa Lama?", implemented: false },
+  { id: 5, name: "Pukul Berapa Siap?", implemented: false }
 ];
 
 const skillDefinitions = [
@@ -46,7 +55,23 @@ const skillDefinitions = [
   { id: "quantity", name: "Kuantiti", icon: "📦", practiceId: 3 },
   { id: "change", name: "Baki", icon: "💰", practiceId: 4 },
   { id: "moneyCents", name: "Wang & Sen", icon: "🪙", practiceId: 7 },
-  { id: "mixed", name: "Campuran", icon: "🎯", practiceId: 9 }
+  { id: "mixed", name: "Campuran", icon: "🎯", practiceId: 9 },
+  { id: "time", name: "Masa & Jam", icon: "🕐", practiceId: "time-1" }
+];
+
+const timeContextTemplates = [
+  { customer: true, dialog: "Saya datang ambil barang nanti!", question: (name) => `Pukul berapa ${name} akan datang?` },
+  { customer: true, dialog: "Saya datang semula pada waktu ini ya!", question: (name) => `Pukul berapa ${name} akan kembali?` },
+  { customer: true, dialog: "Saya akan ambil tempahan pada waktu ini!", question: (name) => `Pukul berapa ${name} mengambil tempahan?` },
+  { customer: true, dialog: "Saya akan membuat pembayaran nanti.", question: (name) => `Pukul berapa ${name} akan membayar?` },
+  { customer: false, dialog: "Kedai Matematik akan dibuka pada waktu ini.", question: () => "Pukul berapa kedai dibuka?" },
+  { customer: false, dialog: "Kedai Matematik akan ditutup pada waktu ini.", question: () => "Pukul berapa kedai ditutup?" },
+  { customer: false, dialog: "Penghantaran stok akan sampai pada waktu ini.", question: () => "Pukul berapa stok akan sampai?" },
+  { customer: false, dialog: "Masa rehat pekerja bermula pada waktu ini.", question: () => "Pukul berapa waktu rehat bermula?" },
+  { customer: false, dialog: "Promosi istimewa bermula pada waktu ini.", question: () => "Pukul berapa promosi bermula?" },
+  { customer: false, dialog: "Promosi kedai tamat pada waktu ini.", question: () => "Pukul berapa promosi tamat?" },
+  { customer: false, dialog: "Tempahan pelanggan siap pada waktu ini.", question: () => "Pukul berapa tempahan siap?" },
+  { customer: false, dialog: "Pekerja mula bertugas pada waktu ini.", question: () => "Pukul berapa pekerja mula bertugas?" }
 ];
 
 const levelSkillCategories = {
@@ -238,6 +263,8 @@ const elements = {
   achievementsScreen: document.querySelector("#achievements-screen"),
   dailyScreen: document.querySelector("#daily-screen"),
   settingsScreen: document.querySelector("#settings-screen"),
+  categoryScreen: document.querySelector("#category-screen"),
+  timeLevelScreen: document.querySelector("#time-level-screen"),
   levelScreen: document.querySelector("#level-screen"),
   gameScreen: document.querySelector("#game-screen"),
   gameOverScreen: document.querySelector("#game-over-screen"),
@@ -249,6 +276,12 @@ const elements = {
   practiceMenuButton: document.querySelector("#practice-menu-button"),
   practiceBackButton: document.querySelector("#practice-back-button"),
   practiceGrid: document.querySelector("#practice-grid"),
+  categoryBackButton: document.querySelector("#category-back-button"),
+  moneyCategoryButton: document.querySelector("#money-category-button"),
+  timeCategoryButton: document.querySelector("#time-category-button"),
+  timeLevelBackButton: document.querySelector("#time-level-back-button"),
+  timeLevelGrid: document.querySelector("#time-level-grid"),
+  timeLevelNotice: document.querySelector("#time-level-notice"),
   profileMenuButton: document.querySelector("#profile-menu-button"),
   profileSaveButton: document.querySelector("#profile-save-button"),
   profileCancelButton: document.querySelector("#profile-cancel-button"),
@@ -304,6 +337,7 @@ const elements = {
   starCount: document.querySelector("#star-count"),
   customerProgress: document.querySelector("#customer-progress"),
   customerName: document.querySelector("#customer-name"),
+  customerAction: document.querySelector("#customer-action"),
   customerPanel: document.querySelector(".customer-panel"),
   customerAvatar: document.querySelector("#customer-avatar"),
   avatarFallback: document.querySelector("#avatar-fallback"),
@@ -316,6 +350,7 @@ const elements = {
   purchaseTotal: document.querySelector("#purchase-total"),
   paymentAmount: document.querySelector("#payment-amount"),
   visualHelp: document.querySelector("#visual-help"),
+  clockStage: document.querySelector("#clock-stage"),
   questionText: document.querySelector("#question-text"),
   answers: document.querySelector("#answers"),
   feedback: document.querySelector("#feedback"),
@@ -361,11 +396,15 @@ let sessionCustomers = [];
 let mixedQuestionPlan = [];
 let correctAnswer = 0;
 let answersUseCents = false;
+let answersUseTime = false;
 let questionLocked = true;
 let questionTimerId = null;
 let questionDeadline = 0;
 let currentStreak = 0;
 let currentSkillCategory = "mixed";
+let currentTimeLevel = 1;
+let lastTimeHour = null;
+let lastTimeTemplateIndex = null;
 let selectedProfileAvatar = "avatar-1";
 let selectedProfileTheme = "purple";
 let randomSource = Math.random;
@@ -419,6 +458,7 @@ function defaultProgress() {
     highestUnlockedLevel: 1,
     bestScores: {},
     stars: {},
+    timeProgress: { highestUnlockedLevel: 1, bestScores: {}, stars: {} },
     stats: defaultStats(),
     skillStats: defaultSkillStats(),
     accessibilitySettings: defaultAccessibilitySettings(),
@@ -479,6 +519,7 @@ function loadProgress() {
     const savedStars = {};
     const savedStats = defaultStats();
     const savedSkillStats = defaultSkillStats();
+    const timeProgress = { highestUnlockedLevel: 1, bestScores: {}, stars: {} };
     const accessibilitySettings = defaultAccessibilitySettings();
     const achievements = defaultAchievements();
     const dailyChallenge = defaultDailyChallenge();
@@ -608,6 +649,20 @@ function loadProgress() {
       });
     }
 
+    if (saved.timeProgress && typeof saved.timeProgress === "object") {
+      const savedTime = saved.timeProgress;
+      const highestTime = Number(savedTime.highestUnlockedLevel);
+      if (Number.isInteger(highestTime)) {
+        timeProgress.highestUnlockedLevel = Math.min(Math.max(highestTime, 1), timeMissions.length);
+      }
+      timeMissions.forEach((mission) => {
+        const score = Number(savedTime.bestScores?.[mission.id]);
+        const rating = Number(savedTime.stars?.[mission.id]);
+        if (Number.isInteger(score) && score >= 0 && score <= totalCustomers) timeProgress.bestScores[mission.id] = score;
+        if (Number.isInteger(rating) && rating >= 0 && rating <= 3) timeProgress.stars[mission.id] = rating;
+      });
+    }
+
     if (saved.accessibilitySettings && typeof saved.accessibilitySettings === "object") {
       Object.keys(accessibilitySettings).forEach((key) => {
         if (typeof saved.accessibilitySettings[key] === "boolean") {
@@ -639,6 +694,7 @@ function loadProgress() {
       highestUnlockedLevel,
       bestScores,
       stars: savedStars,
+      timeProgress,
       stats: savedStats,
       skillStats: savedSkillStats,
       accessibilitySettings,
@@ -994,6 +1050,62 @@ function createAnswerChoices(
   return shuffle([...choices]);
 }
 
+function generateTimeChoices(hour) {
+  const choices = new Set([hour]);
+  shuffle([-2, -1, 1, 2, 3, -3]).forEach((offset) => {
+    const wrapped = ((hour - 1 + offset + 12) % 12) + 1;
+    if (choices.size < 4) choices.add(wrapped);
+  });
+  return shuffle([...choices]);
+}
+
+function generateExactHourQuestion(customer) {
+  let hour;
+  do hour = randomIndex(12) + 1;
+  while (hour === lastTimeHour);
+  lastTimeHour = hour;
+
+  let templateIndex;
+  do templateIndex = randomIndex(timeContextTemplates.length);
+  while (templateIndex === lastTimeTemplateIndex);
+  lastTimeTemplateIndex = templateIndex;
+  const template = timeContextTemplates[templateIndex];
+
+  return {
+    answer: hour,
+    choices: generateTimeChoices(hour),
+    isTime: true,
+    skillCategory: "time",
+    hour,
+    context: {
+      usesCustomer: template.customer,
+      dialog: template.dialog,
+      question: template.question(customer.name)
+    }
+  };
+}
+
+function renderAnalogClock(hour) {
+  const numbers = Array.from({ length: 12 }, (_, index) => {
+    const number = index + 1;
+    const angle = number * 30 * Math.PI / 180;
+    const x = 100 + Math.sin(angle) * 76;
+    const y = 100 - Math.cos(angle) * 76;
+    return `<text x="${x.toFixed(2)}" y="${y.toFixed(2)}" text-anchor="middle" dominant-baseline="central">${number}</text>`;
+  }).join("");
+
+  elements.clockStage.innerHTML = `
+    <svg class="analog-clock" viewBox="0 0 200 200" role="img" aria-label="Jam analog untuk dibaca">
+      <circle class="clock-face" cx="100" cy="100" r="94"></circle>
+      ${numbers}
+      <line class="clock-hand hour-hand" x1="100" y1="108" x2="100" y2="48" transform="rotate(${hour * 30} 100 100)"></line>
+      <line class="clock-hand minute-hand" x1="100" y1="110" x2="100" y2="25"></line>
+      <circle class="clock-pin" cx="100" cy="100" r="7"></circle>
+    </svg>
+    <div class="clock-legend" aria-label="Petunjuk jarum"><span><i class="legend-hour"></i>Jarum Jam</span><span><i class="legend-minute"></i>Jarum Minit</span></div>`;
+  elements.clockStage.classList.remove("hidden");
+}
+
 // Penjana bersama untuk tahap tambah. Shuffle dan slice memastikan barang berbeza.
 function generateAdditionQuestion(itemCount) {
   const items = shuffle(shopItems).slice(0, itemCount);
@@ -1232,6 +1344,8 @@ function showScreen(screenName) {
     achievements: elements.achievementsScreen,
     daily: elements.dailyScreen,
     settings: elements.settingsScreen,
+    categories: elements.categoryScreen,
+    timeLevels: elements.timeLevelScreen,
     levels: elements.levelScreen,
     game: elements.gameScreen,
     results: elements.gameOverScreen
@@ -1240,6 +1354,36 @@ function showScreen(screenName) {
   Object.values(screens).forEach((screen) => screen.classList.add("hidden"));
   elements.gameHeader.classList.toggle("hidden", screenName !== "game");
   screens[screenName].classList.remove("hidden");
+}
+
+function showCategorySelect() {
+  questionLocked = true;
+  showScreen("categories");
+  elements.moneyCategoryButton.focus();
+}
+
+function showTimeLevelSelect(message = "") {
+  questionLocked = true;
+  elements.timeLevelNotice.textContent = message;
+  elements.timeLevelGrid.innerHTML = timeMissions.map((mission) => {
+    const available = mission.id === 1 && mission.implemented;
+    const best = progress.timeProgress.bestScores[mission.id];
+    const rating = progress.timeProgress.stars[mission.id] || 0;
+    return `<button class="level-card time-level-card ${available ? "unlocked" : "locked coming-soon"}" type="button" data-time-level="${mission.id}" ${available ? "" : "disabled"}>
+      ${available ? "" : '<span class="level-lock" aria-hidden="true">🔒</span><span class="coming-label">AKAN DATANG</span>'}
+      <span class="level-number">Misi Masa ${mission.id}</span>
+      <span class="level-name">${mission.name}</span>
+      <span class="level-stars">${formatStarRating(rating)}</span>
+      <span class="level-best">${Number.isInteger(best) ? `⭐ Rekod: ${best}/10` : (available ? "Jom cuba!" : "Belum tersedia")}</span>
+    </button>`;
+  }).join("");
+  showScreen("timeLevels");
+}
+
+function handleTimeLevelSelection(event) {
+  const card = event.target.closest("[data-time-level]");
+  if (!card || card.disabled || Number(card.dataset.timeLevel) !== 1) return;
+  startTimeGame(1, "time-mission");
 }
 
 function showSettings() {
@@ -1483,7 +1627,7 @@ function savePlayerProfile() {
 function renderPracticeCards() {
   elements.practiceGrid.innerHTML = practiceTypes.map((practice) => `
     <button class="practice-card" type="button" data-practice="${practice.id}">
-      <span class="practice-number">Latihan ${practice.id}</span>
+      <span class="practice-number">${practice.category === "time" ? "🕐 Masa & Jam" : `Latihan ${practice.id}`}</span>
       <strong>${practice.name}</strong>
       <span>10 soalan</span>
     </button>
@@ -1501,8 +1645,10 @@ function handlePracticeSelection(event) {
   const card = event.target.closest(".practice-card");
   if (!card) return;
 
-  const practiceId = Number(card.dataset.practice);
+  const rawPracticeId = card.dataset.practice;
+  const practiceId = rawPracticeId === "time-1" ? rawPracticeId : Number(rawPracticeId);
   if (!practiceTypes.some((practice) => practice.id === practiceId)) return;
+  if (practiceId === "time-1") return startTimeGame(1, "time-practice");
   startGame(practiceId, "practice");
 }
 
@@ -1577,8 +1723,10 @@ function renderSkillStatistics() {
 }
 
 function startRecommendedPractice() {
-  const practiceId = Number(statElements.skillRecommendationButton.dataset.practice);
+  const rawPracticeId = statElements.skillRecommendationButton.dataset.practice;
+  const practiceId = rawPracticeId === "time-1" ? rawPracticeId : Number(rawPracticeId);
   if (!practiceTypes.some((practice) => practice.id === practiceId)) return;
+  if (practiceId === "time-1") return startTimeGame(1, "time-practice");
   startGame(practiceId, "practice");
 }
 
@@ -1684,7 +1832,8 @@ function renderItems(items) {
 
 function renderVisualHelp(question) {
   const hints = [];
-  if (question.items.some((item) => item.quantity)) {
+  if (question.isTime) hints.push("🟣 Jarum pendek menunjukkan jam. 🟡 Jarum panjang menunjukkan minit.");
+  if (question.items?.some((item) => item.quantity)) {
     hints.push("📦 Darab harga seunit dengan bilangan unit.");
   }
   if (question.transaction) {
@@ -1715,7 +1864,7 @@ function renderAnswers(choices) {
   elements.answers.innerHTML = choices.map((choice) =>
     `<button class="answer-button" type="button" data-value="${choice}" disabled>${answersUseCents
       ? formatMoney(choice)
-      : `RM${choice}`}</button>`
+      : (answersUseTime ? `${choice}:00` : `RM${choice}`)}</button>`
   ).join("");
 }
 
@@ -1795,13 +1944,18 @@ function newQuestion() {
   elements.questionTimer.classList.remove("timer-low");
 
   const customer = sessionCustomers[currentCustomer - 1];
-  const generator = questionGenerators[currentLevel];
-  const question = generator();
+  const isTimeSession = gameMode === "time-mission" || gameMode === "time-practice";
+  const question = isTimeSession
+    ? generateExactHourQuestion(customer)
+    : questionGenerators[currentLevel]();
   correctAnswer = question.answer;
   answersUseCents = Boolean(question.usesCents);
+  answersUseTime = Boolean(question.isTime);
   currentSkillCategory = question.skillCategory || levelSkillCategories[currentLevel] || "mixed";
 
-  elements.questionText.textContent = question.questionType === "change"
+  elements.questionText.textContent = question.isTime
+    ? question.context.question
+    : question.questionType === "change"
     ? `Berapa baki ${customer.name}?`
     : "Semua sekali berapa?";
   elements.transactionSummary.classList.toggle("hidden", !question.transaction);
@@ -1812,18 +1966,37 @@ function newQuestion() {
       : `RM${question.transaction.paymentAmount}`;
   }
 
-  elements.customerName.textContent = customer.name;
-  elements.customerAvatar.classList.remove("hidden");
-  elements.avatarFallback.classList.add("hidden");
-  elements.customerAvatar.alt = `Avatar ${customer.name}`;
-  elements.customerAvatar.src = customer.avatar;
-  renderItems(question.items);
+  if (question.isTime) {
+    elements.customerAction.textContent = "";
+    elements.itemsAndQuestion.classList.add("time-question");
+    elements.customerName.textContent = question.context.usesCustomer
+      ? `${customer.name}: “${question.context.dialog}”`
+      : question.context.dialog;
+    elements.customerAvatar.classList.toggle("hidden", !question.context.usesCustomer);
+    elements.avatarFallback.textContent = "🏪";
+    elements.avatarFallback.classList.toggle("hidden", question.context.usesCustomer);
+    if (question.context.usesCustomer) {
+      elements.customerAvatar.alt = `Avatar ${customer.name}`;
+      elements.customerAvatar.src = customer.avatar;
+    }
+    elements.itemsList.innerHTML = "";
+    elements.itemsList.classList.remove("three-items");
+    renderAnalogClock(question.hour);
+  } else {
+    elements.customerAction.textContent = " membeli:";
+    elements.itemsAndQuestion.classList.remove("time-question");
+    elements.customerName.textContent = customer.name;
+    elements.customerAvatar.classList.remove("hidden");
+    elements.avatarFallback.textContent = "👤";
+    elements.avatarFallback.classList.add("hidden");
+    elements.customerAvatar.alt = `Avatar ${customer.name}`;
+    elements.customerAvatar.src = customer.avatar;
+    elements.clockStage.classList.add("hidden");
+    elements.clockStage.innerHTML = "";
+    renderItems(question.items);
+  }
   renderVisualHelp(question);
-  renderAnswers(createAnswerChoices(
-    correctAnswer,
-    question.distractors,
-    question.choiceOffsets
-  ));
+  renderAnswers(question.choices || createAnswerChoices(correctAnswer, question.distractors, question.choiceOffsets));
 
   elements.customerPanel.className = "customer-panel";
   void elements.customerPanel.offsetWidth;
@@ -1918,6 +2091,14 @@ function showGameOver() {
     showDailyGameOver();
     return;
   }
+  if (gameMode === "time-practice") {
+    showPracticeGameOver();
+    return;
+  }
+  if (gameMode === "time-mission") {
+    showTimeGameOver();
+    return;
+  }
 
   sessionActive = false;
   elements.homeGameButton.disabled = true;
@@ -1984,6 +2165,44 @@ function showGameOver() {
   elements.playAgainButton.focus();
 }
 
+function showTimeGameOver() {
+  sessionActive = false;
+  elements.homeGameButton.disabled = true;
+  const previousBest = progress.timeProgress.bestScores[currentTimeLevel] || 0;
+  const previousStars = progress.timeProgress.stars[currentTimeLevel] || 0;
+  const rating = getStarRating(stars);
+  const passed = stars >= 8;
+  progress.timeProgress.bestScores[currentTimeLevel] = Math.max(previousBest, stars);
+  progress.timeProgress.stars[currentTimeLevel] = Math.max(previousStars, rating);
+  progress.stats.missionsPlayed += 1;
+  if (passed) progress.stats.missionsPassed += 1;
+  saveProgress();
+
+  elements.gameOverTitle.textContent = "MASA REHAT SEKEJAP!";
+  elements.resultLevel.textContent = `Misi Masa ${currentTimeLevel} — Pukul Berapa?`;
+  elements.finalLabel.textContent = "Keputusan kamu";
+  elements.finalScoreIcon.textContent = "🕐";
+  elements.finalScore.textContent = `${stars} / ${totalCustomers}`;
+  elements.finalAccuracy.textContent = `${Math.round(stars / totalCustomers * 100)}%`;
+  elements.sessionStars.textContent = formatStarRating(rating);
+  elements.sessionStars.classList.remove("hidden");
+  elements.newStarRecord.classList.toggle("hidden", rating <= previousStars);
+  elements.finalBest.closest(".final-best").classList.remove("hidden");
+  elements.finalBest.closest(".final-best").firstChild.textContent = "Rekod Terbaik: ";
+  elements.finalBest.textContent = `${progress.timeProgress.bestScores[currentTimeLevel]} / 10`;
+  elements.finalRating.textContent = getRating(stars);
+  elements.finalRating.classList.remove("hidden");
+  elements.levelUnlocked.classList.add("hidden");
+  elements.nextLevelButton.classList.add("hidden");
+  elements.playAgainButton.textContent = "Main Lagi";
+  elements.chooseLevelButton.textContent = "Pilih Misi Masa";
+  elements.chooseLevelButton.classList.remove("hidden");
+  elements.resultMenuButton.classList.remove("hidden");
+  showScreen("results");
+  audioManager.play("sessionComplete");
+  elements.playAgainButton.focus();
+}
+
 function handleAnswer(event) {
   const button = event.target.closest(".answer-button");
   if (!button || questionLocked) return;
@@ -2043,6 +2262,30 @@ function startGame(levelId = currentLevel, mode = gameMode) {
   questionLocked = true;
   elements.practiceBadge.classList.toggle("hidden", !(isPractice || isDaily));
   elements.practiceBadge.textContent = isDaily ? "☀️ CABARAN HARIAN" : "🎯 MOD LATIHAN";
+  updateStats();
+  showScreen("game");
+  newQuestion();
+}
+
+function startTimeGame(levelId = 1, mode = "time-mission") {
+  if (levelId !== 1 || !["time-mission", "time-practice"].includes(mode)) return;
+  stopQuestionTimer();
+  gameMode = mode;
+  currentTimeLevel = levelId;
+  if (mode === "time-practice") currentPracticeType = "time-1";
+  randomSource = Math.random;
+  sessionActive = true;
+  homeModalOpen = false;
+  elements.homeModal.classList.add("hidden");
+  stars = 0;
+  currentCustomer = 1;
+  sessionCustomers = shuffle(customers);
+  currentStreak = 0;
+  lastTimeHour = null;
+  lastTimeTemplateIndex = null;
+  questionLocked = true;
+  elements.practiceBadge.classList.toggle("hidden", mode !== "time-practice");
+  elements.practiceBadge.textContent = "🕐 LATIHAN MASA";
   updateStats();
   showScreen("game");
   newQuestion();
@@ -2149,7 +2392,12 @@ function goToNextLevel() {
 }
 
 // Semua event listener didaftarkan sekali sahaja.
-elements.startMenuButton.addEventListener("click", () => showLevelSelect());
+elements.startMenuButton.addEventListener("click", showCategorySelect);
+elements.categoryBackButton.addEventListener("click", showMainMenu);
+elements.moneyCategoryButton.addEventListener("click", () => showLevelSelect());
+elements.timeCategoryButton.addEventListener("click", () => showTimeLevelSelect());
+elements.timeLevelBackButton.addEventListener("click", showCategorySelect);
+elements.timeLevelGrid.addEventListener("click", handleTimeLevelSelection);
 elements.howToButton.addEventListener("click", toggleHowTo);
 elements.statisticsButton.addEventListener("click", showStatistics);
 elements.statsBackButton.addEventListener("click", showMainMenu);
@@ -2185,12 +2433,13 @@ document.addEventListener("click", (event) => {
     "#daily-menu-button, #daily-start-button, #daily-back-button, " +
     "#settings-menu-button, #settings-save-button, #settings-back-button, " +
     "#skill-recommendation-button, " +
+    "#category-back-button, #money-category-button, #time-category-button, #time-level-back-button, " +
     "#result-menu-button, #back-to-menu-button, #play-again-button, #choose-level-button, " +
     "#next-level-button, .level-card:not(:disabled), .practice-card, .avatar-option"
   );
   if (mainButton) audioManager.play("buttonClick");
 });
-elements.backToMenuButton.addEventListener("click", showMainMenu);
+elements.backToMenuButton.addEventListener("click", showCategorySelect);
 elements.levelGrid.addEventListener("click", handleLevelSelection);
 elements.practiceGrid.addEventListener("click", handlePracticeSelection);
 elements.answers.addEventListener("click", handleAnswer);
@@ -2198,10 +2447,12 @@ elements.answers.addEventListener("click", handleAnswer);
 elements.itemsList.addEventListener("error", handleItemImageError, true);
 elements.playAgainButton.addEventListener("click", () => {
   if (gameMode === "daily") startDailyChallenge();
+  else if (gameMode === "time-mission" || gameMode === "time-practice") startTimeGame(currentTimeLevel, gameMode);
   else startGame(currentLevel, gameMode);
 });
 elements.chooseLevelButton.addEventListener("click", () => {
-  if (gameMode === "practice") showPracticeSelect();
+  if (gameMode === "practice" || gameMode === "time-practice") showPracticeSelect();
+  else if (gameMode === "time-mission") showTimeLevelSelect();
   else showLevelSelect();
 });
 elements.nextLevelButton.addEventListener("click", goToNextLevel);

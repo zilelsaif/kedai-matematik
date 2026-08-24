@@ -258,9 +258,33 @@
       <div class="practice-grid" id="practice-grid"></div>
     </section>
 
+    <section class="category-screen hidden" id="category-screen" aria-labelledby="category-title">
+      <div class="screen-heading">
+        <button class="back-button" id="category-back-button" type="button">← Menu Utama</button>
+        <div><p class="eyebrow">Pilih dunia pembelajaran</p><h2 id="category-title">PILIH KATEGORI</h2></div>
+      </div>
+      <div class="category-grid">
+        <button class="category-card money-category" id="money-category-button" type="button">
+          <span aria-hidden="true">🛒</span><strong>Wang & Kedai</strong><small>10 misi juruwang menanti!</small>
+        </button>
+        <button class="category-card time-category" id="time-category-button" type="button">
+          <span aria-hidden="true">🕐</span><strong>Masa & Jam</strong><small>Belajar waktu sambil mengurus kedai.</small>
+        </button>
+      </div>
+    </section>
+
+    <section class="time-level-screen hidden" id="time-level-screen" aria-labelledby="time-level-title">
+      <div class="screen-heading">
+        <button class="back-button" id="time-level-back-button" type="button">← Pilih Kategori</button>
+        <div><p class="eyebrow">Jadual Kedai Matematik</p><h2 id="time-level-title">MISI MASA & JAM</h2></div>
+      </div>
+      <p class="level-notice" id="time-level-notice" role="status" aria-live="polite"></p>
+      <div class="level-grid time-level-grid" id="time-level-grid"></div>
+    </section>
+
     <section class="level-screen hidden" id="level-screen" aria-labelledby="level-screen-title">
       <div class="screen-heading">
-        <button class="back-button" id="back-to-menu-button" type="button" aria-label="Kembali ke menu utama">← Menu Utama</button>
+        <button class="back-button" id="back-to-menu-button" type="button" aria-label="Kembali ke pilihan kategori">← Pilih Kategori</button>
         <div>
           <p class="eyebrow">Pilih cabaran kamu</p>
           <h2 id="level-screen-title">PILIH MISI</h2>
@@ -283,12 +307,13 @@
         </div>
         <div class="speech-bubble">
           <p class="customer-label">Pelanggan hari ini</p>
-          <h2 id="customer-title"><span id="customer-name">Aina</span> membeli:</h2>
+          <h2 id="customer-title"><span id="customer-name">Aina</span><span id="customer-action"> membeli:</span></h2>
         </div>
       </div>
 
       <div class="items-and-question">
         <div class="items-list" id="items-list" aria-live="polite"></div>
+        <div class="clock-stage hidden" id="clock-stage"></div>
 
         <div class="question-card">
           <div class="question-timer hidden" id="question-timer" aria-label="Masa menjawab">
