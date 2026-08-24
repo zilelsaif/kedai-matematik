@@ -2217,7 +2217,7 @@ elements.customerAvatar.addEventListener("error", () => {
 });
 
 elements.helperMessage.textContent = helperMessages[randomIndex(helperMessages.length)];
-elements.appVersion.textContent = `v${GAME_VERSION}`;
+elements.appVersion.textContent = `v${GAME_VERSION} by Zil-el-Saif`;
 document.querySelector('meta[name="application-version"]').content = GAME_VERSION;
 updateSoundButton();
 if (!document.fullscreenEnabled) {
