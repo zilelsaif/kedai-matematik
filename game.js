@@ -1,6 +1,6 @@
 "use strict";
 
-const GAME_VERSION = "1.3.0";
+const GAME_VERSION = "1.4.0";
 const STORAGE_KEY = "kedaiMatematikProgress";
 const SOUND_STORAGE_KEY = "kedaiMatematikSoundEnabled";
 const LEGACY_SOUND_STORAGE_KEY = "kedaiMatematikSound";
@@ -39,15 +39,19 @@ const practiceTypes = [
   { id: 7, name: "Wang dan Sen" },
   { id: 8, name: "Sen & Baki" },
   { id: 9, name: "Cabaran Campuran" },
-  { id: "time-1", name: "Baca Jam Tepat", category: "time" }
+  { id: "time-1", name: "Baca Jam Tepat", category: "time", timeLevel: 1 },
+  { id: "time-2", name: "Setengah Jam", category: "time", timeLevel: 2 },
+  { id: "time-3", name: "Suku Jam", category: "time", timeLevel: 3 },
+  { id: "time-4", name: "Tempoh Masa", category: "time", timeLevel: 4 },
+  { id: "time-5", name: "Masa Siap", category: "time", timeLevel: 5 }
 ];
 
 const timeMissions = [
   { id: 1, name: "Pukul Berapa?", implemented: true },
-  { id: 2, name: "Setengah Jam", implemented: false },
-  { id: 3, name: "Suku Jam", implemented: false },
-  { id: 4, name: "Berapa Lama?", implemented: false },
-  { id: 5, name: "Pukul Berapa Siap?", implemented: false }
+  { id: 2, name: "Setengah Jam", implemented: true },
+  { id: 3, name: "Suku Jam", implemented: true },
+  { id: 4, name: "Berapa Lama?", implemented: true },
+  { id: 5, name: "Pukul Berapa Siap?", implemented: true }
 ];
 
 const skillDefinitions = [
@@ -116,7 +120,9 @@ const achievementDefinitions = [
   { id: "allMissions", icon: "🗺️", name: "Semua Misi Dibuka", description: "Buka kesemua Misi 1–10." },
   { id: "storeExpert", icon: "🏪", name: "Pakar Kedai", description: "Lulus Misi 10 sekurang-kurangnya sekali." },
   { id: "starCollector", icon: "🌟", name: "Pengumpul Bintang", description: "Kumpul sekurang-kurangnya 20/30 bintang." },
-  { id: "starKing", icon: "👑", name: "Raja Bintang", description: "Kumpul 30/30 bintang." }
+  { id: "starKing", icon: "👑", name: "Raja Bintang", description: "Kumpul 30/30 bintang." },
+  { id: "onTime", icon: "🕐", name: "Tepat Pada Masanya", description: "Lulus Misi Masa 1." },
+  { id: "timeKeeper", icon: "⏰", name: "Penjaga Waktu", description: "Lulus Misi Masa 5." }
 ];
 
 const shopItems = [
@@ -397,6 +403,7 @@ let mixedQuestionPlan = [];
 let correctAnswer = 0;
 let answersUseCents = false;
 let answersUseTime = false;
+let currentAnswerKind = "money";
 let questionLocked = true;
 let questionTimerId = null;
 let questionDeadline = 0;
@@ -405,6 +412,8 @@ let currentSkillCategory = "mixed";
 let currentTimeLevel = 1;
 let lastTimeHour = null;
 let lastTimeTemplateIndex = null;
+let timeQuestionPlan = [];
+let currentTimeSubSkill = "readClock";
 let selectedProfileAvatar = "avatar-1";
 let selectedProfileTheme = "purple";
 let randomSource = Math.random;
@@ -426,6 +435,11 @@ function defaultStats() {
     missionsPassed: 0,
     totalStars: 0
   };
+}
+
+function defaultTimeSkillStats() {
+  return Object.fromEntries(["readClock", "halfHour", "quarterHour", "duration", "endTime"]
+    .map((id) => [id, { answered: 0, correct: 0 }]));
 }
 
 function defaultSkillStats() {
@@ -459,6 +473,7 @@ function defaultProgress() {
     bestScores: {},
     stars: {},
     timeProgress: { highestUnlockedLevel: 1, bestScores: {}, stars: {} },
+    timeSkillStats: defaultTimeSkillStats(),
     stats: defaultStats(),
     skillStats: defaultSkillStats(),
     accessibilitySettings: defaultAccessibilitySettings(),
@@ -520,6 +535,7 @@ function loadProgress() {
     const savedStats = defaultStats();
     const savedSkillStats = defaultSkillStats();
     const timeProgress = { highestUnlockedLevel: 1, bestScores: {}, stars: {} };
+    const timeSkillStats = defaultTimeSkillStats();
     const accessibilitySettings = defaultAccessibilitySettings();
     const achievements = defaultAchievements();
     const dailyChallenge = defaultDailyChallenge();
@@ -663,6 +679,16 @@ function loadProgress() {
       });
     }
 
+    if (saved.timeSkillStats && typeof saved.timeSkillStats === "object") {
+      Object.keys(timeSkillStats).forEach((key) => {
+        const record = saved.timeSkillStats[key];
+        const answered = Number(record?.answered);
+        const correct = Number(record?.correct);
+        if (Number.isInteger(answered) && answered >= 0) timeSkillStats[key].answered = answered;
+        if (Number.isInteger(correct) && correct >= 0) timeSkillStats[key].correct = Math.min(correct, timeSkillStats[key].answered);
+      });
+    }
+
     if (saved.accessibilitySettings && typeof saved.accessibilitySettings === "object") {
       Object.keys(accessibilitySettings).forEach((key) => {
         if (typeof saved.accessibilitySettings[key] === "boolean") {
@@ -684,6 +710,8 @@ function loadProgress() {
     achievements.storeExpert ||= Number(bestScores[10]) >= 8;
     achievements.starCollector ||= savedStats.totalStars >= 20;
     achievements.starKing ||= savedStats.totalStars >= 30;
+    achievements.onTime ||= Number(timeProgress.bestScores[1]) >= 8;
+    achievements.timeKeeper ||= Number(timeProgress.bestScores[5]) >= 8;
     if (!playerProfile.featuredBadge && achievementDefinitions.some((achievement) =>
       achievement.id === requestedBadge && achievements[achievement.id] === true
     )) {
@@ -695,6 +723,7 @@ function loadProgress() {
       bestScores,
       stars: savedStars,
       timeProgress,
+      timeSkillStats,
       stats: savedStats,
       skillStats: savedSkillStats,
       accessibilitySettings,
@@ -743,7 +772,7 @@ function showNextAchievementToast() {
   }, 3000);
 }
 
-function checkAchievements({ missionScore = null, missionLevel = null, missionPassed = false, allowMissionAchievements = false } = {}) {
+function checkAchievements({ missionScore = null, missionLevel = null, missionPassed = false, allowMissionAchievements = false, timeMissionLevel = null } = {}) {
   const totalStars = calculateTotalStars();
   const conditions = {
     efficientCashier: progress.stats.bestStreak >= 10
@@ -759,6 +788,10 @@ function checkAchievements({ missionScore = null, missionLevel = null, missionPa
       starCollector: totalStars >= 20,
       starKing: totalStars >= 30
     });
+  }
+  if (timeMissionLevel !== null && missionPassed) {
+    conditions.onTime = timeMissionLevel === 1;
+    conditions.timeKeeper = timeMissionLevel === 5;
   }
 
   let unlockedCount = 0;
@@ -776,10 +809,15 @@ function recordQuestionResult(isCorrect) {
   progress.stats.totalQuestions += 1;
   const skillRecord = progress.skillStats[currentSkillCategory] || progress.skillStats.mixed;
   skillRecord.answered += 1;
+  const timeSubRecord = currentSkillCategory === "time"
+    ? progress.timeSkillStats[currentTimeSubSkill]
+    : null;
+  if (timeSubRecord) timeSubRecord.answered += 1;
 
   if (isCorrect) {
     progress.stats.totalCorrect += 1;
     skillRecord.correct += 1;
+    if (timeSubRecord) timeSubRecord.correct += 1;
     currentStreak += 1;
     progress.stats.bestStreak = Math.max(progress.stats.bestStreak, currentStreak);
   } else {
@@ -1050,42 +1088,147 @@ function createAnswerChoices(
   return shuffle([...choices]);
 }
 
-function generateTimeChoices(hour) {
-  const choices = new Set([hour]);
+function normalizeClockMinutes(minutes) {
+  return ((minutes % 720) + 720) % 720;
+}
+
+function formatClockTime(minutes) {
+  const normalized = normalizeClockMinutes(minutes);
+  const hour = Math.floor(normalized / 60) || 12;
+  const minute = normalized % 60;
+  return `${hour}:${String(minute).padStart(2, "0")}`;
+}
+
+function formatDuration(minutes) {
+  if (minutes < 60) return `${minutes} minit`;
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  return `${hours} jam${remainder ? ` ${remainder} minit` : ""}`;
+}
+
+function createTimeQuestionPlan(levelId) {
+  const plans = {
+    1: Array(10).fill(0),
+    2: [0, 0, 0, 0, 0, 30, 30, 30, 30, 30],
+    3: [0, 0, 15, 15, 15, 30, 30, 45, 45, 45],
+    4: [30, 30, 60, 60, 90, 90, 120, 120, 150, 180],
+    5: [30, 30, 60, 60, 60, 90, 90, 90, 120, 120]
+  };
+  return shuffle(plans[levelId] || plans[1]);
+}
+
+function createClockChoices(answerMinutes, stepMinutes) {
+  const choices = new Set([normalizeClockMinutes(answerMinutes)]);
   shuffle([-2, -1, 1, 2, 3, -3]).forEach((offset) => {
-    const wrapped = ((hour - 1 + offset + 12) % 12) + 1;
-    if (choices.size < 4) choices.add(wrapped);
+    if (choices.size < 4) choices.add(normalizeClockMinutes(answerMinutes + offset * stepMinutes));
   });
   return shuffle([...choices]);
 }
 
-function generateExactHourQuestion(customer) {
-  let hour;
-  do hour = randomIndex(12) + 1;
-  while (hour === lastTimeHour);
-  lastTimeHour = hour;
-
+function pickTimeContext(customer) {
   let templateIndex;
   do templateIndex = randomIndex(timeContextTemplates.length);
   while (templateIndex === lastTimeTemplateIndex);
   lastTimeTemplateIndex = templateIndex;
   const template = timeContextTemplates[templateIndex];
+  return {
+    usesCustomer: template.customer,
+    dialog: template.dialog,
+    question: template.question(customer.name)
+  };
+}
+
+function generateClockReadingQuestion(customer, levelId) {
+  const minute = timeQuestionPlan[currentCustomer - 1] ?? 0;
+  let hour;
+  let moment;
+  do {
+    hour = randomIndex(12) + 1;
+    moment = normalizeClockMinutes((hour % 12) * 60 + minute);
+  } while (moment === lastTimeHour);
+  lastTimeHour = moment;
+  currentTimeSubSkill = levelId === 1 ? "readClock" : (levelId === 2 ? "halfHour" : "quarterHour");
 
   return {
-    answer: hour,
-    choices: generateTimeChoices(hour),
+    answer: moment,
+    choices: createClockChoices(moment, levelId === 1 ? 60 : (levelId === 2 ? 30 : 15)),
+    answerKind: "clock",
     isTime: true,
     skillCategory: "time",
-    hour,
-    context: {
-      usesCustomer: template.customer,
-      dialog: template.dialog,
-      question: template.question(customer.name)
+    clocks: [{ minutes: moment }],
+    context: pickTimeContext(customer)
+  };
+}
+
+function generateDurationQuestion(customer) {
+  const duration = timeQuestionPlan[currentCustomer - 1] || 60;
+  const startMinute = randomIndex(2) * 30;
+  const maximumStartHour = Math.max(1, Math.floor((690 - duration - startMinute) / 60));
+  const startHour = randomIndex(Math.min(maximumStartHour, 8)) + 1;
+  const start = startHour * 60 + startMinute;
+  const end = start + duration;
+  const usesCustomer = randomIndex(2) === 0;
+  currentTimeSubSkill = "duration";
+  const durationOptions = [30, 60, 90, 120, 150, 180];
+
+  return {
+    answer: duration,
+    choices: shuffle([duration, ...shuffle(durationOptions.filter((value) => value !== duration)).slice(0, 3)]),
+    answerKind: "duration",
+    isTime: true,
+    isTimeline: true,
+    skillCategory: "time",
+    clocks: [{ label: "MULA", minutes: start }, { label: "TAMAT", minutes: end }],
+    context: usesCustomer ? {
+      usesCustomer: true,
+      dialog: `Saya datang pukul ${formatClockTime(start)}. Pesanan siap pukul ${formatClockTime(end)}.`,
+      question: `Berapa lama ${customer.name} menunggu?`
+    } : {
+      usesCustomer: false,
+      dialog: `Kedai dibuka pukul ${formatClockTime(start)}. Stok sampai pukul ${formatClockTime(end)}.`,
+      question: "Berapa lama selepas kedai dibuka stok sampai?"
     }
   };
 }
 
-function renderAnalogClock(hour) {
+function generateEndTimeQuestion(customer) {
+  const duration = timeQuestionPlan[currentCustomer - 1] || 60;
+  const startMinute = randomIndex(2) * 30;
+  const maximumStartHour = Math.max(1, Math.floor((690 - duration - startMinute) / 60));
+  const startHour = randomIndex(Math.min(maximumStartHour, 9)) + 1;
+  const start = startHour * 60 + startMinute;
+  const end = start + duration;
+  const usesCustomer = randomIndex(2) === 0;
+  currentTimeSubSkill = "endTime";
+
+  return {
+    answer: normalizeClockMinutes(end),
+    choices: createClockChoices(end, 30),
+    answerKind: "clock",
+    isTime: true,
+    isEndTime: true,
+    skillCategory: "time",
+    clocks: [{ label: "MULA", minutes: start }],
+    duration,
+    context: usesCustomer ? {
+      usesCustomer: true,
+      dialog: `Pesanan saya mula dibungkus pukul ${formatClockTime(start)} dan mengambil masa ${formatDuration(duration)}.`,
+      question: `Pukul berapa pesanan ${customer.name} siap?`
+    } : {
+      usesCustomer: false,
+      dialog: `Tempahan bakeri mula disediakan pukul ${formatClockTime(start)} dan mengambil masa ${formatDuration(duration)}.`,
+      question: "Pukul berapa tempahan bakeri siap?"
+    }
+  };
+}
+
+function generateTimeQuestion(customer, levelId) {
+  if (levelId <= 3) return generateClockReadingQuestion(customer, levelId);
+  if (levelId === 4) return generateDurationQuestion(customer);
+  return generateEndTimeQuestion(customer);
+}
+
+function createAnalogClockSvg(minutes, label = "") {
   const numbers = Array.from({ length: 12 }, (_, index) => {
     const number = index + 1;
     const angle = number * 30 * Math.PI / 180;
@@ -1094,14 +1237,28 @@ function renderAnalogClock(hour) {
     return `<text x="${x.toFixed(2)}" y="${y.toFixed(2)}" text-anchor="middle" dominant-baseline="central">${number}</text>`;
   }).join("");
 
-  elements.clockStage.innerHTML = `
-    <svg class="analog-clock" viewBox="0 0 200 200" role="img" aria-label="Jam analog untuk dibaca">
+  const normalized = normalizeClockMinutes(minutes);
+  const hour = Math.floor(normalized / 60);
+  const minute = normalized % 60;
+  const hourAngle = hour * 30 + minute * 0.5;
+  const minuteAngle = minute * 6;
+  return `<div class="clock-unit">${label ? `<strong class="clock-label">${label}</strong>` : ""}
+    <svg class="analog-clock" viewBox="0 0 200 200" role="img" aria-label="Jam analog ${label || "untuk dibaca"}">
       <circle class="clock-face" cx="100" cy="100" r="94"></circle>
       ${numbers}
-      <line class="clock-hand hour-hand" x1="100" y1="108" x2="100" y2="48" transform="rotate(${hour * 30} 100 100)"></line>
-      <line class="clock-hand minute-hand" x1="100" y1="110" x2="100" y2="25"></line>
+      <line class="clock-hand hour-hand" x1="100" y1="108" x2="100" y2="48" transform="rotate(${hourAngle} 100 100)"></line>
+      <line class="clock-hand minute-hand" x1="100" y1="110" x2="100" y2="25" transform="rotate(${minuteAngle} 100 100)"></line>
       <circle class="clock-pin" cx="100" cy="100" r="7"></circle>
-    </svg>
+    </svg></div>`;
+}
+
+function renderTimeDisplay(question) {
+  const clocks = question.clocks.map((clock) => createAnalogClockSvg(clock.minutes, clock.label)).join(
+    question.clocks.length > 1 ? '<span class="clock-arrow" aria-hidden="true">→</span>' : ""
+  );
+  elements.clockStage.classList.toggle("dual-clock", question.clocks.length > 1);
+  elements.clockStage.innerHTML = `<div class="clock-display">${clocks}</div>
+    ${question.isEndTime ? `<div class="duration-chip">+ ${formatDuration(question.duration)} → ?</div>` : ""}
     <div class="clock-legend" aria-label="Petunjuk jarum"><span><i class="legend-hour"></i>Jarum Jam</span><span><i class="legend-minute"></i>Jarum Minit</span></div>`;
   elements.clockStage.classList.remove("hidden");
 }
@@ -1366,15 +1523,17 @@ function showTimeLevelSelect(message = "") {
   questionLocked = true;
   elements.timeLevelNotice.textContent = message;
   elements.timeLevelGrid.innerHTML = timeMissions.map((mission) => {
-    const available = mission.id === 1 && mission.implemented;
+    const unlocked = mission.id <= progress.timeProgress.highestUnlockedLevel;
+    const available = unlocked && mission.implemented;
     const best = progress.timeProgress.bestScores[mission.id];
     const rating = progress.timeProgress.stars[mission.id] || 0;
-    return `<button class="level-card time-level-card ${available ? "unlocked" : "locked coming-soon"}" type="button" data-time-level="${mission.id}" ${available ? "" : "disabled"}>
-      ${available ? "" : '<span class="level-lock" aria-hidden="true">🔒</span><span class="coming-label">AKAN DATANG</span>'}
+    const icon = mission.id <= 3 ? "🕐" : (mission.id === 4 ? "⏱️" : "⏰");
+    return `<button class="level-card time-level-card ${available ? "unlocked" : "locked"}" type="button" data-time-level="${mission.id}" ${available ? "" : "disabled"}>
+      ${available ? "" : '<span class="level-lock" aria-hidden="true">🔒</span>'}
       <span class="level-number">Misi Masa ${mission.id}</span>
-      <span class="level-name">${mission.name}</span>
+      <span class="level-name">${icon} ${mission.name}</span>
       <span class="level-stars">${formatStarRating(rating)}</span>
-      <span class="level-best">${Number.isInteger(best) ? `⭐ Rekod: ${best}/10` : (available ? "Jom cuba!" : "Belum tersedia")}</span>
+      <span class="level-best">${Number.isInteger(best) ? `⭐ Rekod: ${best}/10` : (available ? "Jom cuba!" : "Selesaikan misi sebelumnya")}</span>
     </button>`;
   }).join("");
   showScreen("timeLevels");
@@ -1382,8 +1541,9 @@ function showTimeLevelSelect(message = "") {
 
 function handleTimeLevelSelection(event) {
   const card = event.target.closest("[data-time-level]");
-  if (!card || card.disabled || Number(card.dataset.timeLevel) !== 1) return;
-  startTimeGame(1, "time-mission");
+  const levelId = Number(card?.dataset.timeLevel);
+  if (!card || card.disabled || levelId > progress.timeProgress.highestUnlockedLevel) return;
+  startTimeGame(levelId, "time-mission");
 }
 
 function showSettings() {
@@ -1646,9 +1806,10 @@ function handlePracticeSelection(event) {
   if (!card) return;
 
   const rawPracticeId = card.dataset.practice;
-  const practiceId = rawPracticeId === "time-1" ? rawPracticeId : Number(rawPracticeId);
-  if (!practiceTypes.some((practice) => practice.id === practiceId)) return;
-  if (practiceId === "time-1") return startTimeGame(1, "time-practice");
+  const practiceId = rawPracticeId.startsWith("time-") ? rawPracticeId : Number(rawPracticeId);
+  const practice = practiceTypes.find((entry) => entry.id === practiceId);
+  if (!practice) return;
+  if (practice.category === "time") return startTimeGame(practice.timeLevel, "time-practice");
   startGame(practiceId, "practice");
 }
 
@@ -1724,9 +1885,10 @@ function renderSkillStatistics() {
 
 function startRecommendedPractice() {
   const rawPracticeId = statElements.skillRecommendationButton.dataset.practice;
-  const practiceId = rawPracticeId === "time-1" ? rawPracticeId : Number(rawPracticeId);
-  if (!practiceTypes.some((practice) => practice.id === practiceId)) return;
-  if (practiceId === "time-1") return startTimeGame(1, "time-practice");
+  const practiceId = rawPracticeId.startsWith("time-") ? rawPracticeId : Number(rawPracticeId);
+  const practice = practiceTypes.find((entry) => entry.id === practiceId);
+  if (!practice) return;
+  if (practice.category === "time") return startTimeGame(practice.timeLevel, "time-practice");
   startGame(practiceId, "practice");
 }
 
@@ -1832,7 +1994,9 @@ function renderItems(items) {
 
 function renderVisualHelp(question) {
   const hints = [];
-  if (question.isTime) hints.push("🟣 Jarum pendek menunjukkan jam. 🟡 Jarum panjang menunjukkan minit.");
+  if (question.isTime && !question.isTimeline) hints.push("🟣 Jarum pendek menunjukkan jam. 🟡 Jarum panjang menunjukkan minit.");
+  if (question.isTimeline) hints.push("⏱️ MULA → TAMAT. Kira tempoh di antaranya.");
+  if (question.isEndTime) hints.push("🕐 Masa mula + tempoh → masa siap.");
   if (question.items?.some((item) => item.quantity)) {
     hints.push("📦 Darab harga seunit dengan bilangan unit.");
   }
@@ -1864,7 +2028,9 @@ function renderAnswers(choices) {
   elements.answers.innerHTML = choices.map((choice) =>
     `<button class="answer-button" type="button" data-value="${choice}" disabled>${answersUseCents
       ? formatMoney(choice)
-      : (answersUseTime ? `${choice}:00` : `RM${choice}`)}</button>`
+      : (answersUseTime
+        ? (currentAnswerKind === "duration" ? formatDuration(choice) : formatClockTime(choice))
+        : `RM${choice}`)}</button>`
   ).join("");
 }
 
@@ -1946,11 +2112,12 @@ function newQuestion() {
   const customer = sessionCustomers[currentCustomer - 1];
   const isTimeSession = gameMode === "time-mission" || gameMode === "time-practice";
   const question = isTimeSession
-    ? generateExactHourQuestion(customer)
+    ? generateTimeQuestion(customer, currentTimeLevel)
     : questionGenerators[currentLevel]();
   correctAnswer = question.answer;
   answersUseCents = Boolean(question.usesCents);
   answersUseTime = Boolean(question.isTime);
+  currentAnswerKind = question.answerKind || (question.usesCents ? "money-cents" : "money");
   currentSkillCategory = question.skillCategory || levelSkillCategories[currentLevel] || "mixed";
 
   elements.questionText.textContent = question.isTime
@@ -1981,7 +2148,7 @@ function newQuestion() {
     }
     elements.itemsList.innerHTML = "";
     elements.itemsList.classList.remove("three-items");
-    renderAnalogClock(question.hour);
+    renderTimeDisplay(question);
   } else {
     elements.customerAction.textContent = " membeli:";
     elements.itemsAndQuestion.classList.remove("time-question");
@@ -2157,6 +2324,7 @@ function showGameOver() {
     ? "🏆 Kedai Hebat! Semua Misi Selesai!"
     : "🎉 Misi Baru Dibuka!";
   elements.levelUnlocked.classList.toggle("hidden", !(passedWithNextLevel || allMissionsCompleted));
+  elements.nextLevelButton.textContent = "Misi Seterusnya";
   elements.nextLevelButton.classList.toggle("hidden", !nextLevelUnlocked);
   showScreen("results");
   if (unlockedAchievementCount === 0) {
@@ -2170,16 +2338,33 @@ function showTimeGameOver() {
   elements.homeGameButton.disabled = true;
   const previousBest = progress.timeProgress.bestScores[currentTimeLevel] || 0;
   const previousStars = progress.timeProgress.stars[currentTimeLevel] || 0;
+  const previousHighest = progress.timeProgress.highestUnlockedLevel;
   const rating = getStarRating(stars);
   const passed = stars >= 8;
   progress.timeProgress.bestScores[currentTimeLevel] = Math.max(previousBest, stars);
   progress.timeProgress.stars[currentTimeLevel] = Math.max(previousStars, rating);
   progress.stats.missionsPlayed += 1;
   if (passed) progress.stats.missionsPassed += 1;
+  if (passed && currentTimeLevel < timeMissions.length) {
+    progress.timeProgress.highestUnlockedLevel = Math.max(
+      progress.timeProgress.highestUnlockedLevel,
+      currentTimeLevel + 1
+    );
+  }
+  const achievementCount = checkAchievements({
+    missionScore: stars,
+    missionPassed: passed,
+    timeMissionLevel: currentTimeLevel
+  });
   saveProgress();
 
+  const mission = timeMissions.find((entry) => entry.id === currentTimeLevel);
+  const nextMissionUnlocked = currentTimeLevel < timeMissions.length &&
+    progress.timeProgress.highestUnlockedLevel >= currentTimeLevel + 1;
+  const unlockedNewTimeMission = progress.timeProgress.highestUnlockedLevel > previousHighest;
+
   elements.gameOverTitle.textContent = "MASA REHAT SEKEJAP!";
-  elements.resultLevel.textContent = `Misi Masa ${currentTimeLevel} — Pukul Berapa?`;
+  elements.resultLevel.textContent = `Misi Masa ${currentTimeLevel} — ${mission?.name || "Masa & Jam"}`;
   elements.finalLabel.textContent = "Keputusan kamu";
   elements.finalScoreIcon.textContent = "🕐";
   elements.finalScore.textContent = `${stars} / ${totalCustomers}`;
@@ -2192,14 +2377,18 @@ function showTimeGameOver() {
   elements.finalBest.textContent = `${progress.timeProgress.bestScores[currentTimeLevel]} / 10`;
   elements.finalRating.textContent = getRating(stars);
   elements.finalRating.classList.remove("hidden");
-  elements.levelUnlocked.classList.add("hidden");
-  elements.nextLevelButton.classList.add("hidden");
+  elements.levelUnlocked.textContent = currentTimeLevel === timeMissions.length && passed
+    ? "🏆 Hebat! Semua Misi Masa Selesai!"
+    : "🎉 Misi Masa Baru Dibuka!";
+  elements.levelUnlocked.classList.toggle("hidden", !(unlockedNewTimeMission || (currentTimeLevel === timeMissions.length && passed)));
+  elements.nextLevelButton.textContent = "Misi Masa Seterusnya";
+  elements.nextLevelButton.classList.toggle("hidden", !nextMissionUnlocked);
   elements.playAgainButton.textContent = "Main Lagi";
   elements.chooseLevelButton.textContent = "Pilih Misi Masa";
   elements.chooseLevelButton.classList.remove("hidden");
   elements.resultMenuButton.classList.remove("hidden");
   showScreen("results");
-  audioManager.play("sessionComplete");
+  if (achievementCount === 0) audioManager.play(unlockedNewTimeMission ? "missionUnlock" : "sessionComplete");
   elements.playAgainButton.focus();
 }
 
@@ -2268,11 +2457,13 @@ function startGame(levelId = currentLevel, mode = gameMode) {
 }
 
 function startTimeGame(levelId = 1, mode = "time-mission") {
-  if (levelId !== 1 || !["time-mission", "time-practice"].includes(mode)) return;
+  const timeMission = timeMissions.find((mission) => mission.id === levelId);
+  if (!timeMission?.implemented || !["time-mission", "time-practice"].includes(mode)) return;
+  if (mode === "time-mission" && levelId > progress.timeProgress.highestUnlockedLevel) return;
   stopQuestionTimer();
   gameMode = mode;
   currentTimeLevel = levelId;
-  if (mode === "time-practice") currentPracticeType = "time-1";
+  if (mode === "time-practice") currentPracticeType = `time-${levelId}`;
   randomSource = Math.random;
   sessionActive = true;
   homeModalOpen = false;
@@ -2283,6 +2474,7 @@ function startTimeGame(levelId = 1, mode = "time-mission") {
   currentStreak = 0;
   lastTimeHour = null;
   lastTimeTemplateIndex = null;
+  timeQuestionPlan = createTimeQuestionPlan(levelId);
   questionLocked = true;
   elements.practiceBadge.classList.toggle("hidden", mode !== "time-practice");
   elements.practiceBadge.textContent = "🕐 LATIHAN MASA";
@@ -2380,6 +2572,15 @@ function exitCurrentSession() {
 }
 
 function goToNextLevel() {
+  if (gameMode === "time-mission") {
+    const nextTimeLevel = currentTimeLevel + 1;
+    if (nextTimeLevel <= progress.timeProgress.highestUnlockedLevel && timeMissions[nextTimeLevel - 1]?.implemented) {
+      startTimeGame(nextTimeLevel, "time-mission");
+      return;
+    }
+    showTimeLevelSelect();
+    return;
+  }
   const nextLevelId = currentLevel + 1;
   const nextLevel = levels.find((level) => level.id === nextLevelId);
 

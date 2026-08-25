@@ -183,7 +183,14 @@ h1 { margin: 0; font-size: clamp(1.65rem, 3.6vw, 3rem); line-height: 1; letter-s
 .items-and-question.time-question .items-list { display: none; }
 .clock-stage { display: grid; place-items: center; align-content: center; gap: 8px; min-width: 0; padding: 10px; border: 4px solid #8dd5ef; border-bottom: 8px solid #398fae; border-radius: 26px; background: #e9f9ff; }
 .clock-stage.hidden { display: none; }
+.clock-display { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; }
+.clock-unit { display: grid; place-items: center; min-width: 0; }
+.clock-label { margin-bottom: 2px; padding: 3px 10px; border-radius: 999px; background: var(--purple); color: #fff; font-size: .78rem; letter-spacing: .05em; }
+.clock-arrow { color: var(--green); font-size: 2rem; font-weight: 1000; }
 .analog-clock { width: min(280px, 100%); max-height: 290px; filter: drop-shadow(0 7px 5px rgba(45,68,108,.16)); }
+.dual-clock .analog-clock { width: min(185px, 100%); }
+.dual-clock .clock-unit { width: min(45%, 190px); }
+.duration-chip { padding: 7px 14px; border: 3px solid #f2c13d; border-bottom-width: 6px; border-radius: 14px; background: #fff6bd; color: var(--purple-dark); font-weight: 1000; }
 .clock-face { fill: #fffdf2; stroke: #6546c7; stroke-width: 7; }
 .analog-clock text { fill: #2d3152; font-size: 15px; font-weight: 1000; }
 .clock-hand { stroke-linecap: round; }
@@ -278,6 +285,7 @@ html.visual-help-on .clock-legend { display: flex; }
   .time-level-grid { grid-template-columns: repeat(2, minmax(150px, 1fr)); }
   .items-and-question.time-question { grid-template-columns: minmax(200px, .8fr) 1.2fr; }
   .analog-clock { width: min(240px, 100%); }
+  .dual-clock .analog-clock { width: min(170px, 100%); }
   .game-shell { width: min(100% - 20px, 760px); padding-top: 10px; }
   .top-bar { padding: 12px 16px; }
   .brand .eyebrow { display: none; }
@@ -300,6 +308,7 @@ html.visual-help-on .clock-legend { display: flex; }
   .category-card small { font-size: .72rem; }
   .items-and-question.time-question { grid-template-columns: 1fr; }
   .analog-clock { width: 190px; }
+  .dual-clock .analog-clock { width: 145px; }
   .top-bar { align-items: stretch; flex-direction: column; gap: 10px; }
   .brand { justify-content: center; }
   .game-stats { justify-content: center; }
@@ -576,6 +585,24 @@ html.reduce-motion .customer-panel.customer-wrong { animation-duration: 80ms !im
   .customer-panel { margin-bottom: 14px; }
   .customer-avatar { width: 92px; height: 92px; flex-basis: 92px; }
   .item-card, .items-list.three-items .item-card { min-height: 190px; }
+  html.text-large .top-bar { padding: 7px 14px; }
+  html.text-large .brand-icon { font-size: 2.4rem; }
+  html.text-large h1 { font-size: 1.8rem; }
+  html.text-large .stat-card { padding: 5px 10px; }
+  html.text-large .stat-card > span { font-size: 1.45rem; }
+  html.text-large .stat-card strong { font-size: 1rem; }
+  html.text-large .shop-decoration { margin-bottom: 8px; padding-block: 5px; }
+  html.text-large .customer-panel { margin-bottom: 8px; }
+  html.text-large .customer-avatar { width: 72px; height: 72px; flex-basis: 72px; }
+  html.text-large .speech-bubble { padding-block: 8px; }
+  html.text-large .speech-bubble h2 { font-size: 1.3rem; }
+  html.text-large .items-and-question { gap: 12px; padding: 9px; }
+  html.text-large .question-card { padding: 10px; }
+  html.text-large #question-text { margin-bottom: 9px; font-size: 1.25rem; }
+  html.text-large .answers { gap: 8px; }
+  html.text-large .answer-button { min-height: 58px; padding: 6px; font-size: 1.25rem; }
+  html.text-large .feedback { min-height: 26px; margin-top: 6px; font-size: 1.05rem; }
+  html.text-large .dual-clock .analog-clock { width: min(145px, 100%); }
 }
 
 /* Sentuhan akhir khusus menu utama */
@@ -1038,6 +1065,11 @@ html.visual-help-on .money-cents { text-decoration: underline 3px #ffd84d; text-
   .clock-stage { padding: 4px; border-width: 3px; border-bottom-width: 6px; }
   .analog-clock { width: min(190px, 100%); max-height: 190px; }
   html.text-large .analog-clock { width: min(175px, 100%); max-height: 175px; }
+  .dual-clock .analog-clock { width: min(135px, 100%); max-height: 135px; }
+  html.text-large .dual-clock .analog-clock { width: min(120px, 100%); max-height: 120px; }
+  .clock-label { padding: 2px 7px; font-size: .6rem; }
+  .clock-arrow { font-size: 1.35rem; }
+  .duration-chip { padding: 3px 8px; border-width: 2px; border-bottom-width: 4px; font-size: .72rem; }
   .clock-legend { font-size: .6rem; gap: 6px; }
   .game-shell { width: min(100% - 16px, 1180px); padding-block: 6px; }
   .menu-screen { min-height: calc(100vh - 12px); }
