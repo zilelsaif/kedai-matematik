@@ -1,0 +1,110 @@
+Folder PATH listing for volume AzzamAyyash
+Volume serial number is EE9F-A1C0
+C:.
+|   game.js
+|   index.html
+|   README.md
+|   struktur-saiz.txt
+|   struktur.txt
+|   style.css
+|   
++---assets
+|   |   favicon.svg
+|   |   
+|   +---audio
+|   |       button-click.mp3
+|   |       correct.mp3
+|   |       customer-in.mp3
+|   |       mission-unlock.mp3
+|   |       README.md
+|   |       session-complete.mp3
+|   |       wrong.mp3
+|   |       
+|   +---branding
+|   |       favicon.svg
+|   |       logo-icon.webp
+|   |       logo-icon2.webp
+|   |       logo-main.webp
+|   |       logo-main2.webp
+|   |       
+|   +---customers
+|   |       Affan.webp
+|   |       Ammar.webp
+|   |       Aynaa.webp
+|   |       Ayyash.webp
+|   |       Azzam.webp
+|   |       Ivy-Chian.webp
+|   |       Kumar.webp
+|   |       Maria.webp
+|   |       Mei-Ling.webp
+|   |       Sofia.webp
+|   |       
+|   +---decor
+|   |       deco-cart.webp
+|   |       deco-sparkle.webp
+|   |       deco-star.webp
+|   |       deco-tag.webp
+|   |       mascot-shop.webp
+|   |       
+|   +---items
+|   |       air-kotak.png
+|   |       anggur.png
+|   |       bawang.png
+|   |       beras.png
+|   |       biskut.png
+|   |       buku-nota.png
+|   |       coklat.png
+|   |       epal.png
+|   |       jagung.png
+|   |       jus.png
+|   |       keju.png
+|   |       kentang.png
+|   |       lobak.png
+|   |       mi.png
+|   |       oren.png
+|   |       pen.png
+|   |       pensel.png
+|   |       pir.png
+|   |       pisang.png
+|   |       roti.png
+|   |       sabun.png
+|   |       span.png
+|   |       susu.png
+|   |       syampu.png
+|   |       telur.png
+|   |       tembikai.png
+|   |       tisu.png
+|   |       ubat-gigi.png
+|   |       
+|   +---menu
+|   |       icon-achievement.webp
+|   |       icon-daily.webp
+|   |       icon-money-shop.webp
+|   |       icon-practice.webp
+|   |       icon-profile.webp
+|   |       icon-settings.webp
+|   |       icon-stats.webp
+|   |       icon-time.webp
+|   |       
+|   +---ui
+|   |       icon-back.webp
+|   |       icon-close.webp
+|   |       icon-enter-shop.webp
+|   |       icon-fullscreen.webp
+|   |       icon-home.webp
+|   |       icon-sound-off.webp
+|   |       icon-sound-on.webp
+|   |       
+|   \---unused
+|           favicon.svg
+|           logo-icon-b.png
+|           logo-main-b.png
+|           mascot-shop2.png
+|           mascot-shop3.png
+|           
+\---screenshots
+        gmeplay.png
+        menu.png
+        misi.png
+        Presentation1.pptx
+        

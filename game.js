@@ -29,16 +29,21 @@ const levels = [
   { id: 10, name: "Kedai Sibuk!", implemented: true }
 ];
 
+const practiceCategories = {
+  money: { icon: "🛒", label: "WANG & KEDAI" },
+  time: { icon: "🕐", label: "MASA & JAM" }
+};
+
 const practiceTypes = [
-  { id: 1, name: "Tambah 2 Barang" },
-  { id: 2, name: "Tambah 3 Barang" },
-  { id: 3, name: "Kuantiti Barang" },
-  { id: 4, name: "Baki RM10" },
-  { id: 5, name: "Baki RM20" },
-  { id: 6, name: "Kuantiti & Baki" },
-  { id: 7, name: "Wang dan Sen" },
-  { id: 8, name: "Sen & Baki" },
-  { id: 9, name: "Cabaran Campuran" },
+  { id: 1, name: "Tambah 2 Barang", category: "money" },
+  { id: 2, name: "Tambah 3 Barang", category: "money" },
+  { id: 3, name: "Kuantiti Barang", category: "money" },
+  { id: 4, name: "Baki RM10", category: "money" },
+  { id: 5, name: "Baki RM20", category: "money" },
+  { id: 6, name: "Kuantiti & Baki", category: "money" },
+  { id: 7, name: "Wang dan Sen", category: "money" },
+  { id: 8, name: "Sen & Baki", category: "money" },
+  { id: 9, name: "Cabaran Campuran", category: "money" },
   { id: "time-1", name: "Baca Jam Tepat", category: "time", timeLevel: 1 },
   { id: "time-2", name: "Setengah Jam", category: "time", timeLevel: 2 },
   { id: "time-3", name: "Suku Jam", category: "time", timeLevel: 3 },
@@ -210,16 +215,16 @@ function preloadItemImages() {
 }
 
 const customers = [
-  { name: "Aynaa", avatar: "assets/customers/Aynaa.png" },
-  { name: "Ammar", avatar: "assets/customers/Ammar.png" },
-  { name: "Mei Ling", avatar: "assets/customers/Mei-Ling.png" },
-  { name: "Kumar", avatar: "assets/customers/Kumar.png" },
-  { name: "Sofia", avatar: "assets/customers/Sofia.png" },
-  { name: "Azzam", avatar: "assets/customers/Azzam.png" },
-  { name: "Ayyash", avatar: "assets/customers/Ayyash.png" },
-  { name: "Ivy Chian", avatar: "assets/customers/Ivy-Chian.png" },
-  { name: "Maria", avatar: "assets/customers/Maria.png" },
-  { name: "Affan", avatar: "assets/customers/Affan.png" }
+  { name: "Aynaa", avatar: "assets/customers/Aynaa.webp" },
+  { name: "Ammar", avatar: "assets/customers/Ammar.webp" },
+  { name: "Mei Ling", avatar: "assets/customers/Mei-Ling.webp" },
+  { name: "Kumar", avatar: "assets/customers/Kumar.webp" },
+  { name: "Sofia", avatar: "assets/customers/Sofia.webp" },
+  { name: "Azzam", avatar: "assets/customers/Azzam.webp" },
+  { name: "Ayyash", avatar: "assets/customers/Ayyash.webp" },
+  { name: "Ivy Chian", avatar: "assets/customers/Ivy-Chian.webp" },
+  { name: "Maria", avatar: "assets/customers/Maria.webp" },
+  { name: "Affan", avatar: "assets/customers/Affan.webp" }
 ];
 
 const customerAvatarPreloadCache = [];
@@ -235,20 +240,26 @@ function preloadCustomerAvatars() {
   });
 }
 
-function scheduleAssetPreload() {
-  const preload = () => {
-    preloadItemImages();
-    preloadCustomerAvatars();
-  };
-  const startInBackground = () => window.setTimeout(preload, 250);
+function prepareGameplayAssets() {
+  // Muat aset gameplay selepas interaksi pertama; menu utama kekal ringan.
+  document.querySelectorAll("#game-header img[data-src]").forEach((image) => {
+    image.src = image.dataset.src;
+    image.removeAttribute("data-src");
+  });
+  preloadCustomerAvatars();
+  preloadItemImages();
+}
 
-  if (document.readyState === "complete") {
-    startInBackground();
-  } else if (typeof window.addEventListener === "function") {
-    window.addEventListener("load", startInBackground, { once: true });
-  } else {
-    startInBackground();
-  }
+const mainMenuAssetPreloadCache = [];
+
+function preloadMainMenuAssets() {
+  if (mainMenuAssetPreloadCache.length > 0) return;
+  document.querySelectorAll("#main-menu-screen img[data-src]").forEach((image) => {
+    image.decoding = "async";
+    image.src = image.dataset.src;
+    image.removeAttribute("data-src");
+    mainMenuAssetPreloadCache.push(image);
+  });
 }
 
 const praiseMessages = ["Betul! ⭐", "Hebat! 🎉", "Bagus! 🌟", "Tepat sekali!", "Pandainya! 👏", "Mantap!"];
@@ -262,6 +273,7 @@ const helperMessages = [
 
 const elements = {
   gameHeader: document.querySelector("#game-header"),
+  titleScreen: document.querySelector("#title-screen"),
   mainMenuScreen: document.querySelector("#main-menu-screen"),
   statsScreen: document.querySelector("#stats-screen"),
   practiceScreen: document.querySelector("#practice-screen"),
@@ -269,12 +281,12 @@ const elements = {
   achievementsScreen: document.querySelector("#achievements-screen"),
   dailyScreen: document.querySelector("#daily-screen"),
   settingsScreen: document.querySelector("#settings-screen"),
-  categoryScreen: document.querySelector("#category-screen"),
   timeLevelScreen: document.querySelector("#time-level-screen"),
   levelScreen: document.querySelector("#level-screen"),
   gameScreen: document.querySelector("#game-screen"),
   gameOverScreen: document.querySelector("#game-over-screen"),
   startMenuButton: document.querySelector("#start-menu-button"),
+  titleBackButton: document.querySelector("#title-back-button"),
   menuHighestMission: document.querySelector("#menu-highest-mission"),
   menuBestScore: document.querySelector("#menu-best-score"),
   howToButton: document.querySelector("#how-to-button"),
@@ -282,7 +294,6 @@ const elements = {
   practiceMenuButton: document.querySelector("#practice-menu-button"),
   practiceBackButton: document.querySelector("#practice-back-button"),
   practiceGrid: document.querySelector("#practice-grid"),
-  categoryBackButton: document.querySelector("#category-back-button"),
   moneyCategoryButton: document.querySelector("#money-category-button"),
   timeCategoryButton: document.querySelector("#time-category-button"),
   timeLevelBackButton: document.querySelector("#time-level-back-button"),
@@ -917,7 +928,12 @@ function createAudioManager() {
 }
 
 function updateSoundButton() {
-  elements.soundToggleButton.textContent = audioManager.enabled ? "🔊" : "🔇";
+  const icon = elements.soundToggleButton.querySelector("img");
+  if (icon) {
+    icon.src = audioManager.enabled
+      ? "assets/ui/icon-sound-on.webp"
+      : "assets/ui/icon-sound-off.webp";
+  }
   elements.soundToggleButton.setAttribute("aria-pressed", String(!audioManager.enabled));
   elements.soundToggleButton.setAttribute("aria-label", audioManager.enabled ? "Tutup bunyi" : "Buka bunyi");
 }
@@ -929,7 +945,7 @@ function toggleSound() {
 
 function updateFullscreenButton() {
   const isFullscreen = Boolean(document.fullscreenElement);
-  elements.fullscreenButton.textContent = isFullscreen ? "↙" : "⛶";
+  elements.fullscreenButton.classList.toggle("is-fullscreen", isFullscreen);
   elements.fullscreenButton.setAttribute("aria-pressed", String(isFullscreen));
   elements.fullscreenButton.setAttribute(
     "aria-label",
@@ -1494,6 +1510,7 @@ function showScreen(screenName) {
   if (screenName !== "game") stopQuestionTimer();
 
   const screens = {
+    title: elements.titleScreen,
     menu: elements.mainMenuScreen,
     stats: elements.statsScreen,
     practice: elements.practiceScreen,
@@ -1501,7 +1518,6 @@ function showScreen(screenName) {
     achievements: elements.achievementsScreen,
     daily: elements.dailyScreen,
     settings: elements.settingsScreen,
-    categories: elements.categoryScreen,
     timeLevels: elements.timeLevelScreen,
     levels: elements.levelScreen,
     game: elements.gameScreen,
@@ -1511,12 +1527,6 @@ function showScreen(screenName) {
   Object.values(screens).forEach((screen) => screen.classList.add("hidden"));
   elements.gameHeader.classList.toggle("hidden", screenName !== "game");
   screens[screenName].classList.remove("hidden");
-}
-
-function showCategorySelect() {
-  questionLocked = true;
-  showScreen("categories");
-  elements.moneyCategoryButton.focus();
 }
 
 function showTimeLevelSelect(message = "") {
@@ -1785,13 +1795,16 @@ function savePlayerProfile() {
 }
 
 function renderPracticeCards() {
-  elements.practiceGrid.innerHTML = practiceTypes.map((practice) => `
-    <button class="practice-card" type="button" data-practice="${practice.id}">
-      <span class="practice-number">${practice.category === "time" ? "🕐 Masa & Jam" : `Latihan ${practice.id}`}</span>
-      <strong>${practice.name}</strong>
-      <span>10 soalan</span>
-    </button>
-  `).join("");
+  elements.practiceGrid.innerHTML = practiceTypes.map((practice) => {
+    const category = practiceCategories[practice.category] || practiceCategories.money;
+    return `
+      <button class="practice-card" type="button" data-practice="${practice.id}">
+        <span class="practice-number">${category.icon} ${category.label}</span>
+        <strong>${practice.name}</strong>
+        <span>10 soalan</span>
+      </button>
+    `;
+  }).join("");
 }
 
 function showPracticeSelect() {
@@ -1894,6 +1907,7 @@ function startRecommendedPractice() {
 
 function showMainMenu() {
   questionLocked = true;
+  preloadMainMenuAssets();
   const savedScores = Object.values(progress.bestScores).filter(Number.isInteger);
   const bestScore = savedScores.length > 0 ? Math.max(...savedScores) : 0;
   elements.menuHighestMission.textContent = `Misi ${progress.highestUnlockedLevel}`;
@@ -1908,6 +1922,13 @@ function showMainMenu() {
   elements.howToCard.classList.add("hidden");
   elements.howToButton.setAttribute("aria-expanded", "false");
   showScreen("menu");
+  elements.moneyCategoryButton.focus();
+}
+
+function showTitleScreen() {
+  questionLocked = true;
+  elements.howToCard.classList.add("hidden");
+  showScreen("title");
   elements.startMenuButton.focus();
 }
 
@@ -2139,12 +2160,17 @@ function newQuestion() {
     elements.customerName.textContent = question.context.usesCustomer
       ? `${customer.name}: “${question.context.dialog}”`
       : question.context.dialog;
-    elements.customerAvatar.classList.toggle("hidden", !question.context.usesCustomer);
-    elements.avatarFallback.textContent = "🏪";
-    elements.avatarFallback.classList.toggle("hidden", question.context.usesCustomer);
+    elements.customerAvatar.parentElement.classList.toggle("shop-dialog-badge", !question.context.usesCustomer);
+    elements.customerAvatar.classList.remove("hidden");
+    elements.avatarFallback.classList.add("hidden");
     if (question.context.usesCustomer) {
+      elements.avatarFallback.textContent = "👤";
       elements.customerAvatar.alt = `Avatar ${customer.name}`;
       elements.customerAvatar.src = customer.avatar;
+    } else {
+      elements.avatarFallback.textContent = "KM";
+      elements.customerAvatar.alt = "";
+      elements.customerAvatar.src = "assets/branding/logo-icon.webp";
     }
     elements.itemsList.innerHTML = "";
     elements.itemsList.classList.remove("three-items");
@@ -2154,6 +2180,7 @@ function newQuestion() {
     elements.itemsAndQuestion.classList.remove("time-question");
     elements.customerName.textContent = customer.name;
     elements.customerAvatar.classList.remove("hidden");
+    elements.customerAvatar.parentElement.classList.remove("shop-dialog-badge");
     elements.avatarFallback.textContent = "👤";
     elements.avatarFallback.classList.add("hidden");
     elements.customerAvatar.alt = `Avatar ${customer.name}`;
@@ -2426,6 +2453,7 @@ function handleAnswer(event) {
 
 function startGame(levelId = currentLevel, mode = gameMode) {
   stopQuestionTimer();
+  prepareGameplayAssets();
   const level = levels.find((entry) => entry.id === levelId);
   const isPractice = mode === "practice";
   const isDaily = mode === "daily";
@@ -2593,11 +2621,11 @@ function goToNextLevel() {
 }
 
 // Semua event listener didaftarkan sekali sahaja.
-elements.startMenuButton.addEventListener("click", showCategorySelect);
-elements.categoryBackButton.addEventListener("click", showMainMenu);
+elements.startMenuButton.addEventListener("click", showMainMenu);
+elements.titleBackButton.addEventListener("click", showTitleScreen);
 elements.moneyCategoryButton.addEventListener("click", () => showLevelSelect());
 elements.timeCategoryButton.addEventListener("click", () => showTimeLevelSelect());
-elements.timeLevelBackButton.addEventListener("click", showCategorySelect);
+elements.timeLevelBackButton.addEventListener("click", showMainMenu);
 elements.timeLevelGrid.addEventListener("click", handleTimeLevelSelection);
 elements.howToButton.addEventListener("click", toggleHowTo);
 elements.statisticsButton.addEventListener("click", showStatistics);
@@ -2627,20 +2655,20 @@ elements.fullscreenButton.addEventListener("click", toggleFullscreen);
 document.addEventListener("fullscreenchange", updateFullscreenButton);
 document.addEventListener("click", (event) => {
   const mainButton = event.target.closest(
-    "#start-menu-button, #statistics-button, #stats-back-button, #practice-menu-button, " +
+    "#start-menu-button, #title-back-button, #statistics-button, #stats-back-button, #practice-menu-button, " +
     "#practice-back-button, #profile-menu-button, #profile-save-button, #profile-cancel-button, " +
     "#achievements-menu-button, #achievements-back-button, #home-game-button, " +
     "#home-confirm-button, #home-continue-button, " +
     "#daily-menu-button, #daily-start-button, #daily-back-button, " +
     "#settings-menu-button, #settings-save-button, #settings-back-button, " +
     "#skill-recommendation-button, " +
-    "#category-back-button, #money-category-button, #time-category-button, #time-level-back-button, " +
+    "#money-category-button, #time-category-button, #time-level-back-button, " +
     "#result-menu-button, #back-to-menu-button, #play-again-button, #choose-level-button, " +
     "#next-level-button, .level-card:not(:disabled), .practice-card, .avatar-option"
   );
   if (mainButton) audioManager.play("buttonClick");
 });
-elements.backToMenuButton.addEventListener("click", showCategorySelect);
+elements.backToMenuButton.addEventListener("click", showMainMenu);
 elements.levelGrid.addEventListener("click", handleLevelSelection);
 elements.practiceGrid.addEventListener("click", handlePracticeSelection);
 elements.answers.addEventListener("click", handleAnswer);
@@ -2678,5 +2706,4 @@ if (!document.fullscreenEnabled) {
 }
 updateFullscreenButton();
 renderLevelCards();
-showMainMenu();
-scheduleAssetPreload();
+showTitleScreen();

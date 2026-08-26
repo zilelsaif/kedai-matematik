@@ -25,14 +25,22 @@
       // Tema lalai kekal jika data lama rosak atau storage disekat.
     }
   </script>
-  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="icon" type="image/svg+xml" href="assets/branding/favicon.svg">
+  <link rel="preload" as="image" href="assets/branding/logo-main.webp" type="image/webp">
+  <link rel="preload" as="image" href="assets/ui/icon-enter-shop.webp" type="image/webp">
+  <link rel="preload" as="image" href="assets/ui/icon-sound-on.webp" type="image/webp">
+  <link rel="preload" as="image" href="assets/ui/icon-sound-off.webp" type="image/webp">
+  <link rel="preload" as="image" href="assets/ui/icon-fullscreen.webp" type="image/webp">
+  <link rel="preload" as="image" href="assets/decor/mascot-shop.webp" type="image/webp">
+  <link rel="preload" as="image" href="assets/decor/deco-star.webp" type="image/webp">
+  <link rel="preload" as="image" href="assets/decor/deco-sparkle.webp" type="image/webp">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <main class="game-shell">
     <header class="top-bar hidden" id="game-header">
       <div class="brand">
-        <span class="brand-icon" aria-hidden="true">🏪</span>
+        <img class="shop-header-logo" data-src="assets/branding/logo-icon.webp" alt="Logo Kedai Matematik">
         <div>
           <p class="eyebrow">Mari mengira di</p>
           <h1>KEDAI MATEMATIK</h1>
@@ -40,7 +48,7 @@
       </div>
 
       <div class="game-stats" aria-label="Status permainan">
-        <button class="home-game-button" id="home-game-button" type="button" aria-label="Menu Utama">🏠</button>
+        <button class="home-game-button" id="home-game-button" type="button" aria-label="Menu Utama"><img data-src="assets/ui/icon-home.webp" alt=""></button>
         <div class="stat-card stars-card">
           <span aria-hidden="true">⭐</span>
           <div><small>Bintang</small><strong id="star-count">0</strong></div>
@@ -52,64 +60,58 @@
       </div>
     </header>
 
-    <section class="menu-screen" id="main-menu-screen" aria-labelledby="main-menu-title">
-      <div class="menu-clouds" aria-hidden="true">
-        <span class="menu-cloud cloud-one"></span>
-        <span class="menu-cloud cloud-two"></span>
-        <span class="menu-cloud cloud-three"></span>
+    <section class="title-screen" id="title-screen" aria-labelledby="title-screen-heading">
+      <div class="title-tools" aria-label="Tetapan paparan">
+        <button class="asset-icon-button" id="sound-toggle-button" type="button" aria-label="Tutup bunyi" aria-pressed="false"><img src="assets/ui/icon-sound-on.webp" alt=""></button>
+        <button class="asset-icon-button" id="fullscreen-button" type="button" aria-label="Buka skrin penuh" aria-pressed="false"><img src="assets/ui/icon-fullscreen.webp" alt=""></button>
       </div>
-      <div class="menu-card">
-        <div class="menu-tools" aria-label="Tetapan menu">
-          <button class="menu-tool-button" id="sound-toggle-button" type="button" aria-label="Tutup bunyi" aria-pressed="false">🔊</button>
-          <button class="menu-tool-button" id="fullscreen-button" type="button" aria-label="Buka skrin penuh" aria-pressed="false">⛶</button>
+      <img class="title-decor title-star" src="assets/decor/deco-star.webp" alt="" aria-hidden="true">
+      <img class="title-decor title-sparkle" src="assets/decor/deco-sparkle.webp" alt="" aria-hidden="true">
+      <div class="title-stage">
+        <h1 class="visually-hidden" id="title-screen-heading">Kedai Matematik</h1>
+        <img class="title-logo" src="assets/branding/logo-main.webp" alt="Kedai Matematik">
+        <p class="title-tagline">Jom kira, belajar dan urus kedai!</p>
+        <button class="enter-shop-button" id="start-menu-button" type="button"><img src="assets/ui/icon-enter-shop.webp" alt=""><span>MASUK KEDAI</span></button>
+        <div class="title-mascot" aria-hidden="true">
+          <span class="title-mascot-bubble" id="helper-message">Jom masuk kedai!</span>
+          <img src="assets/decor/mascot-shop.webp" alt="">
         </div>
-        <div class="menu-decor menu-decor-star-one" aria-hidden="true">⭐</div>
-        <div class="menu-decor menu-decor-star-two" aria-hidden="true">✦</div>
-        <div class="menu-decor menu-decor-tag" aria-hidden="true">🏷️</div>
-        <div class="menu-decor menu-decor-cart" aria-hidden="true">🛒</div>
-        <div class="menu-shop-icon" aria-hidden="true">🏪</div>
-        <p class="eyebrow">Mari mengira di</p>
-        <h2 id="main-menu-title">KEDAI MATEMATIK</h2>
-        <p class="menu-tagline">Pelanggan dah menunggu! Jom buka kedai dan kira dengan pantas.</p>
-        <div class="menu-player-greeting" aria-label="Profil pemain">
-          <span id="menu-player-avatar" aria-hidden="true">🐻</span>
-          <span class="menu-player-copy"><strong id="menu-player-greeting">Hai, Pemain!</strong><small class="hidden" id="menu-player-badge"></small></span>
-        </div>
-        <button class="primary-menu-button" id="start-menu-button" type="button">BUKA KEDAI!</button>
-        <div class="menu-status" aria-label="Progress permainan">
-          <div class="menu-status-chip">
-            <span aria-hidden="true">🚩</span>
-            <small>Misi tertinggi</small>
-            <strong id="menu-highest-mission">Misi 1</strong>
+      </div>
+      <small class="title-version" id="app-version"></small>
+    </section>
+
+    <section class="main-hub-screen hidden" id="main-menu-screen" aria-labelledby="main-menu-title">
+      <div class="main-hub-panel">
+        <header class="main-hub-header">
+          <button class="asset-back-button" id="title-back-button" type="button"><img data-src="assets/ui/icon-back.webp" alt=""><span>Title</span></button>
+          <div><p class="eyebrow">Selamat datang ke</p><h2 id="main-menu-title">MAIN MENU</h2></div>
+          <div class="hub-player" aria-label="Profil pemain">
+            <span id="menu-player-avatar" aria-hidden="true">🐻</span>
+            <span class="menu-player-copy"><strong id="menu-player-greeting">Hai, Pemain!</strong><small class="hidden" id="menu-player-badge"></small></span>
           </div>
-          <div class="menu-status-chip">
-            <span aria-hidden="true">🏆</span>
-            <small>Rekod terbaik</small>
-            <strong id="menu-best-score">0/10</strong>
-          </div>
+        </header>
+
+        <div class="hub-progress" aria-label="Progress permainan">
+          <span><small>Misi tertinggi</small><strong id="menu-highest-mission">Misi 1</strong></span>
+          <span><small>Rekod terbaik</small><strong id="menu-best-score">0/10</strong></span>
         </div>
-        <div class="menu-secondary-actions">
-          <button class="how-to-button" id="how-to-button" type="button" aria-expanded="false" aria-controls="how-to-card">❔ Cara Main</button>
-          <button class="how-to-button" id="statistics-button" type="button">📊 STATISTIK</button>
-          <button class="how-to-button practice-menu-button" id="practice-menu-button" type="button">🎯 MOD LATIHAN</button>
-          <button class="how-to-button" id="profile-menu-button" type="button">🙂 PROFIL</button>
-          <button class="how-to-button" id="achievements-menu-button" type="button">🏆 PENCAPAIAN</button>
-          <button class="how-to-button daily-menu-button" id="daily-menu-button" type="button">☀️ CABARAN HARIAN</button>
-          <button class="how-to-button settings-menu-button" id="settings-menu-button" type="button">⚙️ TETAPAN</button>
-        </div>
-        <div class="how-to-card hidden" id="how-to-card">
-          Lihat barang, kira dengan teliti, kemudian pilih jawapan yang betul!
-        </div>
-        <div class="menu-footer-zone" aria-hidden="true">
-          <div class="menu-helper">
-            <div class="helper-bubble" id="helper-message">Pelanggan dah menunggu!</div>
-            <div class="helper-mascot"><span>🐻</span><i></i></div>
-          </div>
-          <div class="mini-shelf">
-            <span>🍞</span><span>🍎</span><span>🥛</span><span>🍪</span><span>🧃</span><span>🛒</span>
-          </div>
-        </div>
-        <small class="app-version" id="app-version"></small>
+
+        <section class="hub-categories" aria-label="Kategori utama">
+          <button class="hub-category-card money-hub-card" id="money-category-button" type="button"><img data-src="assets/menu/icon-money-shop.webp" alt=""><span><strong>Wang &amp; Kedai</strong><small>10 misi juruwang</small></span></button>
+          <button class="hub-category-card time-hub-card" id="time-category-button" type="button"><img data-src="assets/menu/icon-time.webp" alt=""><span><strong>Masa &amp; Jam</strong><small>5 misi waktu kedai</small></span></button>
+        </section>
+
+        <nav class="hub-support-grid" aria-label="Menu sokongan">
+          <button class="hub-menu-card" id="practice-menu-button" type="button"><img data-src="assets/menu/icon-practice.webp" alt=""><span>Mod Latihan</span></button>
+          <button class="hub-menu-card" id="statistics-button" type="button"><img data-src="assets/menu/icon-stats.webp" alt=""><span>Statistik</span></button>
+          <button class="hub-menu-card" id="profile-menu-button" type="button"><img data-src="assets/menu/icon-profile.webp" alt=""><span>Profil</span></button>
+          <button class="hub-menu-card" id="achievements-menu-button" type="button"><img data-src="assets/menu/icon-achievement.webp" alt=""><span>Pencapaian</span></button>
+          <button class="hub-menu-card" id="daily-menu-button" type="button"><img data-src="assets/menu/icon-daily.webp" alt=""><span>Cabaran Harian</span></button>
+          <button class="hub-menu-card" id="settings-menu-button" type="button"><img data-src="assets/menu/icon-settings.webp" alt=""><span>Tetapan</span></button>
+        </nav>
+
+        <button class="hub-how-to-button" id="how-to-button" type="button" aria-expanded="false" aria-controls="how-to-card">❔ Cara Main</button>
+        <div class="how-to-card hidden" id="how-to-card">Lihat barang atau jam, kira dengan teliti, kemudian pilih jawapan yang betul!</div>
       </div>
     </section>
 
@@ -258,24 +260,9 @@
       <div class="practice-grid" id="practice-grid"></div>
     </section>
 
-    <section class="category-screen hidden" id="category-screen" aria-labelledby="category-title">
-      <div class="screen-heading">
-        <button class="back-button" id="category-back-button" type="button">← Menu Utama</button>
-        <div><p class="eyebrow">Pilih dunia pembelajaran</p><h2 id="category-title">PILIH KATEGORI</h2></div>
-      </div>
-      <div class="category-grid">
-        <button class="category-card money-category" id="money-category-button" type="button">
-          <span aria-hidden="true">🛒</span><strong>Wang & Kedai</strong><small>10 misi juruwang menanti!</small>
-        </button>
-        <button class="category-card time-category" id="time-category-button" type="button">
-          <span aria-hidden="true">🕐</span><strong>Masa & Jam</strong><small>Belajar waktu sambil mengurus kedai.</small>
-        </button>
-      </div>
-    </section>
-
     <section class="time-level-screen hidden" id="time-level-screen" aria-labelledby="time-level-title">
       <div class="screen-heading">
-        <button class="back-button" id="time-level-back-button" type="button">← Pilih Kategori</button>
+        <button class="back-button" id="time-level-back-button" type="button">← Main Menu</button>
         <div><p class="eyebrow">Jadual Kedai Matematik</p><h2 id="time-level-title">MISI MASA & JAM</h2></div>
       </div>
       <p class="level-notice" id="time-level-notice" role="status" aria-live="polite"></p>
@@ -284,7 +271,7 @@
 
     <section class="level-screen hidden" id="level-screen" aria-labelledby="level-screen-title">
       <div class="screen-heading">
-        <button class="back-button" id="back-to-menu-button" type="button" aria-label="Kembali ke pilihan kategori">← Pilih Kategori</button>
+        <button class="back-button" id="back-to-menu-button" type="button" aria-label="Kembali ke Main Menu">← Main Menu</button>
         <div>
           <p class="eyebrow">Pilih cabaran kamu</p>
           <h2 id="level-screen-title">PILIH MISI</h2>
@@ -302,7 +289,7 @@
 
       <div class="customer-panel">
         <div class="customer-avatar">
-          <img id="customer-avatar" src="assets/customers/Aynaa.png" alt="Avatar Aynaa">
+          <img id="customer-avatar" alt="Avatar pelanggan">
           <span class="avatar-fallback hidden" id="avatar-fallback" aria-hidden="true">👤</span>
         </div>
         <div class="speech-bubble">
