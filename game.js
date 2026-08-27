@@ -1,6 +1,6 @@
 "use strict";
 
-const GAME_VERSION = "1.5.0";
+const GAME_VERSION = "1.5.1";
 const STORAGE_KEY = "kedaiMatematikProgress";
 const SOUND_STORAGE_KEY = "kedaiMatematikSoundEnabled";
 const LEGACY_SOUND_STORAGE_KEY = "kedaiMatematikSound";
@@ -45,16 +45,27 @@ const practiceTypes = [
   { id: 7, name: "Wang dan Sen", category: "money" },
   { id: 8, name: "Sen & Baki", category: "money" },
   { id: 9, name: "Cabaran Campuran", category: "money" },
+  { id: 10, name: "Kedai Sibuk", category: "money" },
   { id: "time-1", name: "Baca Jam Tepat", category: "time", timeLevel: 1 },
   { id: "time-2", name: "Setengah Jam", category: "time", timeLevel: 2 },
   { id: "time-3", name: "Suku Jam", category: "time", timeLevel: 3 },
   { id: "time-4", name: "Tempoh Masa", category: "time", timeLevel: 4 },
   { id: "time-5", name: "Masa Siap", category: "time", timeLevel: 5 },
+  { id: "time-6", name: "Pagi atau Petang", category: "time", timeLevel: 6 },
+  { id: "time-7", name: "AM & PM", category: "time", timeLevel: 7 },
+  { id: "time-8", name: "Jadual Kedai", category: "time", timeLevel: 8 },
+  { id: "time-9", name: "Cabaran Masa Campuran", category: "time", timeLevel: 9 },
+  { id: "time-10", name: "Kedai Sibuk: Masa", category: "time", timeLevel: 10 },
   { id: "measurement-1", name: "Berat Barang", category: "measurement", measurementLevel: 1 },
   { id: "measurement-2", name: "Gram & Kilogram", category: "measurement", measurementLevel: 2 },
   { id: "measurement-3", name: "Isipadu Minuman", category: "measurement", measurementLevel: 3 },
   { id: "measurement-4", name: "Panjang & Pembungkusan", category: "measurement", measurementLevel: 4 },
-  { id: "measurement-5", name: "Cabaran Ukuran", category: "measurement", measurementLevel: 5 }
+  { id: "measurement-5", name: "Cabaran Ukuran", category: "measurement", measurementLevel: 5 },
+  { id: "measurement-6", name: "Campur Berat", category: "measurement", measurementLevel: 6 },
+  { id: "measurement-7", name: "Campur Isipadu", category: "measurement", measurementLevel: 7 },
+  { id: "measurement-8", name: "Campur Panjang", category: "measurement", measurementLevel: 8 },
+  { id: "measurement-9", name: "Pilih Unit Betul", category: "measurement", measurementLevel: 9 },
+  { id: "measurement-10", name: "Kedai Sibuk: Ukuran", category: "measurement", measurementLevel: 10 }
 ];
 
 const timeMissions = [
@@ -62,7 +73,12 @@ const timeMissions = [
   { id: 2, name: "Setengah Jam", implemented: true },
   { id: 3, name: "Suku Jam", implemented: true },
   { id: 4, name: "Berapa Lama?", implemented: true },
-  { id: 5, name: "Pukul Berapa Siap?", implemented: true }
+  { id: 5, name: "Pukul Berapa Siap?", implemented: true },
+  { id: 6, name: "Pagi atau Petang", implemented: true },
+  { id: 7, name: "AM & PM", implemented: true },
+  { id: 8, name: "Jadual Kedai", implemented: true },
+  { id: 9, name: "Cabaran Masa Campuran", implemented: true },
+  { id: 10, name: "Kedai Sibuk: Masa", implemented: true }
 ];
 
 const measurementMissions = MeasurementModule.missions;
@@ -299,6 +315,9 @@ const elements = {
   titleBackButton: document.querySelector("#title-back-button"),
   menuHighestMission: document.querySelector("#menu-highest-mission"),
   menuBestScore: document.querySelector("#menu-best-score"),
+  moneyStarTotal: document.querySelector("#money-star-total"),
+  timeStarTotal: document.querySelector("#time-star-total"),
+  measurementStarTotal: document.querySelector("#measurement-star-total"),
   howToButton: document.querySelector("#how-to-button"),
   statisticsButton: document.querySelector("#statistics-button"),
   practiceMenuButton: document.querySelector("#practice-menu-button"),
@@ -468,12 +487,12 @@ function defaultStats() {
 }
 
 function defaultTimeSkillStats() {
-  return Object.fromEntries(["readClock", "halfHour", "quarterHour", "duration", "endTime"]
+  return Object.fromEntries(["readClock", "halfHour", "quarterHour", "duration", "endTime", "dayPeriod", "amPm", "schedule"]
     .map((id) => [id, { answered: 0, correct: 0 }]));
 }
 
 function defaultMeasurementSkillStats() {
-  return Object.fromEntries(["weight", "massConversion", "volume", "length"]
+  return Object.fromEntries(["weight", "massConversion", "volume", "length", "unitChoice"]
     .map((id) => [id, { answered: 0, correct: 0 }]));
 }
 
@@ -716,6 +735,10 @@ function loadProgress() {
         if (Number.isInteger(score) && score >= 0 && score <= totalCustomers) timeProgress.bestScores[mission.id] = score;
         if (Number.isInteger(rating) && rating >= 0 && rating <= 3) timeProgress.stars[mission.id] = rating;
       });
+      // Pemain v1.5 yang sudah lulus misi akhir lama terus menerima Misi Masa 6.
+      if (Number(timeProgress.bestScores[5]) >= 8) {
+        timeProgress.highestUnlockedLevel = Math.max(timeProgress.highestUnlockedLevel, 6);
+      }
     }
 
     if (saved.timeSkillStats && typeof saved.timeSkillStats === "object") {
@@ -747,6 +770,10 @@ function loadProgress() {
           measurementProgress.stars[mission.id] = rating;
         }
       });
+      // Pemain v1.5 yang sudah lulus misi akhir lama terus menerima Misi Ukuran 6.
+      if (Number(measurementProgress.bestScores[5]) >= 8) {
+        measurementProgress.highestUnlockedLevel = Math.max(measurementProgress.highestUnlockedLevel, 6);
+      }
     }
 
     if (saved.measurementSkillStats && typeof saved.measurementSkillStats === "object") {
@@ -1190,14 +1217,37 @@ function formatDuration(minutes) {
   return `${hours} jam${remainder ? ` ${remainder} minit` : ""}`;
 }
 
+function formatTimePeriod(periodId) {
+  return ["Pagi", "Tengah hari", "Petang", "Malam"][periodId] || "Pagi";
+}
+
+function formatClockTimeAmPm(minutes) {
+  const normalized = ((minutes % 1440) + 1440) % 1440;
+  const hour24 = Math.floor(normalized / 60);
+  const minute = normalized % 60;
+  const hour12 = hour24 % 12 || 12;
+  return `${hour12}:${String(minute).padStart(2, "0")} ${hour24 < 12 ? "AM" : "PM"}`;
+}
+
+function createMixedTimePlan() {
+  return [
+    ...shuffle([1, 2, 3, 4, 5, 6, 7, 8]),
+    ...shuffle([1, 2])
+  ];
+}
+
 function createTimeQuestionPlan(levelId) {
   const plans = {
     1: Array(10).fill(0),
     2: [0, 0, 0, 0, 0, 30, 30, 30, 30, 30],
     3: [0, 0, 15, 15, 15, 30, 30, 45, 45, 45],
     4: [30, 30, 60, 60, 90, 90, 120, 120, 150, 180],
-    5: [30, 30, 60, 60, 60, 90, 90, 90, 120, 120]
+    5: [30, 30, 60, 60, 60, 90, 90, 90, 120, 120],
+    6: [0, 0, 1, 1, 2, 2, 2, 3, 3, 3],
+    7: [480, 540, 600, 660, 720, 780, 840, 900, 1020, 1140],
+    8: Array(10).fill(8)
   };
+  if (levelId === 9 || levelId === 10) return createMixedTimePlan();
   return shuffle(plans[levelId] || plans[1]);
 }
 
@@ -1223,7 +1273,11 @@ function pickTimeContext(customer) {
 }
 
 function generateClockReadingQuestion(customer, levelId) {
-  const minute = timeQuestionPlan[currentCustomer - 1] ?? 0;
+  const plannedMinute = timeQuestionPlan[currentCustomer - 1];
+  const allowedMinutes = levelId === 1 ? [0] : (levelId === 2 ? [0, 30] : [0, 15, 30, 45]);
+  const minute = typeof plannedMinute === "number" && levelId <= 3
+    ? plannedMinute
+    : allowedMinutes[randomIndex(allowedMinutes.length)];
   let hour;
   let moment;
   do {
@@ -1245,7 +1299,11 @@ function generateClockReadingQuestion(customer, levelId) {
 }
 
 function generateDurationQuestion(customer) {
-  const duration = timeQuestionPlan[currentCustomer - 1] || 60;
+  const plannedDuration = timeQuestionPlan[currentCustomer - 1];
+  const durationOptions = [30, 60, 90, 120, 150, 180];
+  const duration = durationOptions.includes(plannedDuration)
+    ? plannedDuration
+    : durationOptions[randomIndex(durationOptions.length)];
   const startMinute = randomIndex(2) * 30;
   const maximumStartHour = Math.max(1, Math.floor((690 - duration - startMinute) / 60));
   const startHour = randomIndex(Math.min(maximumStartHour, 8)) + 1;
@@ -1253,7 +1311,6 @@ function generateDurationQuestion(customer) {
   const end = start + duration;
   const usesCustomer = randomIndex(2) === 0;
   currentTimeSubSkill = "duration";
-  const durationOptions = [30, 60, 90, 120, 150, 180];
 
   return {
     answer: duration,
@@ -1276,7 +1333,11 @@ function generateDurationQuestion(customer) {
 }
 
 function generateEndTimeQuestion(customer) {
-  const duration = timeQuestionPlan[currentCustomer - 1] || 60;
+  const plannedDuration = timeQuestionPlan[currentCustomer - 1];
+  const durationValues = [30, 60, 90, 120];
+  const duration = durationValues.includes(plannedDuration)
+    ? plannedDuration
+    : durationValues[randomIndex(durationValues.length)];
   const startMinute = randomIndex(2) * 30;
   const maximumStartHour = Math.max(1, Math.floor((690 - duration - startMinute) / 60));
   const startHour = randomIndex(Math.min(maximumStartHour, 9)) + 1;
@@ -1306,10 +1367,102 @@ function generateEndTimeQuestion(customer) {
   };
 }
 
+function generateDayPeriodQuestion(customer) {
+  const plannedPeriod = timeQuestionPlan[currentCustomer - 1];
+  const period = Number.isInteger(plannedPeriod) && plannedPeriod >= 0 && plannedPeriod <= 3
+    ? plannedPeriod
+    : randomIndex(4);
+  const periodHours = [[7, 8, 9, 10, 11], [12, 13], [14, 15, 16, 17, 18], [19, 20, 21]][period];
+  const hour24 = periodHours[randomIndex(periodHours.length)];
+  const usesCustomer = randomIndex(2) === 0;
+  const situationHints = [
+    "Kedai baru sahaja dibuka untuk pelanggan.",
+    "Pekerja berhenti sebentar untuk makan.",
+    "Pelanggan datang selepas waktu sekolah.",
+    "Kedai akan ditutup sebentar lagi."
+  ];
+  currentTimeSubSkill = "dayPeriod";
+  return {
+    answer: period,
+    choices: shuffle([0, 1, 2, 3]),
+    answerKind: "time-period",
+    isTime: true,
+    skillCategory: "time",
+    clocks: [{ minutes: (hour24 % 12) * 60 }],
+    timeCaption: formatClockTimeAmPm(hour24 * 60).replace(/ (AM|PM)$/, ""),
+    context: usesCustomer ? {
+      usesCustomer: true,
+      dialog: `${situationHints[period]} Saya datang pukul ${formatClockTimeAmPm(hour24 * 60).replace(/ (AM|PM)$/, "")}.`,
+      question: `${customer.name} datang pada waktu hari yang mana?`
+    } : {
+      usesCustomer: false,
+      dialog: `${situationHints[period]} Jam menunjukkan ${formatClockTimeAmPm(hour24 * 60).replace(/ (AM|PM)$/, "")}.`,
+      question: "Ini waktu pagi, tengah hari, petang atau malam?"
+    }
+  };
+}
+
+function createAmPmChoices(answer) {
+  const choices = new Set([answer, (answer + 720) % 1440]);
+  [60, -60, 120, -120].forEach((offset) => {
+    if (choices.size < 4) choices.add((answer + offset + 1440) % 1440);
+  });
+  return shuffle([...choices].slice(0, 4));
+}
+
+function generateAmPmQuestion(customer) {
+  const planned = timeQuestionPlan[currentCustomer - 1];
+  const moments = [480, 540, 600, 660, 720, 780, 840, 900, 1020, 1140];
+  const answer = moments.includes(planned) ? planned : moments[randomIndex(moments.length)];
+  const isMorning = answer < 720;
+  currentTimeSubSkill = "amPm";
+  return {
+    answer,
+    choices: createAmPmChoices(answer),
+    answerKind: "clock-ampm",
+    isTime: true,
+    skillCategory: "time",
+    clocks: [{ minutes: answer }],
+    context: {
+      usesCustomer: true,
+      dialog: `Saya datang pada waktu ${isMorning ? "pagi" : "petang atau malam"} ini.`,
+      question: `Pilih waktu AM atau PM yang betul untuk ${customer.name}.`
+    }
+  };
+}
+
+function generateScheduleQuestion(customer) {
+  const schedules = [
+    ["Kedai buka", 480], ["Waktu rehat", 720], ["Stok sampai", 840], ["Tempahan siap", 960]
+  ];
+  const selectedIndex = randomIndex(schedules.length);
+  const answer = schedules[selectedIndex][1];
+  currentTimeSubSkill = "schedule";
+  return {
+    answer,
+    choices: shuffle(schedules.map((entry) => entry[1])),
+    answerKind: "clock-ampm",
+    isTime: true,
+    isSchedule: true,
+    skillCategory: "time",
+    clocks: [],
+    schedule: schedules,
+    context: {
+      usesCustomer: false,
+      dialog: "Semak jadual operasi Kedai Matematik hari ini.",
+      question: `Pukul berapa ${schedules[selectedIndex][0].toLowerCase()}?`
+    }
+  };
+}
+
 function generateTimeQuestion(customer, levelId) {
-  if (levelId <= 3) return generateClockReadingQuestion(customer, levelId);
-  if (levelId === 4) return generateDurationQuestion(customer);
-  return generateEndTimeQuestion(customer);
+  const selectedLevel = levelId >= 9 ? (timeQuestionPlan[currentCustomer - 1] || 1) : levelId;
+  if (selectedLevel <= 3) return generateClockReadingQuestion(customer, selectedLevel);
+  if (selectedLevel === 4) return generateDurationQuestion(customer);
+  if (selectedLevel === 5) return generateEndTimeQuestion(customer);
+  if (selectedLevel === 6) return generateDayPeriodQuestion(customer);
+  if (selectedLevel === 7) return generateAmPmQuestion(customer);
+  return generateScheduleQuestion(customer);
 }
 
 function createAnalogClockSvg(minutes, label = "") {
@@ -1337,12 +1490,21 @@ function createAnalogClockSvg(minutes, label = "") {
 }
 
 function renderTimeDisplay(question) {
+  if (question.isSchedule) {
+    elements.clockStage.classList.remove("dual-clock");
+    elements.clockStage.innerHTML = `<div class="shop-schedule" aria-label="Jadual Kedai Matematik">
+      ${question.schedule.map(([label, minutes]) => `<div><strong>${label}</strong><span>${formatClockTimeAmPm(minutes)}</span></div>`).join("")}
+    </div>`;
+    elements.clockStage.classList.remove("hidden");
+    return;
+  }
   const clocks = question.clocks.map((clock) => createAnalogClockSvg(clock.minutes, clock.label)).join(
     question.clocks.length > 1 ? '<span class="clock-arrow" aria-hidden="true">→</span>' : ""
   );
   elements.clockStage.classList.toggle("dual-clock", question.clocks.length > 1);
   elements.clockStage.innerHTML = `<div class="clock-display">${clocks}</div>
     ${question.isEndTime ? `<div class="duration-chip">+ ${formatDuration(question.duration)} → ?</div>` : ""}
+    ${question.timeCaption ? `<div class="duration-chip">${question.timeCaption}</div>` : ""}
     <div class="clock-legend" aria-label="Petunjuk jarum"><span><i class="legend-hour"></i>Jarum Jam</span><span><i class="legend-minute"></i>Jarum Minit</span></div>`;
   elements.clockStage.classList.remove("hidden");
 }
@@ -1890,15 +2052,18 @@ function savePlayerProfile() {
 }
 
 function renderPracticeCards() {
-  elements.practiceGrid.innerHTML = practiceTypes.map((practice) => {
-    const category = practiceCategories[practice.category] || practiceCategories.money;
-    return `
-      <button class="practice-card" type="button" data-practice="${practice.id}">
-        <span class="practice-number">${category.icon} ${category.label}</span>
-        <strong>${practice.name}</strong>
-        <span>10 soalan</span>
-      </button>
-    `;
+  elements.practiceGrid.innerHTML = Object.entries(practiceCategories).map(([categoryId, category]) => {
+    const cards = practiceTypes.filter((practice) => practice.category === categoryId).map((practice) => `
+        <button class="practice-card" type="button" data-practice="${practice.id}">
+          <span class="practice-number">${category.icon} ${category.label}</span>
+          <strong>${practice.name}</strong>
+          <span>10 soalan</span>
+        </button>
+      `).join("");
+    return `<section class="practice-group" aria-labelledby="practice-${categoryId}-title">
+      <h3 id="practice-${categoryId}-title">${category.icon} ${category.label}</h3>
+      <div class="practice-group-grid">${cards}</div>
+    </section>`;
   }).join("");
 }
 
@@ -2013,6 +2178,9 @@ function showMainMenu() {
   const bestScore = savedScores.length > 0 ? Math.max(...savedScores) : 0;
   elements.menuHighestMission.textContent = `Misi ${progress.highestUnlockedLevel}`;
   elements.menuBestScore.textContent = `${bestScore}/${totalCustomers}`;
+  elements.moneyStarTotal.textContent = `⭐ ${Object.values(progress.stars).reduce((sum, value) => sum + (Number(value) || 0), 0)}/30`;
+  elements.timeStarTotal.textContent = `⭐ ${Object.values(progress.timeProgress.stars).reduce((sum, value) => sum + (Number(value) || 0), 0)}/30`;
+  elements.measurementStarTotal.textContent = `⭐ ${Object.values(progress.measurementProgress.stars).reduce((sum, value) => sum + (Number(value) || 0), 0)}/30`;
   applyPlayerTheme(progress.playerProfile.theme);
   elements.menuPlayerAvatar.textContent = getPlayerAvatar(progress.playerProfile.avatar).icon;
   elements.menuPlayerGreeting.textContent = `Hai, ${progress.playerProfile.name}!`;
@@ -2161,7 +2329,13 @@ function renderAnswers(choices) {
       : answersUseCents
       ? formatMoney(choice)
       : (answersUseTime
-        ? (currentAnswerKind === "duration" ? formatDuration(choice) : formatClockTime(choice))
+        ? (currentAnswerKind === "duration"
+          ? formatDuration(choice)
+          : currentAnswerKind === "time-period"
+            ? formatTimePeriod(choice)
+            : currentAnswerKind === "clock-ampm"
+              ? formatClockTimeAmPm(choice)
+              : formatClockTime(choice))
         : `RM${choice}`)}</button>`
   ).join("");
 }
