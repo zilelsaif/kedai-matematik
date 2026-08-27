@@ -1,6 +1,6 @@
 "use strict";
 
-const GAME_VERSION = "1.4.0";
+const GAME_VERSION = "1.5.0";
 const STORAGE_KEY = "kedaiMatematikProgress";
 const SOUND_STORAGE_KEY = "kedaiMatematikSoundEnabled";
 const LEGACY_SOUND_STORAGE_KEY = "kedaiMatematikSound";
@@ -31,7 +31,8 @@ const levels = [
 
 const practiceCategories = {
   money: { icon: "🛒", label: "WANG & KEDAI" },
-  time: { icon: "🕐", label: "MASA & JAM" }
+  time: { icon: "🕐", label: "MASA & JAM" },
+  measurement: { icon: "⚖️", label: "UKURAN" }
 };
 
 const practiceTypes = [
@@ -48,7 +49,12 @@ const practiceTypes = [
   { id: "time-2", name: "Setengah Jam", category: "time", timeLevel: 2 },
   { id: "time-3", name: "Suku Jam", category: "time", timeLevel: 3 },
   { id: "time-4", name: "Tempoh Masa", category: "time", timeLevel: 4 },
-  { id: "time-5", name: "Masa Siap", category: "time", timeLevel: 5 }
+  { id: "time-5", name: "Masa Siap", category: "time", timeLevel: 5 },
+  { id: "measurement-1", name: "Berat Barang", category: "measurement", measurementLevel: 1 },
+  { id: "measurement-2", name: "Gram & Kilogram", category: "measurement", measurementLevel: 2 },
+  { id: "measurement-3", name: "Isipadu Minuman", category: "measurement", measurementLevel: 3 },
+  { id: "measurement-4", name: "Panjang & Pembungkusan", category: "measurement", measurementLevel: 4 },
+  { id: "measurement-5", name: "Cabaran Ukuran", category: "measurement", measurementLevel: 5 }
 ];
 
 const timeMissions = [
@@ -59,13 +65,16 @@ const timeMissions = [
   { id: 5, name: "Pukul Berapa Siap?", implemented: true }
 ];
 
+const measurementMissions = MeasurementModule.missions;
+
 const skillDefinitions = [
   { id: "addition", name: "Tambah", icon: "➕", practiceId: 1 },
   { id: "quantity", name: "Kuantiti", icon: "📦", practiceId: 3 },
   { id: "change", name: "Baki", icon: "💰", practiceId: 4 },
   { id: "moneyCents", name: "Wang & Sen", icon: "🪙", practiceId: 7 },
   { id: "mixed", name: "Campuran", icon: "🎯", practiceId: 9 },
-  { id: "time", name: "Masa & Jam", icon: "🕐", practiceId: "time-1" }
+  { id: "time", name: "Masa & Jam", icon: "🕐", practiceId: "time-1" },
+  { id: "measurement", name: "Ukuran", icon: "⚖️", practiceId: "measurement-1" }
 ];
 
 const timeContextTemplates = [
@@ -282,6 +291,7 @@ const elements = {
   dailyScreen: document.querySelector("#daily-screen"),
   settingsScreen: document.querySelector("#settings-screen"),
   timeLevelScreen: document.querySelector("#time-level-screen"),
+  measurementLevelScreen: document.querySelector("#measurement-level-screen"),
   levelScreen: document.querySelector("#level-screen"),
   gameScreen: document.querySelector("#game-screen"),
   gameOverScreen: document.querySelector("#game-over-screen"),
@@ -296,9 +306,13 @@ const elements = {
   practiceGrid: document.querySelector("#practice-grid"),
   moneyCategoryButton: document.querySelector("#money-category-button"),
   timeCategoryButton: document.querySelector("#time-category-button"),
+  measurementCategoryButton: document.querySelector("#measurement-category-button"),
   timeLevelBackButton: document.querySelector("#time-level-back-button"),
   timeLevelGrid: document.querySelector("#time-level-grid"),
   timeLevelNotice: document.querySelector("#time-level-notice"),
+  measurementLevelBackButton: document.querySelector("#measurement-level-back-button"),
+  measurementLevelGrid: document.querySelector("#measurement-level-grid"),
+  measurementLevelNotice: document.querySelector("#measurement-level-notice"),
   profileMenuButton: document.querySelector("#profile-menu-button"),
   profileSaveButton: document.querySelector("#profile-save-button"),
   profileCancelButton: document.querySelector("#profile-cancel-button"),
@@ -414,7 +428,9 @@ let mixedQuestionPlan = [];
 let correctAnswer = 0;
 let answersUseCents = false;
 let answersUseTime = false;
+let answersUseMeasurement = false;
 let currentAnswerKind = "money";
+let currentMeasurementDimension = "mass";
 let questionLocked = true;
 let questionTimerId = null;
 let questionDeadline = 0;
@@ -425,6 +441,9 @@ let lastTimeHour = null;
 let lastTimeTemplateIndex = null;
 let timeQuestionPlan = [];
 let currentTimeSubSkill = "readClock";
+let currentMeasurementLevel = 1;
+let currentMeasurementSubSkill = "weight";
+let measurementQuestionPlan = [];
 let selectedProfileAvatar = "avatar-1";
 let selectedProfileTheme = "purple";
 let randomSource = Math.random;
@@ -450,6 +469,11 @@ function defaultStats() {
 
 function defaultTimeSkillStats() {
   return Object.fromEntries(["readClock", "halfHour", "quarterHour", "duration", "endTime"]
+    .map((id) => [id, { answered: 0, correct: 0 }]));
+}
+
+function defaultMeasurementSkillStats() {
+  return Object.fromEntries(["weight", "massConversion", "volume", "length"]
     .map((id) => [id, { answered: 0, correct: 0 }]));
 }
 
@@ -485,6 +509,8 @@ function defaultProgress() {
     stars: {},
     timeProgress: { highestUnlockedLevel: 1, bestScores: {}, stars: {} },
     timeSkillStats: defaultTimeSkillStats(),
+    measurementProgress: { highestUnlockedLevel: 1, bestScores: {}, stars: {} },
+    measurementSkillStats: defaultMeasurementSkillStats(),
     stats: defaultStats(),
     skillStats: defaultSkillStats(),
     accessibilitySettings: defaultAccessibilitySettings(),
@@ -547,6 +573,8 @@ function loadProgress() {
     const savedSkillStats = defaultSkillStats();
     const timeProgress = { highestUnlockedLevel: 1, bestScores: {}, stars: {} };
     const timeSkillStats = defaultTimeSkillStats();
+    const measurementProgress = { highestUnlockedLevel: 1, bestScores: {}, stars: {} };
+    const measurementSkillStats = defaultMeasurementSkillStats();
     const accessibilitySettings = defaultAccessibilitySettings();
     const achievements = defaultAchievements();
     const dailyChallenge = defaultDailyChallenge();
@@ -700,6 +728,39 @@ function loadProgress() {
       });
     }
 
+    if (saved.measurementProgress && typeof saved.measurementProgress === "object") {
+      const savedMeasurement = saved.measurementProgress;
+      const highestMeasurement = Number(savedMeasurement.highestUnlockedLevel);
+      if (Number.isInteger(highestMeasurement)) {
+        measurementProgress.highestUnlockedLevel = Math.min(
+          Math.max(highestMeasurement, 1),
+          measurementMissions.length
+        );
+      }
+      measurementMissions.forEach((mission) => {
+        const score = Number(savedMeasurement.bestScores?.[mission.id]);
+        const rating = Number(savedMeasurement.stars?.[mission.id]);
+        if (Number.isInteger(score) && score >= 0 && score <= totalCustomers) {
+          measurementProgress.bestScores[mission.id] = score;
+        }
+        if (Number.isInteger(rating) && rating >= 0 && rating <= 3) {
+          measurementProgress.stars[mission.id] = rating;
+        }
+      });
+    }
+
+    if (saved.measurementSkillStats && typeof saved.measurementSkillStats === "object") {
+      Object.keys(measurementSkillStats).forEach((key) => {
+        const record = saved.measurementSkillStats[key];
+        const answered = Number(record?.answered);
+        const correct = Number(record?.correct);
+        if (Number.isInteger(answered) && answered >= 0) measurementSkillStats[key].answered = answered;
+        if (Number.isInteger(correct) && correct >= 0) {
+          measurementSkillStats[key].correct = Math.min(correct, measurementSkillStats[key].answered);
+        }
+      });
+    }
+
     if (saved.accessibilitySettings && typeof saved.accessibilitySettings === "object") {
       Object.keys(accessibilitySettings).forEach((key) => {
         if (typeof saved.accessibilitySettings[key] === "boolean") {
@@ -735,6 +796,8 @@ function loadProgress() {
       stars: savedStars,
       timeProgress,
       timeSkillStats,
+      measurementProgress,
+      measurementSkillStats,
       stats: savedStats,
       skillStats: savedSkillStats,
       accessibilitySettings,
@@ -823,12 +886,17 @@ function recordQuestionResult(isCorrect) {
   const timeSubRecord = currentSkillCategory === "time"
     ? progress.timeSkillStats[currentTimeSubSkill]
     : null;
+  const measurementSubRecord = currentSkillCategory === "measurement"
+    ? progress.measurementSkillStats[currentMeasurementSubSkill]
+    : null;
   if (timeSubRecord) timeSubRecord.answered += 1;
+  if (measurementSubRecord) measurementSubRecord.answered += 1;
 
   if (isCorrect) {
     progress.stats.totalCorrect += 1;
     skillRecord.correct += 1;
     if (timeSubRecord) timeSubRecord.correct += 1;
+    if (measurementSubRecord) measurementSubRecord.correct += 1;
     currentStreak += 1;
     progress.stats.bestStreak = Math.max(progress.stats.bestStreak, currentStreak);
   } else {
@@ -1519,6 +1587,7 @@ function showScreen(screenName) {
     daily: elements.dailyScreen,
     settings: elements.settingsScreen,
     timeLevels: elements.timeLevelScreen,
+    measurementLevels: elements.measurementLevelScreen,
     levels: elements.levelScreen,
     game: elements.gameScreen,
     results: elements.gameOverScreen
@@ -1554,6 +1623,32 @@ function handleTimeLevelSelection(event) {
   const levelId = Number(card?.dataset.timeLevel);
   if (!card || card.disabled || levelId > progress.timeProgress.highestUnlockedLevel) return;
   startTimeGame(levelId, "time-mission");
+}
+
+function showMeasurementLevelSelect(message = "") {
+  questionLocked = true;
+  elements.measurementLevelNotice.textContent = message;
+  elements.measurementLevelGrid.innerHTML = measurementMissions.map((mission) => {
+    const unlocked = mission.id <= progress.measurementProgress.highestUnlockedLevel;
+    const best = progress.measurementProgress.bestScores[mission.id];
+    const rating = progress.measurementProgress.stars[mission.id] || 0;
+    return `<button class="level-card measurement-level-card ${unlocked ? "unlocked" : "locked"}" type="button" data-measurement-level="${mission.id}" ${unlocked ? "" : "disabled"}>
+      ${unlocked ? "" : '<span class="level-lock" aria-hidden="true">🔒</span>'}
+      <span class="level-number">Misi Ukuran ${mission.id}</span>
+      <span class="level-name">⚖️ ${mission.name}</span>
+      <span class="level-stars">${formatStarRating(rating)}</span>
+      <span class="level-best">${Number.isInteger(best) ? `⭐ Rekod: ${best}/10` : (unlocked ? "Jom cuba!" : "Selesaikan misi sebelumnya")}</span>
+    </button>`;
+  }).join("");
+  showScreen("measurementLevels");
+  elements.measurementLevelGrid.querySelector("button:not(:disabled)")?.focus();
+}
+
+function handleMeasurementLevelSelection(event) {
+  const card = event.target.closest("[data-measurement-level]");
+  const levelId = Number(card?.dataset.measurementLevel);
+  if (!card || card.disabled || levelId > progress.measurementProgress.highestUnlockedLevel) return;
+  startMeasurementGame(levelId, "measurement-mission");
 }
 
 function showSettings() {
@@ -1819,10 +1914,13 @@ function handlePracticeSelection(event) {
   if (!card) return;
 
   const rawPracticeId = card.dataset.practice;
-  const practiceId = rawPracticeId.startsWith("time-") ? rawPracticeId : Number(rawPracticeId);
+  const practiceId = /^\d+$/.test(rawPracticeId) ? Number(rawPracticeId) : rawPracticeId;
   const practice = practiceTypes.find((entry) => entry.id === practiceId);
   if (!practice) return;
   if (practice.category === "time") return startTimeGame(practice.timeLevel, "time-practice");
+  if (practice.category === "measurement") {
+    return startMeasurementGame(practice.measurementLevel, "measurement-practice");
+  }
   startGame(practiceId, "practice");
 }
 
@@ -1898,10 +1996,13 @@ function renderSkillStatistics() {
 
 function startRecommendedPractice() {
   const rawPracticeId = statElements.skillRecommendationButton.dataset.practice;
-  const practiceId = rawPracticeId.startsWith("time-") ? rawPracticeId : Number(rawPracticeId);
+  const practiceId = /^\d+$/.test(rawPracticeId) ? Number(rawPracticeId) : rawPracticeId;
   const practice = practiceTypes.find((entry) => entry.id === practiceId);
   if (!practice) return;
   if (practice.category === "time") return startTimeGame(practice.timeLevel, "time-practice");
+  if (practice.category === "measurement") {
+    return startMeasurementGame(practice.measurementLevel, "measurement-practice");
+  }
   startGame(practiceId, "practice");
 }
 
@@ -2027,6 +2128,14 @@ function renderVisualHelp(question) {
   if (question.usesCents) {
     hints.push("🪙 RM ialah Ringgit; dua angka selepas titik ialah sen.");
   }
+  if (question.isMeasurement) {
+    const help = {
+      mass: "⚖️ 1000 g bersamaan 1 kg.",
+      volume: "🧃 1000 mL bersamaan 1 L.",
+      length: "📏 100 cm bersamaan 1 m."
+    };
+    hints.push(help[question.measurementDimension]);
+  }
   elements.visualHelp.textContent = hints.join("  ");
   elements.visualHelp.classList.toggle(
     "hidden",
@@ -2047,12 +2156,22 @@ function handleItemImageError(event) {
 
 function renderAnswers(choices) {
   elements.answers.innerHTML = choices.map((choice) =>
-    `<button class="answer-button" type="button" data-value="${choice}" disabled>${answersUseCents
+    `<button class="answer-button" type="button" data-value="${choice}" disabled>${answersUseMeasurement
+      ? MeasurementModule.format(choice, currentMeasurementDimension)
+      : answersUseCents
       ? formatMoney(choice)
       : (answersUseTime
         ? (currentAnswerKind === "duration" ? formatDuration(choice) : formatClockTime(choice))
         : `RM${choice}`)}</button>`
   ).join("");
+}
+
+function renderMeasurementDisplay(question) {
+  elements.itemsList.classList.remove("three-items");
+  elements.itemsList.innerHTML = `<article class="measurement-display" aria-label="Maklumat ukuran">
+    <span class="measurement-icon" aria-hidden="true">${question.visual.icon}</span>
+    <span class="measurement-copy"><strong>${question.visual.title}</strong><b>${question.visual.equation}</b></span>
+  </article>`;
 }
 
 function updateStats() {
@@ -2132,16 +2251,29 @@ function newQuestion() {
 
   const customer = sessionCustomers[currentCustomer - 1];
   const isTimeSession = gameMode === "time-mission" || gameMode === "time-practice";
+  const isMeasurementSession = gameMode === "measurement-mission" || gameMode === "measurement-practice";
   const question = isTimeSession
     ? generateTimeQuestion(customer, currentTimeLevel)
-    : questionGenerators[currentLevel]();
+    : isMeasurementSession
+      ? MeasurementModule.generate(
+        currentMeasurementLevel,
+        currentCustomer - 1,
+        customer,
+        randomIndex,
+        shuffle,
+        measurementQuestionPlan
+      )
+      : questionGenerators[currentLevel]();
   correctAnswer = question.answer;
   answersUseCents = Boolean(question.usesCents);
   answersUseTime = Boolean(question.isTime);
+  answersUseMeasurement = Boolean(question.isMeasurement);
   currentAnswerKind = question.answerKind || (question.usesCents ? "money-cents" : "money");
+  currentMeasurementDimension = question.measurementDimension || "mass";
+  currentMeasurementSubSkill = question.measurementSubSkill || "weight";
   currentSkillCategory = question.skillCategory || levelSkillCategories[currentLevel] || "mixed";
 
-  elements.questionText.textContent = question.isTime
+  elements.questionText.textContent = question.isTime || question.isMeasurement
     ? question.context.question
     : question.questionType === "change"
     ? `Berapa baki ${customer.name}?`
@@ -2154,9 +2286,10 @@ function newQuestion() {
       : `RM${question.transaction.paymentAmount}`;
   }
 
-  if (question.isTime) {
+  if (question.isTime || question.isMeasurement) {
     elements.customerAction.textContent = "";
-    elements.itemsAndQuestion.classList.add("time-question");
+    elements.itemsAndQuestion.classList.toggle("time-question", Boolean(question.isTime));
+    elements.itemsAndQuestion.classList.toggle("measurement-question", Boolean(question.isMeasurement));
     elements.customerName.textContent = question.context.usesCustomer
       ? `${customer.name}: “${question.context.dialog}”`
       : question.context.dialog;
@@ -2172,12 +2305,19 @@ function newQuestion() {
       elements.customerAvatar.alt = "";
       elements.customerAvatar.src = "assets/branding/logo-icon.webp";
     }
-    elements.itemsList.innerHTML = "";
-    elements.itemsList.classList.remove("three-items");
-    renderTimeDisplay(question);
+    if (question.isTime) {
+      elements.itemsList.innerHTML = "";
+      elements.itemsList.classList.remove("three-items");
+      renderTimeDisplay(question);
+    } else {
+      elements.clockStage.classList.add("hidden");
+      elements.clockStage.innerHTML = "";
+      renderMeasurementDisplay(question);
+    }
   } else {
     elements.customerAction.textContent = " membeli:";
     elements.itemsAndQuestion.classList.remove("time-question");
+    elements.itemsAndQuestion.classList.remove("measurement-question");
     elements.customerName.textContent = customer.name;
     elements.customerAvatar.classList.remove("hidden");
     elements.customerAvatar.parentElement.classList.remove("shop-dialog-badge");
@@ -2289,8 +2429,16 @@ function showGameOver() {
     showPracticeGameOver();
     return;
   }
+  if (gameMode === "measurement-practice") {
+    showPracticeGameOver();
+    return;
+  }
   if (gameMode === "time-mission") {
     showTimeGameOver();
+    return;
+  }
+  if (gameMode === "measurement-mission") {
+    showMeasurementGameOver();
     return;
   }
 
@@ -2419,6 +2567,61 @@ function showTimeGameOver() {
   elements.playAgainButton.focus();
 }
 
+function showMeasurementGameOver() {
+  sessionActive = false;
+  elements.homeGameButton.disabled = true;
+  const previousBest = progress.measurementProgress.bestScores[currentMeasurementLevel] || 0;
+  const previousStars = progress.measurementProgress.stars[currentMeasurementLevel] || 0;
+  const previousHighest = progress.measurementProgress.highestUnlockedLevel;
+  const rating = getStarRating(stars);
+  const passed = stars >= 8;
+
+  progress.measurementProgress.bestScores[currentMeasurementLevel] = Math.max(previousBest, stars);
+  progress.measurementProgress.stars[currentMeasurementLevel] = Math.max(previousStars, rating);
+  progress.stats.missionsPlayed += 1;
+  if (passed) progress.stats.missionsPassed += 1;
+  if (passed && currentMeasurementLevel < measurementMissions.length) {
+    progress.measurementProgress.highestUnlockedLevel = Math.max(
+      progress.measurementProgress.highestUnlockedLevel,
+      currentMeasurementLevel + 1
+    );
+  }
+  saveProgress();
+
+  const mission = measurementMissions.find((entry) => entry.id === currentMeasurementLevel);
+  const nextMissionUnlocked = currentMeasurementLevel < measurementMissions.length &&
+    progress.measurementProgress.highestUnlockedLevel >= currentMeasurementLevel + 1;
+  const unlockedNewMission = progress.measurementProgress.highestUnlockedLevel > previousHighest;
+
+  elements.gameOverTitle.textContent = "UKURAN SELESAI!";
+  elements.resultLevel.textContent = `Misi Ukuran ${currentMeasurementLevel} — ${mission?.name || "Ukuran"}`;
+  elements.finalLabel.textContent = "Keputusan kamu";
+  elements.finalScoreIcon.textContent = "⚖️";
+  elements.finalScore.textContent = `${stars} / ${totalCustomers}`;
+  elements.finalAccuracy.textContent = `${Math.round(stars / totalCustomers * 100)}%`;
+  elements.sessionStars.textContent = formatStarRating(rating);
+  elements.sessionStars.classList.remove("hidden");
+  elements.newStarRecord.classList.toggle("hidden", rating <= previousStars);
+  elements.finalBest.closest(".final-best").classList.remove("hidden");
+  elements.finalBest.closest(".final-best").firstChild.textContent = "Rekod Terbaik: ";
+  elements.finalBest.textContent = `${progress.measurementProgress.bestScores[currentMeasurementLevel]} / 10`;
+  elements.finalRating.textContent = getRating(stars);
+  elements.finalRating.classList.remove("hidden");
+  elements.levelUnlocked.textContent = currentMeasurementLevel === measurementMissions.length && passed
+    ? "🏆 Hebat! Semua Misi Ukuran Selesai!"
+    : "🎉 Misi Ukuran Baru Dibuka!";
+  elements.levelUnlocked.classList.toggle("hidden", !(unlockedNewMission || (currentMeasurementLevel === measurementMissions.length && passed)));
+  elements.nextLevelButton.textContent = "Misi Ukuran Seterusnya";
+  elements.nextLevelButton.classList.toggle("hidden", !nextMissionUnlocked);
+  elements.playAgainButton.textContent = "Main Lagi";
+  elements.chooseLevelButton.textContent = "Pilih Misi Ukuran";
+  elements.chooseLevelButton.classList.remove("hidden");
+  elements.resultMenuButton.classList.remove("hidden");
+  showScreen("results");
+  audioManager.play(unlockedNewMission ? "missionUnlock" : "sessionComplete");
+  elements.playAgainButton.focus();
+}
+
 function handleAnswer(event) {
   const button = event.target.closest(".answer-button");
   if (!button || questionLocked) return;
@@ -2489,6 +2692,7 @@ function startTimeGame(levelId = 1, mode = "time-mission") {
   if (!timeMission?.implemented || !["time-mission", "time-practice"].includes(mode)) return;
   if (mode === "time-mission" && levelId > progress.timeProgress.highestUnlockedLevel) return;
   stopQuestionTimer();
+  prepareGameplayAssets();
   gameMode = mode;
   currentTimeLevel = levelId;
   if (mode === "time-practice") currentPracticeType = `time-${levelId}`;
@@ -2506,6 +2710,32 @@ function startTimeGame(levelId = 1, mode = "time-mission") {
   questionLocked = true;
   elements.practiceBadge.classList.toggle("hidden", mode !== "time-practice");
   elements.practiceBadge.textContent = "🕐 LATIHAN MASA";
+  updateStats();
+  showScreen("game");
+  newQuestion();
+}
+
+function startMeasurementGame(levelId = 1, mode = "measurement-mission") {
+  const mission = measurementMissions.find((entry) => entry.id === levelId);
+  if (!mission?.implemented || !["measurement-mission", "measurement-practice"].includes(mode)) return;
+  if (mode === "measurement-mission" && levelId > progress.measurementProgress.highestUnlockedLevel) return;
+  stopQuestionTimer();
+  prepareGameplayAssets();
+  gameMode = mode;
+  currentMeasurementLevel = levelId;
+  if (mode === "measurement-practice") currentPracticeType = `measurement-${levelId}`;
+  randomSource = Math.random;
+  sessionActive = true;
+  homeModalOpen = false;
+  elements.homeModal.classList.add("hidden");
+  stars = 0;
+  currentCustomer = 1;
+  sessionCustomers = shuffle(customers);
+  currentStreak = 0;
+  measurementQuestionPlan = MeasurementModule.createPlan(levelId, shuffle);
+  questionLocked = true;
+  elements.practiceBadge.classList.toggle("hidden", mode !== "measurement-practice");
+  elements.practiceBadge.textContent = "⚖️ LATIHAN UKURAN";
   updateStats();
   showScreen("game");
   newQuestion();
@@ -2600,6 +2830,18 @@ function exitCurrentSession() {
 }
 
 function goToNextLevel() {
+  if (gameMode === "measurement-mission") {
+    const nextMeasurementLevel = currentMeasurementLevel + 1;
+    if (
+      nextMeasurementLevel <= progress.measurementProgress.highestUnlockedLevel &&
+      measurementMissions[nextMeasurementLevel - 1]?.implemented
+    ) {
+      startMeasurementGame(nextMeasurementLevel, "measurement-mission");
+      return;
+    }
+    showMeasurementLevelSelect();
+    return;
+  }
   if (gameMode === "time-mission") {
     const nextTimeLevel = currentTimeLevel + 1;
     if (nextTimeLevel <= progress.timeProgress.highestUnlockedLevel && timeMissions[nextTimeLevel - 1]?.implemented) {
@@ -2625,8 +2867,11 @@ elements.startMenuButton.addEventListener("click", showMainMenu);
 elements.titleBackButton.addEventListener("click", showTitleScreen);
 elements.moneyCategoryButton.addEventListener("click", () => showLevelSelect());
 elements.timeCategoryButton.addEventListener("click", () => showTimeLevelSelect());
+elements.measurementCategoryButton.addEventListener("click", () => showMeasurementLevelSelect());
 elements.timeLevelBackButton.addEventListener("click", showMainMenu);
 elements.timeLevelGrid.addEventListener("click", handleTimeLevelSelection);
+elements.measurementLevelBackButton.addEventListener("click", showMainMenu);
+elements.measurementLevelGrid.addEventListener("click", handleMeasurementLevelSelection);
 elements.howToButton.addEventListener("click", toggleHowTo);
 elements.statisticsButton.addEventListener("click", showStatistics);
 elements.statsBackButton.addEventListener("click", showMainMenu);
@@ -2662,7 +2907,8 @@ document.addEventListener("click", (event) => {
     "#daily-menu-button, #daily-start-button, #daily-back-button, " +
     "#settings-menu-button, #settings-save-button, #settings-back-button, " +
     "#skill-recommendation-button, " +
-    "#money-category-button, #time-category-button, #time-level-back-button, " +
+    "#money-category-button, #time-category-button, #measurement-category-button, " +
+    "#time-level-back-button, #measurement-level-back-button, " +
     "#result-menu-button, #back-to-menu-button, #play-again-button, #choose-level-button, " +
     "#next-level-button, .level-card:not(:disabled), .practice-card, .avatar-option"
   );
@@ -2676,11 +2922,15 @@ elements.answers.addEventListener("click", handleAnswer);
 elements.itemsList.addEventListener("error", handleItemImageError, true);
 elements.playAgainButton.addEventListener("click", () => {
   if (gameMode === "daily") startDailyChallenge();
+  else if (gameMode === "measurement-mission" || gameMode === "measurement-practice") {
+    startMeasurementGame(currentMeasurementLevel, gameMode);
+  }
   else if (gameMode === "time-mission" || gameMode === "time-practice") startTimeGame(currentTimeLevel, gameMode);
   else startGame(currentLevel, gameMode);
 });
 elements.chooseLevelButton.addEventListener("click", () => {
-  if (gameMode === "practice" || gameMode === "time-practice") showPracticeSelect();
+  if (gameMode === "practice" || gameMode === "time-practice" || gameMode === "measurement-practice") showPracticeSelect();
+  else if (gameMode === "measurement-mission") showMeasurementLevelSelect();
   else if (gameMode === "time-mission") showTimeLevelSelect();
   else showLevelSelect();
 });

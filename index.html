@@ -99,6 +99,7 @@
         <section class="hub-categories" aria-label="Kategori utama">
           <button class="hub-category-card money-hub-card" id="money-category-button" type="button"><img data-src="assets/menu/icon-money-shop.webp" alt=""><span><strong>Wang &amp; Kedai</strong><small>10 misi juruwang</small></span></button>
           <button class="hub-category-card time-hub-card" id="time-category-button" type="button"><img data-src="assets/menu/icon-time.webp" alt=""><span><strong>Masa &amp; Jam</strong><small>5 misi waktu kedai</small></span></button>
+          <button class="hub-category-card measurement-hub-card" id="measurement-category-button" type="button"><span class="hub-category-emoji" aria-hidden="true">⚖️</span><span><strong>Ukuran</strong><small>5 misi ukuran kedai</small></span></button>
         </section>
 
         <nav class="hub-support-grid" aria-label="Menu sokongan">
@@ -269,6 +270,15 @@
       <div class="level-grid time-level-grid" id="time-level-grid"></div>
     </section>
 
+    <section class="measurement-level-screen hidden" id="measurement-level-screen" aria-labelledby="measurement-level-title">
+      <div class="screen-heading">
+        <button class="back-button" id="measurement-level-back-button" type="button">← Main Menu</button>
+        <div><p class="eyebrow">Timbang, sukat dan ukur</p><h2 id="measurement-level-title">MISI UKURAN</h2></div>
+      </div>
+      <p class="level-notice" id="measurement-level-notice" role="status" aria-live="polite"></p>
+      <div class="level-grid measurement-level-grid" id="measurement-level-grid"></div>
+    </section>
+
     <section class="level-screen hidden" id="level-screen" aria-labelledby="level-screen-title">
       <div class="screen-heading">
         <button class="back-button" id="back-to-menu-button" type="button" aria-label="Kembali ke Main Menu">← Main Menu</button>
@@ -361,6 +371,7 @@
     <small id="achievement-toast-description"></small>
   </aside>
 
+  <script src="measurement.js"></script>
   <script src="game.js"></script>
 </body>
 </html>
