@@ -1,6 +1,6 @@
 "use strict";
 
-const GAME_VERSION = "1.5.1";
+const GAME_VERSION = "1.5.2";
 const STORAGE_KEY = "kedaiMatematikProgress";
 const SOUND_STORAGE_KEY = "kedaiMatematikSoundEnabled";
 const LEGACY_SOUND_STORAGE_KEY = "kedaiMatematikSound";
@@ -1229,26 +1229,96 @@ function formatClockTimeAmPm(minutes) {
   return `${hour12}:${String(minute).padStart(2, "0")} ${hour24 < 12 ? "AM" : "PM"}`;
 }
 
-function createMixedTimePlan() {
-  return [
-    ...shuffle([1, 2, 3, 4, 5, 6, 7, 8]),
-    ...shuffle([1, 2])
+function createClockMomentPool(minutes) {
+  return minutes.flatMap((minute) =>
+    Array.from({ length: 12 }, (_, index) => ({ moment: ((index + 1) % 12) * 60 + minute }))
+  );
+}
+
+function createDurationPool(durationValues, maximumHour) {
+  return durationValues.flatMap((duration) => [0, 30].flatMap((startMinute) => {
+    const maximumStartHour = Math.max(1, Math.floor((690 - duration - startMinute) / 60));
+    return Array.from(
+      { length: Math.min(maximumStartHour, maximumHour) },
+      (_, index) => ({ start: (index + 1) * 60 + startMinute, duration })
+    );
+  }));
+}
+
+const dayPeriodMomentPools = [
+  [360, 390, 420, 450, 480, 510, 540, 570, 600, 630, 660, 690],
+  [720, 750, 780, 810],
+  [840, 870, 900, 930, 960, 990, 1020, 1050, 1080, 1110],
+  [1140, 1170, 1200, 1230, 1260, 1290]
+];
+
+function createSchedulePool() {
+  const activityNames = [
+    "Kedai buka", "Stok sampai", "Pelanggan ambil tempahan",
+    "Waktu rehat", "Promosi bermula", "Promosi tamat", "Kedai tutup"
   ];
+  const offsets = [0, 60, 150, 240, 330, 420, 540];
+  return Array.from({ length: 6 }, (_, variant) => {
+    const start = 420 + variant * 30;
+    const schedule = activityNames.map((label, index) => [label, start + offsets[index]]);
+    return schedule.map((_, queryIndex) => ({ schedule, queryIndex }));
+  }).flat();
+}
+
+function getTimeSpecPool(levelId) {
+  if (levelId === 1) return createClockMomentPool([0]);
+  if (levelId === 2) return createClockMomentPool([0, 30]);
+  if (levelId === 3) return createClockMomentPool([0, 15, 30, 45]);
+  if (levelId === 4) return createDurationPool([30, 60, 90, 120, 150, 180], 8);
+  if (levelId === 5) return createDurationPool([30, 60, 90, 120], 9);
+  if (levelId === 6) {
+    return dayPeriodMomentPools.flatMap((moments, period) =>
+      moments.map((moment) => ({ period, moment }))
+    );
+  }
+  if (levelId === 7) {
+    return Array.from({ length: 32 }, (_, index) => ({ moment: 360 + index * 30 }));
+  }
+  return createSchedulePool();
+}
+
+function createMixedTimePlan() {
+  const typePlan = [...shuffle([1, 2, 3, 4, 5, 6, 7, 8]), ...shuffle([1, 2])];
+  const pools = Object.fromEntries(
+    Array.from({ length: 8 }, (_, index) => [index + 1, shuffle(getTimeSpecPool(index + 1))])
+  );
+  return typePlan.map((selectedLevel) => ({
+    levelId: selectedLevel,
+    ...pools[selectedLevel].shift()
+  }));
 }
 
 function createTimeQuestionPlan(levelId) {
-  const plans = {
-    1: Array(10).fill(0),
-    2: [0, 0, 0, 0, 0, 30, 30, 30, 30, 30],
-    3: [0, 0, 15, 15, 15, 30, 30, 45, 45, 45],
-    4: [30, 30, 60, 60, 90, 90, 120, 120, 150, 180],
-    5: [30, 30, 60, 60, 60, 90, 90, 90, 120, 120],
-    6: [0, 0, 1, 1, 2, 2, 2, 3, 3, 3],
-    7: [480, 540, 600, 660, 720, 780, 840, 900, 1020, 1140],
-    8: Array(10).fill(8)
-  };
   if (levelId === 9 || levelId === 10) return createMixedTimePlan();
-  return shuffle(plans[levelId] || plans[1]);
+  if (levelId === 2) {
+    return shuffle([
+      ...shuffle(createClockMomentPool([0])).slice(0, 5),
+      ...shuffle(createClockMomentPool([30])).slice(0, 5)
+    ]);
+  }
+  if (levelId === 3) {
+    return shuffle([0, 15, 30, 45].flatMap((minute, index) =>
+      shuffle(createClockMomentPool([minute])).slice(0, [2, 3, 3, 2][index])
+    ));
+  }
+  if (levelId === 6) {
+    return shuffle(dayPeriodMomentPools.flatMap((moments, period) =>
+      shuffle(moments).slice(0, [3, 2, 3, 2][period]).map((moment) => ({ period, moment }))
+    ));
+  }
+  if (levelId === 7) {
+    const pool = getTimeSpecPool(7);
+    return shuffle([
+      ...shuffle(pool.filter(({ moment }) => moment < 720)).slice(0, 5),
+      ...shuffle(pool.filter(({ moment }) => moment >= 720)).slice(0, 5)
+    ]);
+  }
+  return shuffle(getTimeSpecPool(levelId)).slice(0, 10);
 }
 
 function createClockChoices(answerMinutes, stepMinutes) {
@@ -1273,14 +1343,17 @@ function pickTimeContext(customer) {
 }
 
 function generateClockReadingQuestion(customer, levelId) {
-  const plannedMinute = timeQuestionPlan[currentCustomer - 1];
+  const planned = timeQuestionPlan[currentCustomer - 1];
   const allowedMinutes = levelId === 1 ? [0] : (levelId === 2 ? [0, 30] : [0, 15, 30, 45]);
-  const minute = typeof plannedMinute === "number" && levelId <= 3
-    ? plannedMinute
-    : allowedMinutes[randomIndex(allowedMinutes.length)];
+  const plannedMoment = Number.isInteger(planned?.moment) ? planned.moment : null;
+  const minute = plannedMoment === null
+    ? allowedMinutes[randomIndex(allowedMinutes.length)]
+    : plannedMoment % 60;
   let hour;
   let moment;
-  do {
+  if (plannedMoment !== null) {
+    moment = normalizeClockMinutes(plannedMoment);
+  } else do {
     hour = randomIndex(12) + 1;
     moment = normalizeClockMinutes((hour % 12) * 60 + minute);
   } while (moment === lastTimeHour);
@@ -1299,15 +1372,18 @@ function generateClockReadingQuestion(customer, levelId) {
 }
 
 function generateDurationQuestion(customer) {
-  const plannedDuration = timeQuestionPlan[currentCustomer - 1];
+  const planned = timeQuestionPlan[currentCustomer - 1];
   const durationOptions = [30, 60, 90, 120, 150, 180];
-  const duration = durationOptions.includes(plannedDuration)
-    ? plannedDuration
+  const duration = durationOptions.includes(planned?.duration)
+    ? planned.duration
     : durationOptions[randomIndex(durationOptions.length)];
-  const startMinute = randomIndex(2) * 30;
-  const maximumStartHour = Math.max(1, Math.floor((690 - duration - startMinute) / 60));
-  const startHour = randomIndex(Math.min(maximumStartHour, 8)) + 1;
-  const start = startHour * 60 + startMinute;
+  const start = Number.isInteger(planned?.start)
+    ? planned.start
+    : (() => {
+      const startMinute = randomIndex(2) * 30;
+      const maximumStartHour = Math.max(1, Math.floor((690 - duration - startMinute) / 60));
+      return (randomIndex(Math.min(maximumStartHour, 8)) + 1) * 60 + startMinute;
+    })();
   const end = start + duration;
   const usesCustomer = randomIndex(2) === 0;
   currentTimeSubSkill = "duration";
@@ -1333,15 +1409,18 @@ function generateDurationQuestion(customer) {
 }
 
 function generateEndTimeQuestion(customer) {
-  const plannedDuration = timeQuestionPlan[currentCustomer - 1];
+  const planned = timeQuestionPlan[currentCustomer - 1];
   const durationValues = [30, 60, 90, 120];
-  const duration = durationValues.includes(plannedDuration)
-    ? plannedDuration
+  const duration = durationValues.includes(planned?.duration)
+    ? planned.duration
     : durationValues[randomIndex(durationValues.length)];
-  const startMinute = randomIndex(2) * 30;
-  const maximumStartHour = Math.max(1, Math.floor((690 - duration - startMinute) / 60));
-  const startHour = randomIndex(Math.min(maximumStartHour, 9)) + 1;
-  const start = startHour * 60 + startMinute;
+  const start = Number.isInteger(planned?.start)
+    ? planned.start
+    : (() => {
+      const startMinute = randomIndex(2) * 30;
+      const maximumStartHour = Math.max(1, Math.floor((690 - duration - startMinute) / 60));
+      return (randomIndex(Math.min(maximumStartHour, 9)) + 1) * 60 + startMinute;
+    })();
   const end = start + duration;
   const usesCustomer = randomIndex(2) === 0;
   currentTimeSubSkill = "endTime";
@@ -1368,12 +1447,13 @@ function generateEndTimeQuestion(customer) {
 }
 
 function generateDayPeriodQuestion(customer) {
-  const plannedPeriod = timeQuestionPlan[currentCustomer - 1];
-  const period = Number.isInteger(plannedPeriod) && plannedPeriod >= 0 && plannedPeriod <= 3
-    ? plannedPeriod
+  const planned = timeQuestionPlan[currentCustomer - 1];
+  const period = Number.isInteger(planned?.period) && planned.period >= 0 && planned.period <= 3
+    ? planned.period
     : randomIndex(4);
-  const periodHours = [[7, 8, 9, 10, 11], [12, 13], [14, 15, 16, 17, 18], [19, 20, 21]][period];
-  const hour24 = periodHours[randomIndex(periodHours.length)];
+  const moment = Number.isInteger(planned?.moment)
+    ? planned.moment
+    : dayPeriodMomentPools[period][randomIndex(dayPeriodMomentPools[period].length)];
   const usesCustomer = randomIndex(2) === 0;
   const situationHints = [
     "Kedai baru sahaja dibuka untuk pelanggan.",
@@ -1388,15 +1468,15 @@ function generateDayPeriodQuestion(customer) {
     answerKind: "time-period",
     isTime: true,
     skillCategory: "time",
-    clocks: [{ minutes: (hour24 % 12) * 60 }],
-    timeCaption: formatClockTimeAmPm(hour24 * 60).replace(/ (AM|PM)$/, ""),
+    clocks: [{ minutes: moment }],
+    timeCaption: formatClockTimeAmPm(moment).replace(/ (AM|PM)$/, ""),
     context: usesCustomer ? {
       usesCustomer: true,
-      dialog: `${situationHints[period]} Saya datang pukul ${formatClockTimeAmPm(hour24 * 60).replace(/ (AM|PM)$/, "")}.`,
+      dialog: `${situationHints[period]} Saya datang pukul ${formatClockTimeAmPm(moment).replace(/ (AM|PM)$/, "")}.`,
       question: `${customer.name} datang pada waktu hari yang mana?`
     } : {
       usesCustomer: false,
-      dialog: `${situationHints[period]} Jam menunjukkan ${formatClockTimeAmPm(hour24 * 60).replace(/ (AM|PM)$/, "")}.`,
+      dialog: `${situationHints[period]} Jam menunjukkan ${formatClockTimeAmPm(moment).replace(/ (AM|PM)$/, "")}.`,
       question: "Ini waktu pagi, tengah hari, petang atau malam?"
     }
   };
@@ -1412,8 +1492,10 @@ function createAmPmChoices(answer) {
 
 function generateAmPmQuestion(customer) {
   const planned = timeQuestionPlan[currentCustomer - 1];
-  const moments = [480, 540, 600, 660, 720, 780, 840, 900, 1020, 1140];
-  const answer = moments.includes(planned) ? planned : moments[randomIndex(moments.length)];
+  const moments = getTimeSpecPool(7).map(({ moment }) => moment);
+  const answer = Number.isInteger(planned?.moment)
+    ? planned.moment
+    : moments[randomIndex(moments.length)];
   const isMorning = answer < 720;
   currentTimeSubSkill = "amPm";
   return {
@@ -1432,15 +1514,18 @@ function generateAmPmQuestion(customer) {
 }
 
 function generateScheduleQuestion(customer) {
-  const schedules = [
-    ["Kedai buka", 480], ["Waktu rehat", 720], ["Stok sampai", 840], ["Tempahan siap", 960]
-  ];
-  const selectedIndex = randomIndex(schedules.length);
+  const planned = timeQuestionPlan[currentCustomer - 1];
+  const fallback = getTimeSpecPool(8)[randomIndex(getTimeSpecPool(8).length)];
+  const schedules = Array.isArray(planned?.schedule) ? planned.schedule : fallback.schedule;
+  const selectedIndex = Number.isInteger(planned?.queryIndex) ? planned.queryIndex : fallback.queryIndex;
   const answer = schedules[selectedIndex][1];
   currentTimeSubSkill = "schedule";
   return {
     answer,
-    choices: shuffle(schedules.map((entry) => entry[1])),
+    choices: shuffle([
+      answer,
+      ...shuffle(schedules.filter((_, index) => index !== selectedIndex).map((entry) => entry[1])).slice(0, 3)
+    ]),
     answerKind: "clock-ampm",
     isTime: true,
     isSchedule: true,
@@ -1456,7 +1541,7 @@ function generateScheduleQuestion(customer) {
 }
 
 function generateTimeQuestion(customer, levelId) {
-  const selectedLevel = levelId >= 9 ? (timeQuestionPlan[currentCustomer - 1] || 1) : levelId;
+  const selectedLevel = levelId >= 9 ? (timeQuestionPlan[currentCustomer - 1]?.levelId || 1) : levelId;
   if (selectedLevel <= 3) return generateClockReadingQuestion(customer, selectedLevel);
   if (selectedLevel === 4) return generateDurationQuestion(customer);
   if (selectedLevel === 5) return generateEndTimeQuestion(customer);
