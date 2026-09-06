@@ -1,0 +1,26 @@
+{
+  "name": "kedai-matematik",
+  "version": "1.0.0",
+  "description": "Game pendidikan matematik kanak-kanak berasaskan web.",
+  "main": "game.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zilelsaif/kedai-matematik.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/zilelsaif/kedai-matematik/issues"
+  },
+  "homepage": "https://github.com/zilelsaif/kedai-matematik#readme",
+  "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/cli": "^8.5.0",
+    "@capacitor/core": "^8.5.0"
+  }
+}

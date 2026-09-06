@@ -100,6 +100,7 @@
           <button class="hub-category-card money-hub-card" id="money-category-button" type="button"><img data-src="assets/menu/icon-money-shop.webp" alt="Ikon Wang dan Kedai"><span><strong>Wang &amp; Kedai</strong><small>10 misi juruwang</small><small class="category-star-total" id="money-star-total">⭐ 0/30</small></span></button>
           <button class="hub-category-card time-hub-card" id="time-category-button" type="button"><img data-src="assets/menu/icon-time.webp" alt="Ikon Masa dan Jam"><span><strong>Masa &amp; Jam</strong><small>10 misi waktu kedai</small><small class="category-star-total" id="time-star-total">⭐ 0/30</small></span></button>
           <button class="hub-category-card measurement-hub-card" id="measurement-category-button" type="button"><img data-src="assets/menu/icon-measurement.webp" alt="Ikon Ukuran"><span><strong>Ukuran</strong><small>10 misi ukuran kedai</small><small class="category-star-total" id="measurement-star-total">⭐ 0/30</small></span></button>
+          <button class="hub-category-card fraction-hub-card" id="fraction-category-button" type="button"><img data-src="assets/menu/icon-fraction.webp" alt="Ikon Pecahan"><span><strong>Pecahan</strong><small>10 misi pecahan kedai</small><small class="category-star-total" id="fraction-star-total">⭐ 0/30</small></span></button>
         </section>
 
         <nav class="hub-support-grid" aria-label="Menu sokongan">
@@ -279,6 +280,15 @@
       <div class="level-grid measurement-level-grid" id="measurement-level-grid"></div>
     </section>
 
+    <section class="fraction-level-screen hidden" id="fraction-level-screen" aria-labelledby="fraction-level-title">
+      <div class="screen-heading">
+        <button class="back-button" id="fraction-level-back-button" type="button">← Main Menu</button>
+        <div><p class="eyebrow">Potong, kongsi dan lengkapkan</p><h2 id="fraction-level-title">MISI PECAHAN</h2></div>
+      </div>
+      <p class="level-notice" id="fraction-level-notice" role="status" aria-live="polite"></p>
+      <div class="level-grid fraction-level-grid" id="fraction-level-grid"></div>
+    </section>
+
     <section class="level-screen hidden" id="level-screen" aria-labelledby="level-screen-title">
       <div class="screen-heading">
         <button class="back-button" id="back-to-menu-button" type="button" aria-label="Kembali ke Main Menu">← Main Menu</button>
@@ -372,6 +382,7 @@
   </aside>
 
   <script src="measurement.js"></script>
+  <script src="fraction.js"></script>
   <script src="game.js"></script>
 </body>
 </html>

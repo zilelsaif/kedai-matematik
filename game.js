@@ -1,6 +1,6 @@
 "use strict";
 
-const GAME_VERSION = "1.5.2";
+const GAME_VERSION = "1.6.0";
 const STORAGE_KEY = "kedaiMatematikProgress";
 const SOUND_STORAGE_KEY = "kedaiMatematikSoundEnabled";
 const LEGACY_SOUND_STORAGE_KEY = "kedaiMatematikSound";
@@ -32,7 +32,8 @@ const levels = [
 const practiceCategories = {
   money: { icon: "🛒", label: "WANG & KEDAI" },
   time: { icon: "🕐", label: "MASA & JAM" },
-  measurement: { icon: "⚖️", label: "UKURAN" }
+  measurement: { icon: "⚖️", label: "UKURAN" },
+  fraction: { icon: "🍰", iconImage: "assets/menu/icon-fraction.webp", label: "PECAHAN" }
 };
 
 const practiceTypes = [
@@ -65,7 +66,17 @@ const practiceTypes = [
   { id: "measurement-7", name: "Campur Isipadu", category: "measurement", measurementLevel: 7 },
   { id: "measurement-8", name: "Campur Panjang", category: "measurement", measurementLevel: 8 },
   { id: "measurement-9", name: "Pilih Unit Betul", category: "measurement", measurementLevel: 9 },
-  { id: "measurement-10", name: "Kedai Sibuk: Ukuran", category: "measurement", measurementLevel: 10 }
+  { id: "measurement-10", name: "Kedai Sibuk: Ukuran", category: "measurement", measurementLevel: 10 },
+  { id: "fraction-1", name: "Kenal 1/2", category: "fraction", fractionLevel: 1 },
+  { id: "fraction-2", name: "Kenal 1/4", category: "fraction", fractionLevel: 2 },
+  { id: "fraction-3", name: "Kenal 3/4", category: "fraction", fractionLevel: 3 },
+  { id: "fraction-4", name: "Bahagian daripada Objek", category: "fraction", fractionLevel: 4 },
+  { id: "fraction-5", name: "Bahagian daripada Kumpulan", category: "fraction", fractionLevel: 5 },
+  { id: "fraction-6", name: "Pecahan Setara", category: "fraction", fractionLevel: 6 },
+  { id: "fraction-7", name: "Banding Pecahan", category: "fraction", fractionLevel: 7 },
+  { id: "fraction-8", name: "Lengkapkan Keseluruhan", category: "fraction", fractionLevel: 8 },
+  { id: "fraction-9", name: "Campuran Pecahan", category: "fraction", fractionLevel: 9 },
+  { id: "fraction-10", name: "Kedai Sibuk: Pecahan", category: "fraction", fractionLevel: 10 }
 ];
 
 const timeMissions = [
@@ -82,6 +93,7 @@ const timeMissions = [
 ];
 
 const measurementMissions = MeasurementModule.missions;
+const fractionMissions = FractionModule.missions;
 
 const skillDefinitions = [
   { id: "addition", name: "Tambah", icon: "➕", practiceId: 1 },
@@ -90,7 +102,8 @@ const skillDefinitions = [
   { id: "moneyCents", name: "Wang & Sen", icon: "🪙", practiceId: 7 },
   { id: "mixed", name: "Campuran", icon: "🎯", practiceId: 9 },
   { id: "time", name: "Masa & Jam", icon: "🕐", practiceId: "time-1" },
-  { id: "measurement", name: "Ukuran", icon: "⚖️", practiceId: "measurement-1" }
+  { id: "measurement", name: "Ukuran", icon: "⚖️", practiceId: "measurement-1" },
+  { id: "fraction", name: "Pecahan", icon: "🍰", iconImage: "assets/menu/icon-fraction.webp", practiceId: "fraction-1" }
 ];
 
 const timeContextTemplates = [
@@ -152,7 +165,9 @@ const achievementDefinitions = [
   { id: "starCollector", icon: "🌟", name: "Pengumpul Bintang", description: "Kumpul sekurang-kurangnya 20/30 bintang." },
   { id: "starKing", icon: "👑", name: "Raja Bintang", description: "Kumpul 30/30 bintang." },
   { id: "onTime", icon: "🕐", name: "Tepat Pada Masanya", description: "Lulus Misi Masa 1." },
-  { id: "timeKeeper", icon: "⏰", name: "Penjaga Waktu", description: "Lulus Misi Masa 5." }
+  { id: "timeKeeper", icon: "⏰", name: "Penjaga Waktu", description: "Lulus Misi Masa 5." },
+  { id: "fractionHalfway", icon: "🍰", name: "Separuh Jalan Pecahan", description: "Lulus Misi Pecahan 5." },
+  { id: "fractionExpert", icon: "🏅", name: "Pakar Pecahan", description: "Lulus Misi Pecahan 10." }
 ];
 
 const shopItems = [
@@ -247,7 +262,7 @@ const customers = [
   { name: "Sofia", avatar: "assets/customers/Sofia.webp" },
   { name: "Azzam", avatar: "assets/customers/Azzam.webp" },
   { name: "Ayyash", avatar: "assets/customers/Ayyash.webp" },
-  { name: "Ivy Chian", avatar: "assets/customers/Ivy-Chian.webp" },
+  { name: "Ivy", avatar: "assets/customers/Ivy-Chian.webp" },
   { name: "Maria", avatar: "assets/customers/Maria.webp" },
   { name: "Affan", avatar: "assets/customers/Affan.webp" }
 ];
@@ -308,6 +323,7 @@ const elements = {
   settingsScreen: document.querySelector("#settings-screen"),
   timeLevelScreen: document.querySelector("#time-level-screen"),
   measurementLevelScreen: document.querySelector("#measurement-level-screen"),
+  fractionLevelScreen: document.querySelector("#fraction-level-screen"),
   levelScreen: document.querySelector("#level-screen"),
   gameScreen: document.querySelector("#game-screen"),
   gameOverScreen: document.querySelector("#game-over-screen"),
@@ -318,6 +334,7 @@ const elements = {
   moneyStarTotal: document.querySelector("#money-star-total"),
   timeStarTotal: document.querySelector("#time-star-total"),
   measurementStarTotal: document.querySelector("#measurement-star-total"),
+  fractionStarTotal: document.querySelector("#fraction-star-total"),
   howToButton: document.querySelector("#how-to-button"),
   statisticsButton: document.querySelector("#statistics-button"),
   practiceMenuButton: document.querySelector("#practice-menu-button"),
@@ -326,12 +343,16 @@ const elements = {
   moneyCategoryButton: document.querySelector("#money-category-button"),
   timeCategoryButton: document.querySelector("#time-category-button"),
   measurementCategoryButton: document.querySelector("#measurement-category-button"),
+  fractionCategoryButton: document.querySelector("#fraction-category-button"),
   timeLevelBackButton: document.querySelector("#time-level-back-button"),
   timeLevelGrid: document.querySelector("#time-level-grid"),
   timeLevelNotice: document.querySelector("#time-level-notice"),
   measurementLevelBackButton: document.querySelector("#measurement-level-back-button"),
   measurementLevelGrid: document.querySelector("#measurement-level-grid"),
   measurementLevelNotice: document.querySelector("#measurement-level-notice"),
+  fractionLevelBackButton: document.querySelector("#fraction-level-back-button"),
+  fractionLevelGrid: document.querySelector("#fraction-level-grid"),
+  fractionLevelNotice: document.querySelector("#fraction-level-notice"),
   profileMenuButton: document.querySelector("#profile-menu-button"),
   profileSaveButton: document.querySelector("#profile-save-button"),
   profileCancelButton: document.querySelector("#profile-cancel-button"),
@@ -448,6 +469,7 @@ let correctAnswer = 0;
 let answersUseCents = false;
 let answersUseTime = false;
 let answersUseMeasurement = false;
+let answersUseFraction = false;
 let currentAnswerKind = "money";
 let currentMeasurementDimension = "mass";
 let questionLocked = true;
@@ -463,6 +485,9 @@ let currentTimeSubSkill = "readClock";
 let currentMeasurementLevel = 1;
 let currentMeasurementSubSkill = "weight";
 let measurementQuestionPlan = [];
+let currentFractionLevel = 1;
+let currentFractionSubSkill = "half";
+let fractionQuestionPlan = [];
 let selectedProfileAvatar = "avatar-1";
 let selectedProfileTheme = "purple";
 let randomSource = Math.random;
@@ -493,6 +518,11 @@ function defaultTimeSkillStats() {
 
 function defaultMeasurementSkillStats() {
   return Object.fromEntries(["weight", "massConversion", "volume", "length", "unitChoice"]
+    .map((id) => [id, { answered: 0, correct: 0 }]));
+}
+
+function defaultFractionSkillStats() {
+  return Object.fromEntries(["half", "quarter", "visualFraction", "groupFraction", "equivalentFraction", "compareFraction", "completeWhole"]
     .map((id) => [id, { answered: 0, correct: 0 }]));
 }
 
@@ -530,6 +560,8 @@ function defaultProgress() {
     timeSkillStats: defaultTimeSkillStats(),
     measurementProgress: { highestUnlockedLevel: 1, bestScores: {}, stars: {} },
     measurementSkillStats: defaultMeasurementSkillStats(),
+    fractionProgress: { highestUnlockedLevel: 1, bestScores: {}, stars: {} },
+    fractionSkillStats: defaultFractionSkillStats(),
     stats: defaultStats(),
     skillStats: defaultSkillStats(),
     accessibilitySettings: defaultAccessibilitySettings(),
@@ -594,6 +626,8 @@ function loadProgress() {
     const timeSkillStats = defaultTimeSkillStats();
     const measurementProgress = { highestUnlockedLevel: 1, bestScores: {}, stars: {} };
     const measurementSkillStats = defaultMeasurementSkillStats();
+    const fractionProgress = { highestUnlockedLevel: 1, bestScores: {}, stars: {} };
+    const fractionSkillStats = defaultFractionSkillStats();
     const accessibilitySettings = defaultAccessibilitySettings();
     const achievements = defaultAchievements();
     const dailyChallenge = defaultDailyChallenge();
@@ -788,6 +822,30 @@ function loadProgress() {
       });
     }
 
+    if (saved.fractionProgress && typeof saved.fractionProgress === "object") {
+      const savedFraction = saved.fractionProgress;
+      const highestFraction = Number(savedFraction.highestUnlockedLevel);
+      if (Number.isInteger(highestFraction)) {
+        fractionProgress.highestUnlockedLevel = Math.min(Math.max(highestFraction, 1), fractionMissions.length);
+      }
+      fractionMissions.forEach((mission) => {
+        const score = Number(savedFraction.bestScores?.[mission.id]);
+        const rating = Number(savedFraction.stars?.[mission.id]);
+        if (Number.isInteger(score) && score >= 0 && score <= totalCustomers) fractionProgress.bestScores[mission.id] = score;
+        if (Number.isInteger(rating) && rating >= 0 && rating <= 3) fractionProgress.stars[mission.id] = rating;
+      });
+    }
+
+    if (saved.fractionSkillStats && typeof saved.fractionSkillStats === "object") {
+      Object.keys(fractionSkillStats).forEach((key) => {
+        const record = saved.fractionSkillStats[key];
+        const answered = Number(record?.answered);
+        const correct = Number(record?.correct);
+        if (Number.isInteger(answered) && answered >= 0) fractionSkillStats[key].answered = answered;
+        if (Number.isInteger(correct) && correct >= 0) fractionSkillStats[key].correct = Math.min(correct, fractionSkillStats[key].answered);
+      });
+    }
+
     if (saved.accessibilitySettings && typeof saved.accessibilitySettings === "object") {
       Object.keys(accessibilitySettings).forEach((key) => {
         if (typeof saved.accessibilitySettings[key] === "boolean") {
@@ -811,6 +869,8 @@ function loadProgress() {
     achievements.starKing ||= savedStats.totalStars >= 30;
     achievements.onTime ||= Number(timeProgress.bestScores[1]) >= 8;
     achievements.timeKeeper ||= Number(timeProgress.bestScores[5]) >= 8;
+    achievements.fractionHalfway ||= Number(fractionProgress.bestScores[5]) >= 8;
+    achievements.fractionExpert ||= Number(fractionProgress.bestScores[10]) >= 8;
     if (!playerProfile.featuredBadge && achievementDefinitions.some((achievement) =>
       achievement.id === requestedBadge && achievements[achievement.id] === true
     )) {
@@ -825,6 +885,8 @@ function loadProgress() {
       timeSkillStats,
       measurementProgress,
       measurementSkillStats,
+      fractionProgress,
+      fractionSkillStats,
       stats: savedStats,
       skillStats: savedSkillStats,
       accessibilitySettings,
@@ -873,7 +935,7 @@ function showNextAchievementToast() {
   }, 3000);
 }
 
-function checkAchievements({ missionScore = null, missionLevel = null, missionPassed = false, allowMissionAchievements = false, timeMissionLevel = null } = {}) {
+function checkAchievements({ missionScore = null, missionLevel = null, missionPassed = false, allowMissionAchievements = false, timeMissionLevel = null, fractionMissionLevel = null } = {}) {
   const totalStars = calculateTotalStars();
   const conditions = {
     efficientCashier: progress.stats.bestStreak >= 10
@@ -893,6 +955,10 @@ function checkAchievements({ missionScore = null, missionLevel = null, missionPa
   if (timeMissionLevel !== null && missionPassed) {
     conditions.onTime = timeMissionLevel === 1;
     conditions.timeKeeper = timeMissionLevel === 5;
+  }
+  if (fractionMissionLevel !== null && missionPassed) {
+    conditions.fractionHalfway = fractionMissionLevel === 5;
+    conditions.fractionExpert = fractionMissionLevel === 10;
   }
 
   let unlockedCount = 0;
@@ -916,14 +982,19 @@ function recordQuestionResult(isCorrect) {
   const measurementSubRecord = currentSkillCategory === "measurement"
     ? progress.measurementSkillStats[currentMeasurementSubSkill]
     : null;
+  const fractionSubRecord = currentSkillCategory === "fraction"
+    ? progress.fractionSkillStats[currentFractionSubSkill]
+    : null;
   if (timeSubRecord) timeSubRecord.answered += 1;
   if (measurementSubRecord) measurementSubRecord.answered += 1;
+  if (fractionSubRecord) fractionSubRecord.answered += 1;
 
   if (isCorrect) {
     progress.stats.totalCorrect += 1;
     skillRecord.correct += 1;
     if (timeSubRecord) timeSubRecord.correct += 1;
     if (measurementSubRecord) measurementSubRecord.correct += 1;
+    if (fractionSubRecord) fractionSubRecord.correct += 1;
     currentStreak += 1;
     progress.stats.bestStreak = Math.max(progress.stats.bestStreak, currentStreak);
   } else {
@@ -1835,6 +1906,7 @@ function showScreen(screenName) {
     settings: elements.settingsScreen,
     timeLevels: elements.timeLevelScreen,
     measurementLevels: elements.measurementLevelScreen,
+    fractionLevels: elements.fractionLevelScreen,
     levels: elements.levelScreen,
     game: elements.gameScreen,
     results: elements.gameOverScreen
@@ -1896,6 +1968,32 @@ function handleMeasurementLevelSelection(event) {
   const levelId = Number(card?.dataset.measurementLevel);
   if (!card || card.disabled || levelId > progress.measurementProgress.highestUnlockedLevel) return;
   startMeasurementGame(levelId, "measurement-mission");
+}
+
+function showFractionLevelSelect(message = "") {
+  questionLocked = true;
+  elements.fractionLevelNotice.textContent = message;
+  elements.fractionLevelGrid.innerHTML = fractionMissions.map((mission) => {
+    const unlocked = mission.id <= progress.fractionProgress.highestUnlockedLevel;
+    const best = progress.fractionProgress.bestScores[mission.id];
+    const rating = progress.fractionProgress.stars[mission.id] || 0;
+    return `<button class="level-card fraction-level-card ${unlocked ? "unlocked" : "locked"}" type="button" data-fraction-level="${mission.id}" ${unlocked ? "" : "disabled"}>
+      ${unlocked ? "" : '<span class="level-lock" aria-hidden="true">🔒</span>'}
+      <span class="level-number">Misi Pecahan ${mission.id}</span>
+      <span class="level-name"><img class="fraction-inline-icon" src="assets/menu/icon-fraction.webp" alt=""> ${mission.name}</span>
+      <span class="level-stars">${formatStarRating(rating)}</span>
+      <span class="level-best">${Number.isInteger(best) ? `⭐ Rekod: ${best}/10` : (unlocked ? "Jom cuba!" : "Selesaikan misi sebelumnya")}</span>
+    </button>`;
+  }).join("");
+  showScreen("fractionLevels");
+  elements.fractionLevelGrid.querySelector("button:not(:disabled)")?.focus();
+}
+
+function handleFractionLevelSelection(event) {
+  const card = event.target.closest("[data-fraction-level]");
+  const levelId = Number(card?.dataset.fractionLevel);
+  if (!card || card.disabled || levelId > progress.fractionProgress.highestUnlockedLevel) return;
+  startFractionGame(levelId, "fraction-mission");
 }
 
 function showSettings() {
@@ -2138,15 +2236,18 @@ function savePlayerProfile() {
 
 function renderPracticeCards() {
   elements.practiceGrid.innerHTML = Object.entries(practiceCategories).map(([categoryId, category]) => {
+    const categoryIcon = category.iconImage
+      ? `<img class="practice-category-icon" src="${category.iconImage}" alt="">`
+      : `<span aria-hidden="true">${category.icon}</span>`;
     const cards = practiceTypes.filter((practice) => practice.category === categoryId).map((practice) => `
         <button class="practice-card" type="button" data-practice="${practice.id}">
-          <span class="practice-number">${category.icon} ${category.label}</span>
+          <span class="practice-number">${categoryIcon} ${category.label}</span>
           <strong>${practice.name}</strong>
           <span>10 soalan</span>
         </button>
       `).join("");
     return `<section class="practice-group" aria-labelledby="practice-${categoryId}-title">
-      <h3 id="practice-${categoryId}-title">${category.icon} ${category.label}</h3>
+      <h3 id="practice-${categoryId}-title">${categoryIcon} ${category.label}</h3>
       <div class="practice-group-grid">${cards}</div>
     </section>`;
   }).join("");
@@ -2171,6 +2272,7 @@ function handlePracticeSelection(event) {
   if (practice.category === "measurement") {
     return startMeasurementGame(practice.measurementLevel, "measurement-practice");
   }
+  if (practice.category === "fraction") return startFractionGame(practice.fractionLevel, "fraction-practice");
   startGame(practiceId, "practice");
 }
 
@@ -2214,8 +2316,11 @@ function renderSkillStatistics() {
     const accuracy = getSkillAccuracy(record);
     const card = document.createElement("article");
     card.className = "skill-stat-card";
+    const skillIcon = skill.iconImage
+      ? `<img class="skill-category-icon" src="${skill.iconImage}" alt="">`
+      : `<span aria-hidden="true">${skill.icon}</span>`;
     card.innerHTML = `
-      <div class="skill-stat-heading"><span aria-hidden="true">${skill.icon}</span><strong>${skill.name}</strong></div>
+      <div class="skill-stat-heading">${skillIcon}<strong>${skill.name}</strong></div>
       <div class="skill-stat-score">${accuracy}%</div>
       <div class="skill-progress" role="progressbar" aria-label="Ketepatan ${skill.name}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${accuracy}">
         <span style="width: ${accuracy}%"></span>
@@ -2253,6 +2358,7 @@ function startRecommendedPractice() {
   if (practice.category === "measurement") {
     return startMeasurementGame(practice.measurementLevel, "measurement-practice");
   }
+  if (practice.category === "fraction") return startFractionGame(practice.fractionLevel, "fraction-practice");
   startGame(practiceId, "practice");
 }
 
@@ -2266,6 +2372,7 @@ function showMainMenu() {
   elements.moneyStarTotal.textContent = `⭐ ${Object.values(progress.stars).reduce((sum, value) => sum + (Number(value) || 0), 0)}/30`;
   elements.timeStarTotal.textContent = `⭐ ${Object.values(progress.timeProgress.stars).reduce((sum, value) => sum + (Number(value) || 0), 0)}/30`;
   elements.measurementStarTotal.textContent = `⭐ ${Object.values(progress.measurementProgress.stars).reduce((sum, value) => sum + (Number(value) || 0), 0)}/30`;
+  elements.fractionStarTotal.textContent = `⭐ ${Object.values(progress.fractionProgress.stars).reduce((sum, value) => sum + (Number(value) || 0), 0)}/30`;
   applyPlayerTheme(progress.playerProfile.theme);
   elements.menuPlayerAvatar.textContent = getPlayerAvatar(progress.playerProfile.avatar).icon;
   elements.menuPlayerGreeting.textContent = `Hai, ${progress.playerProfile.name}!`;
@@ -2389,6 +2496,9 @@ function renderVisualHelp(question) {
     };
     hints.push(help[question.measurementDimension]);
   }
+  if (question.isFraction) {
+    hints.push("🍰 Garisan menunjukkan semua bahagian yang sama besar. Kira bahagian berwarna dan jumlah bahagiannya.");
+  }
   elements.visualHelp.textContent = hints.join("  ");
   elements.visualHelp.classList.toggle(
     "hidden",
@@ -2409,7 +2519,9 @@ function handleItemImageError(event) {
 
 function renderAnswers(choices) {
   elements.answers.innerHTML = choices.map((choice) =>
-    `<button class="answer-button" type="button" data-value="${choice}" disabled>${answersUseMeasurement
+    `<button class="answer-button" type="button" data-value="${choice}" disabled>${answersUseFraction
+      ? FractionModule.format(choice, currentAnswerKind)
+      : answersUseMeasurement
       ? MeasurementModule.format(choice, currentMeasurementDimension)
       : answersUseCents
       ? formatMoney(choice)
@@ -2431,6 +2543,11 @@ function renderMeasurementDisplay(question) {
     <span class="measurement-icon" aria-hidden="true">${question.visual.icon}</span>
     <span class="measurement-copy"><strong>${question.visual.title}</strong><b>${question.visual.equation}</b></span>
   </article>`;
+}
+
+function renderFractionDisplay(question) {
+  elements.itemsList.classList.remove("three-items");
+  elements.itemsList.innerHTML = FractionModule.render(question, progress.accessibilitySettings.visualHelp);
 }
 
 function updateStats() {
@@ -2511,6 +2628,7 @@ function newQuestion() {
   const customer = sessionCustomers[currentCustomer - 1];
   const isTimeSession = gameMode === "time-mission" || gameMode === "time-practice";
   const isMeasurementSession = gameMode === "measurement-mission" || gameMode === "measurement-practice";
+  const isFractionSession = gameMode === "fraction-mission" || gameMode === "fraction-practice";
   const question = isTimeSession
     ? generateTimeQuestion(customer, currentTimeLevel)
     : isMeasurementSession
@@ -2522,17 +2640,28 @@ function newQuestion() {
         shuffle,
         measurementQuestionPlan
       )
-      : questionGenerators[currentLevel]();
+      : isFractionSession
+        ? FractionModule.generate(
+          currentFractionLevel,
+          currentCustomer - 1,
+          customer,
+          randomIndex,
+          shuffle,
+          fractionQuestionPlan
+        )
+        : questionGenerators[currentLevel]();
   correctAnswer = question.answer;
   answersUseCents = Boolean(question.usesCents);
   answersUseTime = Boolean(question.isTime);
   answersUseMeasurement = Boolean(question.isMeasurement);
+  answersUseFraction = Boolean(question.isFraction);
   currentAnswerKind = question.answerKind || (question.usesCents ? "money-cents" : "money");
   currentMeasurementDimension = question.measurementDimension || "mass";
   currentMeasurementSubSkill = question.measurementSubSkill || "weight";
+  currentFractionSubSkill = question.fractionSubSkill || "visualFraction";
   currentSkillCategory = question.skillCategory || levelSkillCategories[currentLevel] || "mixed";
 
-  elements.questionText.textContent = question.isTime || question.isMeasurement
+  elements.questionText.textContent = question.isTime || question.isMeasurement || question.isFraction
     ? question.context.question
     : question.questionType === "change"
     ? `Berapa baki ${customer.name}?`
@@ -2545,10 +2674,11 @@ function newQuestion() {
       : `RM${question.transaction.paymentAmount}`;
   }
 
-  if (question.isTime || question.isMeasurement) {
+  if (question.isTime || question.isMeasurement || question.isFraction) {
     elements.customerAction.textContent = "";
     elements.itemsAndQuestion.classList.toggle("time-question", Boolean(question.isTime));
     elements.itemsAndQuestion.classList.toggle("measurement-question", Boolean(question.isMeasurement));
+    elements.itemsAndQuestion.classList.toggle("fraction-question", Boolean(question.isFraction));
     elements.customerName.textContent = question.context.usesCustomer
       ? `${customer.name}: “${question.context.dialog}”`
       : question.context.dialog;
@@ -2568,15 +2698,20 @@ function newQuestion() {
       elements.itemsList.innerHTML = "";
       elements.itemsList.classList.remove("three-items");
       renderTimeDisplay(question);
-    } else {
+    } else if (question.isMeasurement) {
       elements.clockStage.classList.add("hidden");
       elements.clockStage.innerHTML = "";
       renderMeasurementDisplay(question);
+    } else {
+      elements.clockStage.classList.add("hidden");
+      elements.clockStage.innerHTML = "";
+      renderFractionDisplay(question);
     }
   } else {
     elements.customerAction.textContent = " membeli:";
     elements.itemsAndQuestion.classList.remove("time-question");
     elements.itemsAndQuestion.classList.remove("measurement-question");
+    elements.itemsAndQuestion.classList.remove("fraction-question");
     elements.customerName.textContent = customer.name;
     elements.customerAvatar.classList.remove("hidden");
     elements.customerAvatar.parentElement.classList.remove("shop-dialog-badge");
@@ -2692,12 +2827,20 @@ function showGameOver() {
     showPracticeGameOver();
     return;
   }
+  if (gameMode === "fraction-practice") {
+    showPracticeGameOver();
+    return;
+  }
   if (gameMode === "time-mission") {
     showTimeGameOver();
     return;
   }
   if (gameMode === "measurement-mission") {
     showMeasurementGameOver();
+    return;
+  }
+  if (gameMode === "fraction-mission") {
+    showFractionGameOver();
     return;
   }
 
@@ -2881,6 +3024,66 @@ function showMeasurementGameOver() {
   elements.playAgainButton.focus();
 }
 
+function showFractionGameOver() {
+  sessionActive = false;
+  elements.homeGameButton.disabled = true;
+  const previousBest = progress.fractionProgress.bestScores[currentFractionLevel] || 0;
+  const previousStars = progress.fractionProgress.stars[currentFractionLevel] || 0;
+  const previousHighest = progress.fractionProgress.highestUnlockedLevel;
+  const rating = getStarRating(stars);
+  const passed = stars >= 8;
+
+  progress.fractionProgress.bestScores[currentFractionLevel] = Math.max(previousBest, stars);
+  progress.fractionProgress.stars[currentFractionLevel] = Math.max(previousStars, rating);
+  progress.stats.missionsPlayed += 1;
+  if (passed) progress.stats.missionsPassed += 1;
+  if (passed && currentFractionLevel < fractionMissions.length) {
+    progress.fractionProgress.highestUnlockedLevel = Math.max(
+      progress.fractionProgress.highestUnlockedLevel,
+      currentFractionLevel + 1
+    );
+  }
+  const achievementCount = checkAchievements({
+    missionScore: stars,
+    missionPassed: passed,
+    fractionMissionLevel: currentFractionLevel
+  });
+  saveProgress();
+
+  const mission = fractionMissions.find((entry) => entry.id === currentFractionLevel);
+  const nextMissionUnlocked = currentFractionLevel < fractionMissions.length &&
+    progress.fractionProgress.highestUnlockedLevel >= currentFractionLevel + 1;
+  const unlockedNewMission = progress.fractionProgress.highestUnlockedLevel > previousHighest;
+
+  elements.gameOverTitle.textContent = "PECAHAN SELESAI!";
+  elements.resultLevel.textContent = `Misi Pecahan ${currentFractionLevel} — ${mission?.name || "Pecahan"}`;
+  elements.finalLabel.textContent = "Keputusan kamu";
+  elements.finalScoreIcon.innerHTML = '<img class="result-fraction-icon" src="assets/menu/icon-fraction.webp" alt="">';
+  elements.finalScore.textContent = `${stars} / ${totalCustomers}`;
+  elements.finalAccuracy.textContent = `${Math.round(stars / totalCustomers * 100)}%`;
+  elements.sessionStars.textContent = formatStarRating(rating);
+  elements.sessionStars.classList.remove("hidden");
+  elements.newStarRecord.classList.toggle("hidden", rating <= previousStars);
+  elements.finalBest.closest(".final-best").classList.remove("hidden");
+  elements.finalBest.closest(".final-best").firstChild.textContent = "Rekod Terbaik: ";
+  elements.finalBest.textContent = `${progress.fractionProgress.bestScores[currentFractionLevel]} / 10`;
+  elements.finalRating.textContent = getRating(stars);
+  elements.finalRating.classList.remove("hidden");
+  elements.levelUnlocked.textContent = currentFractionLevel === fractionMissions.length && passed
+    ? "🏆 Hebat! Semua Misi Pecahan Selesai!"
+    : "🎉 Misi Pecahan Baru Dibuka!";
+  elements.levelUnlocked.classList.toggle("hidden", !(unlockedNewMission || (currentFractionLevel === fractionMissions.length && passed)));
+  elements.nextLevelButton.textContent = "Misi Pecahan Seterusnya";
+  elements.nextLevelButton.classList.toggle("hidden", !nextMissionUnlocked);
+  elements.playAgainButton.textContent = "Main Lagi";
+  elements.chooseLevelButton.textContent = "Pilih Misi Pecahan";
+  elements.chooseLevelButton.classList.remove("hidden");
+  elements.resultMenuButton.classList.remove("hidden");
+  showScreen("results");
+  if (achievementCount === 0) audioManager.play(unlockedNewMission ? "missionUnlock" : "sessionComplete");
+  elements.playAgainButton.focus();
+}
+
 function handleAnswer(event) {
   const button = event.target.closest(".answer-button");
   if (!button || questionLocked) return;
@@ -3000,6 +3203,32 @@ function startMeasurementGame(levelId = 1, mode = "measurement-mission") {
   newQuestion();
 }
 
+function startFractionGame(levelId = 1, mode = "fraction-mission") {
+  const mission = fractionMissions.find((entry) => entry.id === levelId);
+  if (!mission?.implemented || !["fraction-mission", "fraction-practice"].includes(mode)) return;
+  if (mode === "fraction-mission" && levelId > progress.fractionProgress.highestUnlockedLevel) return;
+  stopQuestionTimer();
+  prepareGameplayAssets();
+  gameMode = mode;
+  currentFractionLevel = levelId;
+  if (mode === "fraction-practice") currentPracticeType = `fraction-${levelId}`;
+  randomSource = Math.random;
+  sessionActive = true;
+  homeModalOpen = false;
+  elements.homeModal.classList.add("hidden");
+  stars = 0;
+  currentCustomer = 1;
+  sessionCustomers = shuffle(customers);
+  currentStreak = 0;
+  fractionQuestionPlan = FractionModule.createPlan(levelId, shuffle);
+  questionLocked = true;
+  elements.practiceBadge.classList.toggle("hidden", mode !== "fraction-practice");
+  elements.practiceBadge.innerHTML = '<img class="practice-badge-icon" src="assets/menu/icon-fraction.webp" alt=""> LATIHAN PECAHAN';
+  updateStats();
+  showScreen("game");
+  newQuestion();
+}
+
 function handleCustomerAnimationEnd(event) {
   if (!sessionActive || homeModalOpen) return;
   if (event.target !== elements.customerPanel) return;
@@ -3089,6 +3318,15 @@ function exitCurrentSession() {
 }
 
 function goToNextLevel() {
+  if (gameMode === "fraction-mission") {
+    const nextFractionLevel = currentFractionLevel + 1;
+    if (nextFractionLevel <= progress.fractionProgress.highestUnlockedLevel && fractionMissions[nextFractionLevel - 1]?.implemented) {
+      startFractionGame(nextFractionLevel, "fraction-mission");
+      return;
+    }
+    showFractionLevelSelect();
+    return;
+  }
   if (gameMode === "measurement-mission") {
     const nextMeasurementLevel = currentMeasurementLevel + 1;
     if (
@@ -3127,10 +3365,13 @@ elements.titleBackButton.addEventListener("click", showTitleScreen);
 elements.moneyCategoryButton.addEventListener("click", () => showLevelSelect());
 elements.timeCategoryButton.addEventListener("click", () => showTimeLevelSelect());
 elements.measurementCategoryButton.addEventListener("click", () => showMeasurementLevelSelect());
+elements.fractionCategoryButton.addEventListener("click", () => showFractionLevelSelect());
 elements.timeLevelBackButton.addEventListener("click", showMainMenu);
 elements.timeLevelGrid.addEventListener("click", handleTimeLevelSelection);
 elements.measurementLevelBackButton.addEventListener("click", showMainMenu);
 elements.measurementLevelGrid.addEventListener("click", handleMeasurementLevelSelection);
+elements.fractionLevelBackButton.addEventListener("click", showMainMenu);
+elements.fractionLevelGrid.addEventListener("click", handleFractionLevelSelection);
 elements.howToButton.addEventListener("click", toggleHowTo);
 elements.statisticsButton.addEventListener("click", showStatistics);
 elements.statsBackButton.addEventListener("click", showMainMenu);
@@ -3166,8 +3407,8 @@ document.addEventListener("click", (event) => {
     "#daily-menu-button, #daily-start-button, #daily-back-button, " +
     "#settings-menu-button, #settings-save-button, #settings-back-button, " +
     "#skill-recommendation-button, " +
-    "#money-category-button, #time-category-button, #measurement-category-button, " +
-    "#time-level-back-button, #measurement-level-back-button, " +
+    "#money-category-button, #time-category-button, #measurement-category-button, #fraction-category-button, " +
+    "#time-level-back-button, #measurement-level-back-button, #fraction-level-back-button, " +
     "#result-menu-button, #back-to-menu-button, #play-again-button, #choose-level-button, " +
     "#next-level-button, .level-card:not(:disabled), .practice-card, .avatar-option"
   );
@@ -3184,11 +3425,13 @@ elements.playAgainButton.addEventListener("click", () => {
   else if (gameMode === "measurement-mission" || gameMode === "measurement-practice") {
     startMeasurementGame(currentMeasurementLevel, gameMode);
   }
+  else if (gameMode === "fraction-mission" || gameMode === "fraction-practice") startFractionGame(currentFractionLevel, gameMode);
   else if (gameMode === "time-mission" || gameMode === "time-practice") startTimeGame(currentTimeLevel, gameMode);
   else startGame(currentLevel, gameMode);
 });
 elements.chooseLevelButton.addEventListener("click", () => {
-  if (gameMode === "practice" || gameMode === "time-practice" || gameMode === "measurement-practice") showPracticeSelect();
+  if (gameMode === "practice" || gameMode === "time-practice" || gameMode === "measurement-practice" || gameMode === "fraction-practice") showPracticeSelect();
+  else if (gameMode === "fraction-mission") showFractionLevelSelect();
   else if (gameMode === "measurement-mission") showMeasurementLevelSelect();
   else if (gameMode === "time-mission") showTimeLevelSelect();
   else showLevelSelect();
