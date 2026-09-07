@@ -1,0 +1,21 @@
+# Node dependencies
+node_modules/
+
+# Gradle caches
+.gradle/
+android/.gradle/
+
+# Android generated build output
+android/build/
+android/app/build/
+**/build/
+
+# Capacitor generated web staging
+www/
+
+# Logs
+*.log
+
+# Windows / macOS
+Thumbs.db
+.DS_Store
