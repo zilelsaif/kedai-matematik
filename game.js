@@ -1,6 +1,6 @@
 "use strict";
 
-const GAME_VERSION = "1.6.0";
+const GAME_VERSION = "1.7.0";
 const STORAGE_KEY = "kedaiMatematikProgress";
 const SOUND_STORAGE_KEY = "kedaiMatematikSoundEnabled";
 const LEGACY_SOUND_STORAGE_KEY = "kedaiMatematikSound";
@@ -418,6 +418,7 @@ const elements = {
   timerSeconds: document.querySelector("#timer-seconds"),
   timerBar: document.querySelector("#timer-bar"),
   transactionSummary: document.querySelector("#transaction-summary"),
+  moneyVisualStage: document.querySelector("#money-visual-stage"),
   purchaseTotal: document.querySelector("#purchase-total"),
   paymentAmount: document.querySelector("#payment-amount"),
   visualHelp: document.querySelector("#visual-help"),
@@ -2474,6 +2475,42 @@ function renderItems(items) {
   `).join("");
 }
 
+function getMoneyVisualData(question) {
+  if (question.transaction) {
+    return {
+      valueSen: question.transaction.usesCents
+        ? question.transaction.paymentAmount
+        : question.transaction.paymentAmount * 100,
+      label: "Wang diberi pelanggan"
+    };
+  }
+
+  const item = question.items?.[0];
+  if (!item) return null;
+  return {
+    valueSen: item.priceCents !== undefined ? item.priceCents : item.price * 100,
+    label: `Contoh wang untuk harga ${item.name}`
+  };
+}
+
+function renderMoneyVisual(question) {
+  const visual = getMoneyVisualData(question);
+  if (!visual || !Number.isInteger(visual.valueSen) || visual.valueSen <= 0) {
+    elements.moneyVisualStage.replaceChildren();
+    elements.moneyVisualStage.classList.add("hidden");
+    return;
+  }
+  const variant = progress.accessibilitySettings.visualHelp ? 0 : currentCustomer + currentLevel;
+  const markup = MoneyVisualModule.renderMoneyAmount(visual.valueSen, {
+    label: visual.label,
+    maxPieces: 8,
+    variant,
+    showAmount: true
+  });
+  elements.moneyVisualStage.innerHTML = markup;
+  elements.moneyVisualStage.classList.toggle("hidden", !markup);
+}
+
 function renderVisualHelp(question) {
   const hints = [];
   if (question.isTime && !question.isTimeline) hints.push("🟣 Jarum pendek menunjukkan jam. 🟡 Jarum panjang menunjukkan minit.");
@@ -2498,6 +2535,9 @@ function renderVisualHelp(question) {
   }
   if (question.isFraction) {
     hints.push("🍰 Garisan menunjukkan semua bahagian yang sama besar. Kira bahagian berwarna dan jumlah bahagiannya.");
+  }
+  if (!question.isTime && !question.isMeasurement && !question.isFraction) {
+    hints.push("💵 Setiap wang mempunyai label nilai. Kira menggunakan nilai itu, bukan warnanya.");
   }
   elements.visualHelp.textContent = hints.join("  ");
   elements.visualHelp.classList.toggle(
@@ -2675,6 +2715,8 @@ function newQuestion() {
   }
 
   if (question.isTime || question.isMeasurement || question.isFraction) {
+    elements.moneyVisualStage.replaceChildren();
+    elements.moneyVisualStage.classList.add("hidden");
     elements.customerAction.textContent = "";
     elements.itemsAndQuestion.classList.toggle("time-question", Boolean(question.isTime));
     elements.itemsAndQuestion.classList.toggle("measurement-question", Boolean(question.isMeasurement));
@@ -2722,6 +2764,7 @@ function newQuestion() {
     elements.clockStage.classList.add("hidden");
     elements.clockStage.innerHTML = "";
     renderItems(question.items);
+    renderMoneyVisual(question);
   }
   renderVisualHelp(question);
   renderAnswers(question.choices || createAnswerChoices(correctAnswer, question.distractors, question.choiceOffsets));
