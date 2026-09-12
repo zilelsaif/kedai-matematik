@@ -1,7 +1,9 @@
 "use strict";
 
-const GAME_VERSION = "1.8.0";
+const GAME_VERSION = "1.9.0";
 const STORAGE_KEY = "kedaiMatematikProgress";
+const PROFILES_STORAGE_KEY = "kedaiMatematikProfiles";
+const MAX_PROFILES = 6;
 const SOUND_STORAGE_KEY = "kedaiMatematikSoundEnabled";
 const LEGACY_SOUND_STORAGE_KEY = "kedaiMatematikSound";
 const totalCustomers = 10;
@@ -135,12 +137,16 @@ const levelSkillCategories = {
 };
 
 const playerAvatars = [
-  { id: "avatar-1", icon: "🐻", name: "Beruang Ceria" },
-  { id: "avatar-2", icon: "🐱", name: "Kucing Comel" },
-  { id: "avatar-3", icon: "🦊", name: "Musang Bijak" },
-  { id: "avatar-4", icon: "🐼", name: "Panda Rajin" },
-  { id: "avatar-5", icon: "🐰", name: "Arnab Pantas" },
-  { id: "avatar-6", icon: "🐯", name: "Harimau Berani" }
+  { id: "avatar-1", icon: "👧", image: "assets/customers/Aynaa.webp", name: "Aynaa" },
+  { id: "avatar-2", icon: "👦", image: "assets/customers/Ammar.webp", name: "Ammar" },
+  { id: "avatar-3", icon: "👧🏻", image: "assets/customers/Mei-Ling.webp", name: "Mei Ling" },
+  { id: "avatar-4", icon: "👦🏽", image: "assets/customers/Kumar.webp", name: "Kumar" },
+  { id: "avatar-5", icon: "👧🏽", image: "assets/customers/Sofia.webp", name: "Sofia" },
+  { id: "avatar-6", icon: "🧑🏻", image: "assets/customers/Azzam.webp", name: "Azzam" },
+  { id: "avatar-7", icon: "👦🏻", image: "assets/customers/Ayyash.webp", name: "Ayyash" },
+  { id: "avatar-8", icon: "👩🏻", image: "assets/customers/Ivy-Chian.webp", name: "Ivy" },
+  { id: "avatar-9", icon: "👩🏽", image: "assets/customers/Maria.webp", name: "Maria" },
+  { id: "avatar-10", icon: "🧒🏻", image: "assets/customers/Affan.webp", name: "Affan" }
 ];
 
 const playerThemes = [
@@ -323,6 +329,8 @@ const elements = {
   achievementsScreen: document.querySelector("#achievements-screen"),
   dailyScreen: document.querySelector("#daily-screen"),
   settingsScreen: document.querySelector("#settings-screen"),
+  profilePickerScreen: document.querySelector("#profile-picker-screen"),
+  parentScreen: document.querySelector("#parent-screen"),
   timeLevelScreen: document.querySelector("#time-level-screen"),
   measurementLevelScreen: document.querySelector("#measurement-level-screen"),
   fractionLevelScreen: document.querySelector("#fraction-level-screen"),
@@ -330,6 +338,7 @@ const elements = {
   gameScreen: document.querySelector("#game-screen"),
   gameOverScreen: document.querySelector("#game-over-screen"),
   startMenuButton: document.querySelector("#start-menu-button"),
+  profileSwitchButton: document.querySelector("#profile-switch-button"),
   titleBackButton: document.querySelector("#title-back-button"),
   menuHighestMission: document.querySelector("#menu-highest-mission"),
   menuBestScore: document.querySelector("#menu-best-score"),
@@ -393,6 +402,36 @@ const elements = {
   dailyWeekMessage: document.querySelector("#daily-week-message"),
   dailyStatus: document.querySelector("#daily-status"),
   settingsMenuButton: document.querySelector("#settings-menu-button"),
+  parentMenuButton: document.querySelector("#parent-menu-button"),
+  profilePickerBack: document.querySelector("#profile-picker-back"),
+  profilePickerGrid: document.querySelector("#profile-picker-grid"),
+  profileLimitMessage: document.querySelector("#profile-limit-message"),
+  profileCreateForm: document.querySelector("#profile-create-form"),
+  profileCreateModal: document.querySelector("#profile-create-modal"),
+  newProfileName: document.querySelector("#new-profile-name"),
+  newProfileAvatarOptions: document.querySelector("#new-profile-avatar-options"),
+  newProfileThemeOptions: document.querySelector("#new-profile-theme-options"),
+  profileCreateCancel: document.querySelector("#profile-create-cancel"),
+  parentGate: document.querySelector("#parent-gate"),
+  parentGateForm: document.querySelector("#parent-gate-form"),
+  parentGateQuestion: document.querySelector("#parent-gate-question"),
+  parentGateAnswer: document.querySelector("#parent-gate-answer"),
+  parentGateFeedback: document.querySelector("#parent-gate-feedback"),
+  parentGateCancel: document.querySelector("#parent-gate-cancel"),
+  parentBackButton: document.querySelector("#parent-back-button"),
+  parentProfileSelect: document.querySelector("#parent-profile-select"),
+  parentOverview: document.querySelector("#parent-overview"),
+  parentModuleGrid: document.querySelector("#parent-module-grid"),
+  parentInsights: document.querySelector("#parent-insights"),
+  parentShopSummary: document.querySelector("#parent-shop-summary"),
+  parentDailySummary: document.querySelector("#parent-daily-summary"),
+  parentAchievementSummary: document.querySelector("#parent-achievement-summary"),
+  parentAddProfile: document.querySelector("#parent-add-profile"),
+  parentEditProfile: document.querySelector("#parent-edit-profile"),
+  parentSwitchProfile: document.querySelector("#parent-switch-profile"),
+  parentResetProfile: document.querySelector("#parent-reset-profile"),
+  parentDeleteProfile: document.querySelector("#parent-delete-profile"),
+  parentPrintReport: document.querySelector("#parent-print-report"),
   settingsForm: document.querySelector("#accessibility-form"),
   settingsSaveButton: document.querySelector("#settings-save-button"),
   settingsBackButton: document.querySelector("#settings-back-button"),
@@ -465,7 +504,11 @@ const statElements = {
   shopChallengeGold: document.querySelector("#shop-challenge-gold")
 };
 
-let progress = loadProgress();
+let profileStore = loadProfileStore();
+let activeProfileId = profileStore.activeProfileId;
+let progress = loadProgress(profileStore.items[activeProfileId]?.data);
+profileStore.items[activeProfileId].data = progress;
+persistProfileStore();
 applyPlayerTheme(progress.playerProfile.theme);
 let gameMode = "mission";
 let currentLevel = 1;
@@ -499,6 +542,8 @@ let currentFractionSubSkill = "half";
 let fractionQuestionPlan = [];
 let selectedProfileAvatar = "avatar-1";
 let selectedProfileTheme = "purple";
+let selectedNewProfileAvatar = "avatar-1";
+let selectedNewProfileTheme = "purple";
 let randomSource = Math.random;
 let activeDailyDate = "";
 let sessionActive = false;
@@ -510,6 +555,7 @@ let shopChallengeScore = 0;
 let sessionBestStreak = 0;
 let sessionModuleResults = {};
 let sessionQuestionKeys = new Set();
+let parentGateExpectedAnswer = 0;
 const achievementToastQueue = [];
 const audioManager = createAudioManager();
 applyAccessibilitySettings(progress.accessibilitySettings);
@@ -592,9 +638,73 @@ function defaultProgress() {
   };
 }
 
+function createProfileId() {
+  return `p_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function persistProfileStore() {
+  try {
+    localStorage.setItem(PROFILES_STORAGE_KEY, JSON.stringify(profileStore));
+  } catch (error) {
+    // Profil kekal dalam memori jika storage disekat atau penuh.
+  }
+}
+
+function loadProfileStore() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(PROFILES_STORAGE_KEY));
+    if (stored && typeof stored === "object" && stored.items && typeof stored.items === "object") {
+      const validIds = Array.isArray(stored.order)
+        ? stored.order.filter((id, index, all) => typeof id === "string" && stored.items[id]?.data && all.indexOf(id) === index).slice(0, MAX_PROFILES)
+        : [];
+      if (validIds.length > 0) {
+        return {
+          version: 1,
+          activeProfileId: validIds.includes(stored.activeProfileId) ? stored.activeProfileId : validIds[0],
+          order: validIds,
+          items: Object.fromEntries(validIds.map((id) => [id, {
+            id,
+            createdAt: typeof stored.items[id].createdAt === "string" ? stored.items[id].createdAt : "",
+            data: stored.items[id].data
+          }]))
+        };
+      }
+    }
+  } catch (error) {
+    // Cuba migrasi data tunggal lama di bawah.
+  }
+
+  let legacyData = null;
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (saved && typeof saved === "object") legacyData = saved;
+  } catch (error) {
+    // Data rosak menerima default tanpa menjejaskan keupayaan game bermula.
+  }
+  const id = createProfileId();
+  const store = {
+    version: 1,
+    activeProfileId: id,
+    order: [id],
+    items: { [id]: { id, createdAt: new Date().toISOString(), data: legacyData || defaultProgress() } }
+  };
+  try { localStorage.setItem(PROFILES_STORAGE_KEY, JSON.stringify(store)); } catch (error) {}
+  return store;
+}
+
 function sanitizePlayerName(value) {
   const normalized = typeof value === "string" ? value.trim().replace(/\s+/g, " ") : "";
   return normalized.slice(0, 20).trim() || "Pemain";
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;"
+  })[character]);
 }
 
 function getPlayerAvatar(avatarId) {
@@ -603,6 +713,10 @@ function getPlayerAvatar(avatarId) {
 
 function getPlayerTheme(themeId) {
   return playerThemes.find((theme) => theme.id === themeId) || playerThemes[0];
+}
+
+function playerAvatarMarkup(avatar, className = "player-avatar-image") {
+  return `<img class="${className}" src="${avatar.image}" alt="${escapeHtml(avatar.name)}"><span class="player-avatar-fallback" aria-hidden="true">${avatar.icon}</span>`;
 }
 
 function getAchievement(achievementId) {
@@ -630,9 +744,11 @@ function applyAccessibilitySettings(settings) {
   audioManager.setSoft(settings.softSound === true);
 }
 
-function loadProgress() {
+function loadProgress(savedInput = null) {
   try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    const saved = savedInput && typeof savedInput === "object"
+      ? savedInput
+      : JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (!saved || typeof saved !== "object") return defaultProgress();
 
     const highest = Number(saved.highestUnlockedLevel);
@@ -945,8 +1061,9 @@ function loadProgress() {
 
 function saveProgress() {
   progress.stats.totalStars = calculateTotalStars();
+  if (profileStore?.items?.[activeProfileId]) profileStore.items[activeProfileId].data = progress;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+    persistProfileStore();
   } catch (error) {
     // Game masih boleh dimainkan jika storage disekat atau penuh.
   }
@@ -1181,11 +1298,16 @@ async function toggleFullscreen() {
 function resetProgress() {
   try {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(PROFILES_STORAGE_KEY);
   } catch (error) {
     // Tetapkan semula memori walaupun localStorage tidak tersedia.
   }
 
-  progress = defaultProgress();
+  profileStore = loadProfileStore();
+  activeProfileId = profileStore.activeProfileId;
+  progress = loadProgress(profileStore.items[activeProfileId].data);
+  profileStore.items[activeProfileId].data = progress;
+  persistProfileStore();
   selectedProfileAvatar = progress.playerProfile.avatar;
   selectedProfileTheme = progress.playerProfile.theme;
   applyPlayerTheme(progress.playerProfile.theme);
@@ -2071,6 +2193,8 @@ function showScreen(screenName) {
     achievements: elements.achievementsScreen,
     daily: elements.dailyScreen,
     settings: elements.settingsScreen,
+    profilePicker: elements.profilePickerScreen,
+    parent: elements.parentScreen,
     timeLevels: elements.timeLevelScreen,
     measurementLevels: elements.measurementLevelScreen,
     fractionLevels: elements.fractionLevelScreen,
@@ -2312,11 +2436,12 @@ function showAchievements() {
 function updateProfilePreview() {
   const name = sanitizePlayerName(elements.profileNameInput.value);
   elements.profilePreviewName.textContent = name;
-  elements.profilePreviewAvatar.textContent = getPlayerAvatar(selectedProfileAvatar).icon;
+  elements.profilePreviewAvatar.innerHTML = playerAvatarMarkup(getPlayerAvatar(selectedProfileAvatar), "profile-preview-image");
   elements.avatarOptions.querySelectorAll(".avatar-option").forEach((button) => {
     const selected = button.dataset.avatar === selectedProfileAvatar;
     button.classList.toggle("selected", selected);
     button.setAttribute("aria-pressed", String(selected));
+    button.setAttribute("aria-selected", String(selected));
   });
   elements.themeOptions.querySelectorAll(".theme-option").forEach((button) => {
     const selected = button.dataset.theme === selectedProfileTheme;
@@ -2325,20 +2450,28 @@ function updateProfilePreview() {
   });
 }
 
-function renderAvatarOptions() {
-  elements.avatarOptions.innerHTML = playerAvatars.map((avatar) => `
-    <button class="avatar-option" type="button" data-avatar="${avatar.id}" aria-label="Pilih avatar ${avatar.name}" aria-pressed="false">
-      <span aria-hidden="true">${avatar.icon}</span><small>${avatar.name}</small>
+function renderAvatarPicker(container, selectedAvatarId) {
+  container.innerHTML = playerAvatars.map((avatar) => `
+    <button class="avatar-option${avatar.id === selectedAvatarId ? " selected" : ""}" type="button" data-avatar="${avatar.id}" aria-label="Pilih avatar ${avatar.name}" aria-pressed="${avatar.id === selectedAvatarId}" aria-selected="${avatar.id === selectedAvatarId}">
+      <span class="avatar-option-visual">${playerAvatarMarkup(avatar)}</span><small>${avatar.name}</small>
     </button>
   `).join("");
 }
 
-function renderThemeOptions() {
-  elements.themeOptions.innerHTML = playerThemes.map((theme) => `
-    <button class="theme-option" type="button" data-theme="${theme.id}" aria-label="Pilih tema ${theme.name}" aria-pressed="false">
+function renderThemePicker(container, selectedThemeId) {
+  container.innerHTML = playerThemes.map((theme) => `
+    <button class="theme-option${theme.id === selectedThemeId ? " selected" : ""}" type="button" data-theme="${theme.id}" aria-label="Pilih tema ${theme.name}" aria-pressed="${theme.id === selectedThemeId}">
       <span style="--theme-swatch: ${theme.color}" aria-hidden="true"></span>${theme.name}
     </button>
   `).join("");
+}
+
+function renderAvatarOptions() {
+  renderAvatarPicker(elements.avatarOptions, selectedProfileAvatar);
+}
+
+function renderThemeOptions() {
+  renderThemePicker(elements.themeOptions, selectedProfileTheme);
 }
 
 function renderProfileBadges() {
@@ -2398,6 +2531,198 @@ function savePlayerProfile() {
   applyPlayerTheme(progress.playerProfile.theme);
   saveProgress();
   showMainMenu();
+}
+
+function getProfileData(profileId) {
+  const record = profileStore.items[profileId];
+  return record ? loadProgress(record.data) : null;
+}
+
+function switchProfile(profileId, destination = "menu") {
+  if (!profileStore.items[profileId]) return false;
+  if (sessionActive) cleanupActiveSession();
+  saveProgress();
+  activeProfileId = profileId;
+  profileStore.activeProfileId = profileId;
+  progress = loadProgress(profileStore.items[profileId].data);
+  profileStore.items[profileId].data = progress;
+  currentStreak = 0;
+  randomSource = Math.random;
+  applyPlayerTheme(progress.playerProfile.theme);
+  applyAccessibilitySettings(progress.accessibilitySettings);
+  persistProfileStore();
+  if (destination === "parent") renderParentDashboard();
+  else showMainMenu();
+  return true;
+}
+
+function totalAcademicStars(data) {
+  return [data.stars, data.timeProgress.stars, data.measurementProgress.stars, data.fractionProgress.stars]
+    .reduce((total, ratings) => total + Object.values(ratings).reduce((sum, value) => sum + (Number(value) || 0), 0), 0);
+}
+
+function renderProfilePicker() {
+  const cards = profileStore.order.map((id) => {
+    const data = getProfileData(id);
+    const avatar = getPlayerAvatar(data.playerProfile.avatar);
+    return `<button class="profile-picker-card${id === activeProfileId ? " active" : ""}" type="button" data-profile-id="${id}">
+      <span class="profile-picker-avatar">${playerAvatarMarkup(avatar)}</span><strong>${escapeHtml(data.playerProfile.name)}</strong><small>⭐ ${totalAcademicStars(data)}/120</small>
+    </button>`;
+  }).join("");
+  elements.profilePickerGrid.innerHTML = `${cards}<button class="profile-picker-card add-profile-card" id="profile-picker-add" type="button" ${profileStore.order.length >= MAX_PROFILES ? "disabled" : ""}><span aria-hidden="true">＋</span><strong>Tambah Pemain</strong><small>Maksimum 6</small></button>`;
+  elements.profileLimitMessage.classList.toggle("hidden", profileStore.order.length < MAX_PROFILES);
+}
+
+function showProfilePicker() {
+  renderProfilePicker();
+  showScreen("profilePicker");
+  elements.profilePickerGrid.querySelector("button")?.focus();
+}
+
+function openProfileCreateForm() {
+  if (profileStore.order.length >= MAX_PROFILES) return;
+  elements.newProfileName.value = "";
+  selectedNewProfileAvatar = "avatar-1";
+  selectedNewProfileTheme = "purple";
+  renderAvatarPicker(elements.newProfileAvatarOptions, selectedNewProfileAvatar);
+  renderThemePicker(elements.newProfileThemeOptions, selectedNewProfileTheme);
+  elements.profileCreateModal.classList.remove("hidden");
+  elements.newProfileName.focus();
+}
+
+function closeProfileCreateForm() {
+  elements.profileCreateModal.classList.add("hidden");
+  elements.profileCreateForm.reset();
+  elements.newProfileName.setCustomValidity("");
+}
+
+function createLocalProfile(event) {
+  event.preventDefault();
+  if (profileStore.order.length >= MAX_PROFILES) return;
+  if (!elements.newProfileName.value.trim()) {
+    elements.newProfileName.setCustomValidity("Masukkan nama panggilan pemain.");
+    elements.newProfileName.reportValidity();
+    return;
+  }
+  elements.newProfileName.setCustomValidity("");
+  const data = defaultProgress();
+  data.playerProfile.name = sanitizePlayerName(elements.newProfileName.value);
+  data.playerProfile.avatar = playerAvatars.some((avatar) => avatar.id === selectedNewProfileAvatar) ? selectedNewProfileAvatar : "avatar-1";
+  data.playerProfile.theme = playerThemes.some((theme) => theme.id === selectedNewProfileTheme) ? selectedNewProfileTheme : "purple";
+  saveProgress();
+  const id = createProfileId();
+  profileStore.items[id] = { id, createdAt: new Date().toISOString(), data };
+  profileStore.order.push(id);
+  activeProfileId = id;
+  profileStore.activeProfileId = id;
+  progress = loadProgress(data);
+  profileStore.items[id].data = progress;
+  applyPlayerTheme(progress.playerProfile.theme);
+  applyAccessibilitySettings(progress.accessibilitySettings);
+  persistProfileStore();
+  closeProfileCreateForm();
+  renderProfilePicker();
+}
+
+function getModuleAccuracy(data, moduleId) {
+  const skillIds = moduleId === "money" ? ["addition", "quantity", "change", "moneyCents", "mixed"] : [moduleId];
+  const totals = skillIds.reduce((result, id) => {
+    const record = data.skillStats[id] || { answered: 0, correct: 0 };
+    result.answered += record.answered;
+    result.correct += record.correct;
+    return result;
+  }, { answered: 0, correct: 0 });
+  return totals.answered ? Math.round(totals.correct / totals.answered * 100) : 0;
+}
+
+function renderParentDashboard() {
+  const selectedId = elements.parentProfileSelect.value && profileStore.items[elements.parentProfileSelect.value]
+    ? elements.parentProfileSelect.value : activeProfileId;
+  elements.parentProfileSelect.innerHTML = profileStore.order.map((id) => {
+    const data = getProfileData(id);
+    return `<option value="${id}">${escapeHtml(data.playerProfile.name)}${id === activeProfileId ? " (aktif)" : ""}</option>`;
+  }).join("");
+  elements.parentProfileSelect.value = selectedId;
+  const data = getProfileData(selectedId);
+  const starsTotal = totalAcademicStars(data);
+  const accuracy = data.stats.totalQuestions ? Math.round(data.stats.totalCorrect / data.stats.totalQuestions * 100) : 0;
+  elements.parentOverview.innerHTML = `<div class="parent-profile-hero"><span class="parent-profile-avatar">${playerAvatarMarkup(getPlayerAvatar(data.playerProfile.avatar))}</span><div><h3>${escapeHtml(data.playerProfile.name)}</h3><p>⭐ ${starsTotal} / 120</p><small>Tarikh laporan: ${new Date().toLocaleDateString("ms-MY")}</small></div></div><div class="parent-overview-grid"><span><small>Selesai</small><strong>${Math.round(starsTotal / 120 * 100)}%</strong></span><span><small>Soalan</small><strong>${data.stats.totalQuestions}</strong></span><span><small>Ketepatan</small><strong>${accuracy}%</strong></span><span><small>Best Streak</small><strong>${data.stats.bestStreak}</strong></span><span><small>Sesi</small><strong>${data.stats.missionsPlayed}</strong></span><span><small>Lulus</small><strong>${data.stats.missionsPassed}</strong></span></div>`;
+  const modules = [
+    ["money", "Wang & Kedai", data.stars], ["time", "Masa & Jam", data.timeProgress.stars],
+    ["measurement", "Ukuran", data.measurementProgress.stars], ["fraction", "Pecahan", data.fractionProgress.stars]
+  ];
+  elements.parentModuleGrid.innerHTML = modules.map(([id, label, ratings]) => {
+    const moduleStars = Object.values(ratings).reduce((sum, value) => sum + (Number(value) || 0), 0);
+    const moduleAccuracy = getModuleAccuracy(data, id);
+    return `<article><h4>${label}</h4><strong>⭐ ${moduleStars}/30</strong><p>Ketepatan ${moduleAccuracy}%</p><div class="parent-progress"><span style="width:${moduleStars / 30 * 100}%"></span></div></article>`;
+  }).join("");
+  const ranked = modules.map(([id, label]) => ({ id, label, accuracy: getModuleAccuracy(data, id), answered: id === "money" ? ["addition", "quantity", "change", "moneyCents", "mixed"].reduce((n, key) => n + data.skillStats[key].answered, 0) : data.skillStats[id].answered })).filter((entry) => entry.answered >= 5).sort((a, b) => b.accuracy - a.accuracy);
+  const strongest = ranked[0];
+  const needsPractice = ranked.at(-1);
+  elements.parentInsights.innerHTML = ranked.length ? `<p><strong>✅ Paling Kuat:</strong> ${strongest.label} — ${strongest.accuracy}%</p><p><strong>📚 Perlu lebih latihan:</strong> ${needsPractice.label} — ${needsPractice.accuracy}%</p><p class="parent-recommendation">${needsPractice.accuracy < 70 ? `Cuba Mod Latihan ${needsPractice.label}.` : "Prestasi baik! Cuba Cabaran Kedai untuk latihan campuran."}</p>` : "<p>Main beberapa misi lagi untuk mendapatkan cadangan.</p>";
+  const shop = data.shopChallenge;
+  elements.parentShopSummary.innerHTML = `<h3>🏪 Cabaran Kedai</h3><p>Sesi: ${shop.sessionsPlayed}</p><p>Skor terbaik: ${shop.bestScore.toLocaleString("ms-MY")}</p><p>Betul terbaik: ${shop.bestCorrect}/10</p><p>Emas: ${shop.goldMedals}</p>`;
+  const todayRecord = data.dailyChallenge.history[getLocalDateKey()];
+  const dailyHistory = getLastSevenLocalDays().map((day) => {
+    const record = data.dailyChallenge.history[getLocalDateKey(day)];
+    const label = new Intl.DateTimeFormat("ms-MY", { weekday: "short", day: "numeric" }).format(day);
+    return `${label}: ${record?.completed ? `✅ ${record.bestScore}/10` : "—"}`;
+  }).join("<br>");
+  elements.parentDailySummary.innerHTML = `<h3>☀️ Cabaran Harian</h3><p>Streak: ${data.dailyChallenge.currentStreak} hari</p><p>Terbaik hari ini: ${todayRecord?.completed ? `${todayRecord.bestScore}/10` : "Belum dimainkan"}</p><p class="parent-daily-history"><strong>7 hari terakhir</strong><br>${dailyHistory}</p>`;
+  const unlocked = achievementDefinitions.filter((achievement) => data.achievements[achievement.id]);
+  elements.parentAchievementSummary.innerHTML = `<h3>🏆 Pencapaian</h3><p>${unlocked.length} / ${achievementDefinitions.length} dibuka</p><p>${unlocked.slice(-3).map((achievement) => `${achievement.icon} ${achievement.name}`).join("<br>") || "Belum ada pencapaian"}</p>`;
+  elements.parentAddProfile.disabled = profileStore.order.length >= MAX_PROFILES;
+  elements.parentDeleteProfile.disabled = profileStore.order.length <= 1;
+}
+
+function openParentGate() {
+  const left = 10 + Math.floor(Math.random() * 41);
+  const right = 10 + Math.floor(Math.random() * 41);
+  parentGateExpectedAnswer = left + right;
+  elements.parentGateQuestion.textContent = `Berapakah ${left} + ${right}?`;
+  elements.parentGateAnswer.value = "";
+  elements.parentGateFeedback.textContent = "";
+  elements.parentGate.classList.remove("hidden");
+  elements.parentGateAnswer.focus();
+}
+
+function handleParentGate(event) {
+  event.preventDefault();
+  if (Number(elements.parentGateAnswer.value) !== parentGateExpectedAnswer) {
+    elements.parentGateFeedback.textContent = "Belum tepat. Cuba sekali lagi.";
+    elements.parentGateAnswer.select();
+    return;
+  }
+  elements.parentGate.classList.add("hidden");
+  showScreen("parent");
+  renderParentDashboard();
+}
+
+function resetSelectedProfile() {
+  const id = elements.parentProfileSelect.value;
+  const existing = getProfileData(id);
+  if (!existing || !confirm(`Reset kemajuan ${existing.playerProfile.name}? Nama dan avatar akan dikekalkan.`)) return;
+  const replacement = defaultProgress();
+  replacement.playerProfile = { ...existing.playerProfile, featuredBadge: "" };
+  profileStore.items[id].data = replacement;
+  if (id === activeProfileId) progress = replacement;
+  persistProfileStore();
+  renderParentDashboard();
+}
+
+function deleteSelectedProfile() {
+  const id = elements.parentProfileSelect.value;
+  const data = getProfileData(id);
+  if (!data || profileStore.order.length <= 1 || !confirm(`Padam profil ${data.playerProfile.name}? Semua kemajuan profil ini akan dipadam dari peranti.`)) return;
+  delete profileStore.items[id];
+  profileStore.order = profileStore.order.filter((profileId) => profileId !== id);
+  if (id === activeProfileId) {
+    activeProfileId = profileStore.order[0];
+    profileStore.activeProfileId = activeProfileId;
+    progress = getProfileData(activeProfileId);
+  }
+  persistProfileStore();
+  renderParentDashboard();
 }
 
 function renderPracticeCards() {
@@ -2545,7 +2870,7 @@ function showMainMenu() {
   elements.measurementStarTotal.textContent = `⭐ ${Object.values(progress.measurementProgress.stars).reduce((sum, value) => sum + (Number(value) || 0), 0)}/30`;
   elements.fractionStarTotal.textContent = `⭐ ${Object.values(progress.fractionProgress.stars).reduce((sum, value) => sum + (Number(value) || 0), 0)}/30`;
   applyPlayerTheme(progress.playerProfile.theme);
-  elements.menuPlayerAvatar.textContent = getPlayerAvatar(progress.playerProfile.avatar).icon;
+  elements.menuPlayerAvatar.innerHTML = playerAvatarMarkup(getPlayerAvatar(progress.playerProfile.avatar), "menu-player-avatar-image");
   elements.menuPlayerGreeting.textContent = `Hai, ${progress.playerProfile.name}!`;
   const featuredBadge = getAchievement(progress.playerProfile.featuredBadge);
   const badgeIsValid = featuredBadge && progress.achievements[featuredBadge.id] === true;
@@ -2562,6 +2887,11 @@ function showTitleScreen() {
   elements.howToCard.classList.add("hidden");
   showScreen("title");
   elements.startMenuButton.focus();
+}
+
+function enterShop() {
+  if (profileStore.order.length > 1) showProfilePicker();
+  else showMainMenu();
 }
 
 function toggleHowTo() {
@@ -3670,8 +4000,41 @@ function goToNextLevel() {
 }
 
 // Semua event listener didaftarkan sekali sahaja.
-elements.startMenuButton.addEventListener("click", showMainMenu);
+elements.startMenuButton.addEventListener("click", enterShop);
 elements.titleBackButton.addEventListener("click", showTitleScreen);
+elements.profileSwitchButton.addEventListener("click", showProfilePicker);
+elements.profilePickerBack.addEventListener("click", showMainMenu);
+elements.profilePickerGrid.addEventListener("click", (event) => {
+  const profileCard = event.target.closest("[data-profile-id]");
+  if (profileCard) switchProfile(profileCard.dataset.profileId);
+  else if (event.target.closest("#profile-picker-add")) openProfileCreateForm();
+});
+elements.profileCreateForm.addEventListener("submit", createLocalProfile);
+elements.newProfileName.addEventListener("input", () => elements.newProfileName.setCustomValidity(""));
+elements.newProfileAvatarOptions.addEventListener("click", (event) => {
+  const button = event.target.closest(".avatar-option");
+  if (!button || !playerAvatars.some((avatar) => avatar.id === button.dataset.avatar)) return;
+  selectedNewProfileAvatar = button.dataset.avatar;
+  renderAvatarPicker(elements.newProfileAvatarOptions, selectedNewProfileAvatar);
+});
+elements.newProfileThemeOptions.addEventListener("click", (event) => {
+  const button = event.target.closest(".theme-option");
+  if (!button || !playerThemes.some((theme) => theme.id === button.dataset.theme)) return;
+  selectedNewProfileTheme = button.dataset.theme;
+  renderThemePicker(elements.newProfileThemeOptions, selectedNewProfileTheme);
+});
+elements.profileCreateCancel.addEventListener("click", closeProfileCreateForm);
+elements.parentMenuButton.addEventListener("click", openParentGate);
+elements.parentGateForm.addEventListener("submit", handleParentGate);
+elements.parentGateCancel.addEventListener("click", () => elements.parentGate.classList.add("hidden"));
+elements.parentBackButton.addEventListener("click", showMainMenu);
+elements.parentProfileSelect.addEventListener("change", renderParentDashboard);
+elements.parentAddProfile.addEventListener("click", () => { showProfilePicker(); openProfileCreateForm(); });
+elements.parentEditProfile.addEventListener("click", () => { const id = elements.parentProfileSelect.value; if (switchProfile(id)) showPlayerProfile(); });
+elements.parentSwitchProfile.addEventListener("click", () => switchProfile(elements.parentProfileSelect.value, "parent"));
+elements.parentResetProfile.addEventListener("click", resetSelectedProfile);
+elements.parentDeleteProfile.addEventListener("click", deleteSelectedProfile);
+elements.parentPrintReport.addEventListener("click", () => window.print());
 elements.moneyCategoryButton.addEventListener("click", () => showLevelSelect());
 elements.timeCategoryButton.addEventListener("click", () => showTimeLevelSelect());
 elements.measurementCategoryButton.addEventListener("click", () => showMeasurementLevelSelect());
@@ -3709,13 +4072,19 @@ elements.settingsBackButton.addEventListener("click", showMainMenu);
 elements.soundToggleButton.addEventListener("click", toggleSound);
 elements.fullscreenButton.addEventListener("click", toggleFullscreen);
 document.addEventListener("fullscreenchange", updateFullscreenButton);
+document.addEventListener("error", (event) => {
+  if (!(event.target instanceof HTMLImageElement) || !event.target.classList.contains("player-avatar-image")) return;
+  event.target.classList.add("hidden");
+  event.target.nextElementSibling?.classList.add("is-visible");
+}, true);
 document.addEventListener("click", (event) => {
   const mainButton = event.target.closest(
-    "#start-menu-button, #title-back-button, #statistics-button, #stats-back-button, #practice-menu-button, " +
+    "#start-menu-button, #title-back-button, #profile-switch-button, #statistics-button, #stats-back-button, #practice-menu-button, " +
     "#practice-back-button, #profile-menu-button, #profile-save-button, #profile-cancel-button, " +
     "#achievements-menu-button, #achievements-back-button, #home-game-button, " +
     "#home-confirm-button, #home-continue-button, " +
-    "#daily-menu-button, #daily-start-button, #daily-back-button, #shop-challenge-menu-button, " +
+    "#daily-menu-button, #daily-start-button, #daily-back-button, #shop-challenge-menu-button, #parent-menu-button, " +
+    "#profile-picker-back, #profile-picker-add, .profile-picker-card, #parent-back-button, #parent-print-report, " +
     "#settings-menu-button, #settings-save-button, #settings-back-button, " +
     "#skill-recommendation-button, " +
     "#money-category-button, #time-category-button, #measurement-category-button, #fraction-category-button, " +

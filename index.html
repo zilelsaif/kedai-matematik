@@ -85,10 +85,10 @@
         <header class="main-hub-header">
           <button class="asset-back-button" id="title-back-button" type="button"><img data-src="assets/ui/icon-back.webp" alt=""><span>Title</span></button>
           <div><p class="eyebrow">Selamat datang ke</p><h2 id="main-menu-title">MAIN MENU</h2></div>
-          <div class="hub-player" aria-label="Profil pemain">
+          <button class="hub-player" id="profile-switch-button" type="button" aria-label="Tukar pemain">
             <span id="menu-player-avatar" aria-hidden="true">🐻</span>
             <span class="menu-player-copy"><strong id="menu-player-greeting">Hai, Pemain!</strong><small class="hidden" id="menu-player-badge"></small></span>
-          </div>
+          </button>
         </header>
 
         <div class="hub-progress" aria-label="Progress permainan">
@@ -110,11 +110,32 @@
           <button class="hub-menu-card" id="achievements-menu-button" type="button"><img data-src="assets/menu/icon-achievement.webp" alt=""><span>Pencapaian</span></button>
           <button class="hub-menu-card" id="daily-menu-button" type="button"><img data-src="assets/menu/icon-daily.webp" alt=""><span>Cabaran Harian</span></button>
           <button class="hub-menu-card shop-challenge-menu-card" id="shop-challenge-menu-button" type="button"><span class="hub-menu-emoji" aria-hidden="true">🏪</span><span>Cabaran Kedai<small>Layan 10 pelanggan!</small></span></button>
+          <button class="hub-menu-card" id="parent-menu-button" type="button"><span class="hub-menu-emoji" aria-hidden="true">👨‍👩‍👧</span><span>Ibu Bapa / Guru</span></button>
           <button class="hub-menu-card" id="settings-menu-button" type="button"><img data-src="assets/menu/icon-settings.webp" alt=""><span>Tetapan</span></button>
         </nav>
 
         <button class="hub-how-to-button" id="how-to-button" type="button" aria-expanded="false" aria-controls="how-to-card">❔ Cara Main</button>
         <div class="how-to-card hidden" id="how-to-card">Lihat barang atau jam, kira dengan teliti, kemudian pilih jawapan yang betul!</div>
+      </div>
+    </section>
+
+    <section class="profile-picker-screen hidden" id="profile-picker-screen" aria-labelledby="profile-picker-title">
+      <div class="profile-picker-panel">
+        <div class="screen-heading"><button class="back-button" id="profile-picker-back" type="button">← Kembali</button><div><p class="eyebrow">Siapa yang bermain?</p><h2 id="profile-picker-title">PILIH PEMAIN</h2></div></div>
+        <div class="profile-picker-grid" id="profile-picker-grid"></div>
+        <p class="profile-limit-message hidden" id="profile-limit-message">Maksimum 6 pemain pada peranti ini.</p>
+      </div>
+    </section>
+
+    <section class="parent-screen hidden" id="parent-screen" aria-labelledby="parent-title">
+      <div class="parent-dashboard" id="parent-report">
+        <div class="screen-heading"><button class="back-button" id="parent-back-button" type="button">← Main Menu</button><div><p class="eyebrow">Laporan pembelajaran lokal</p><h2 id="parent-title">IBU BAPA / GURU</h2></div></div>
+        <label class="parent-profile-select">Pilih Profil <select id="parent-profile-select"></select></label>
+        <section class="parent-overview" id="parent-overview"></section>
+        <section><h3>KEMAJUAN MODUL</h3><div class="parent-module-grid" id="parent-module-grid"></div></section>
+        <section class="parent-insights" id="parent-insights"></section>
+        <section class="parent-detail-grid"><article id="parent-shop-summary"></article><article id="parent-daily-summary"></article><article id="parent-achievement-summary"></article></section>
+        <section class="parent-management"><h3>URUS PEMAIN</h3><div><button class="secondary-button" id="parent-add-profile" type="button">Tambah Profil</button><button class="secondary-button" id="parent-edit-profile" type="button">Edit Profil</button><button class="secondary-button" id="parent-switch-profile" type="button">Jadikan Aktif</button><button class="secondary-button" id="parent-reset-profile" type="button">Reset Kemajuan</button><button class="secondary-button danger-button" id="parent-delete-profile" type="button">Padam Profil</button><button class="play-again-button" id="parent-print-report" type="button">Cetak Laporan</button></div></section>
       </div>
     </section>
 
@@ -386,6 +407,33 @@
         <button class="secondary-button" id="home-continue-button" type="button">Teruskan Main</button>
       </div>
     </div>
+  </div>
+
+  <div class="parent-gate hidden" id="parent-gate" role="dialog" aria-modal="true" aria-labelledby="parent-gate-title">
+    <form class="parent-gate-card" id="parent-gate-form">
+      <h2 id="parent-gate-title">Untuk Ibu Bapa / Guru</h2>
+      <p id="parent-gate-question">Berapakah 17 + 8?</p>
+      <input id="parent-gate-answer" type="number" inputmode="numeric" required aria-label="Jawapan soalan ibu bapa">
+      <p id="parent-gate-feedback" role="status"></p>
+      <div><button class="play-again-button" type="submit">Teruskan</button><button class="secondary-button" id="parent-gate-cancel" type="button">Batal</button></div>
+    </form>
+  </div>
+
+  <div class="profile-create-modal hidden" id="profile-create-modal" role="dialog" aria-modal="true" aria-labelledby="profile-create-title">
+    <form class="profile-create-form" id="profile-create-form">
+      <h2 id="profile-create-title">Tambah Pemain</h2>
+      <label class="profile-create-name" for="new-profile-name">Nama panggilan</label>
+      <input id="new-profile-name" maxlength="20" autocomplete="nickname" required>
+      <fieldset class="avatar-picker">
+        <legend>Pilih Avatar</legend>
+        <div class="avatar-options create-avatar-options" id="new-profile-avatar-options"></div>
+      </fieldset>
+      <fieldset class="theme-picker">
+        <legend>Pilih Tema</legend>
+        <div class="theme-options" id="new-profile-theme-options"></div>
+      </fieldset>
+      <div class="profile-create-actions"><button class="play-again-button" type="submit">Simpan Pemain</button><button class="secondary-button" id="profile-create-cancel" type="button">Batal</button></div>
+    </form>
   </div>
 
   <aside class="achievement-toast hidden" id="achievement-toast" role="status" aria-live="polite">
