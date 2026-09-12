@@ -13,6 +13,7 @@ echo [1/4] Sync production files ke www...
 if not exist "www" mkdir "www"
 
 copy /Y "index.html" "www\index.html" >nul
+copy /Y "privacy.html" "www\privacy.html" >nul
 copy /Y "style.css" "www\style.css" >nul
 copy /Y "game.js" "www\game.js" >nul
 copy /Y "money.js" "www\money.js" >nul

@@ -19,3 +19,8 @@ www/
 # Windows / macOS
 Thumbs.db
 .DS_Store
+
+# Android release signing secrets
+android/keystore.properties
+*.jks
+*.keystore
