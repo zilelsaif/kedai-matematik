@@ -1,6 +1,6 @@
 "use strict";
 
-const GAME_VERSION = "1.7.0";
+const GAME_VERSION = "1.8.0";
 const STORAGE_KEY = "kedaiMatematikProgress";
 const SOUND_STORAGE_KEY = "kedaiMatematikSoundEnabled";
 const LEGACY_SOUND_STORAGE_KEY = "kedaiMatematikSound";
@@ -167,7 +167,9 @@ const achievementDefinitions = [
   { id: "onTime", icon: "🕐", name: "Tepat Pada Masanya", description: "Lulus Misi Masa 1." },
   { id: "timeKeeper", icon: "⏰", name: "Penjaga Waktu", description: "Lulus Misi Masa 5." },
   { id: "fractionHalfway", icon: "🍰", name: "Separuh Jalan Pecahan", description: "Lulus Misi Pecahan 5." },
-  { id: "fractionExpert", icon: "🏅", name: "Pakar Pecahan", description: "Lulus Misi Pecahan 10." }
+  { id: "fractionExpert", icon: "🏅", name: "Pakar Pecahan", description: "Lulus Misi Pecahan 10." },
+  { id: "shopChallengeFirst", icon: "🏪", name: "Kedai Dibuka!", description: "Selesaikan Cabaran Kedai pertama." },
+  { id: "shopChallengeGold", icon: "🏆", name: "Juruwang Serba Boleh", description: "Dapat medal Emas dalam Cabaran Kedai." }
 ];
 
 const shopItems = [
@@ -378,6 +380,7 @@ const elements = {
   achievementToastName: document.querySelector("#achievement-toast-name"),
   achievementToastDescription: document.querySelector("#achievement-toast-description"),
   dailyMenuButton: document.querySelector("#daily-menu-button"),
+  shopChallengeMenuButton: document.querySelector("#shop-challenge-menu-button"),
   dailyStartButton: document.querySelector("#daily-start-button"),
   dailyBackButton: document.querySelector("#daily-back-button"),
   dailyDate: document.querySelector("#daily-date"),
@@ -454,7 +457,12 @@ const statElements = {
   missionsPassed: document.querySelector("#stats-missions-passed"),
   skillGrid: document.querySelector("#skill-stats-grid"),
   skillRecommendation: document.querySelector("#skill-recommendation"),
-  skillRecommendationButton: document.querySelector("#skill-recommendation-button")
+  skillRecommendationButton: document.querySelector("#skill-recommendation-button"),
+  shopChallengeSessions: document.querySelector("#shop-challenge-sessions"),
+  shopChallengeBestScore: document.querySelector("#shop-challenge-best-score"),
+  shopChallengeBestCorrect: document.querySelector("#shop-challenge-best-correct"),
+  shopChallengeBestStreak: document.querySelector("#shop-challenge-best-streak"),
+  shopChallengeGold: document.querySelector("#shop-challenge-gold")
 };
 
 let progress = loadProgress();
@@ -497,6 +505,11 @@ let sessionActive = false;
 let homeModalOpen = false;
 let homePausedMilliseconds = 0;
 let achievementToastTimer = null;
+let crossModulePlan = [];
+let shopChallengeScore = 0;
+let sessionBestStreak = 0;
+let sessionModuleResults = {};
+let sessionQuestionKeys = new Set();
 const achievementToastQueue = [];
 const audioManager = createAudioManager();
 applyAccessibilitySettings(progress.accessibilitySettings);
@@ -548,8 +561,14 @@ function defaultDailyChallenge() {
     bestScore: 0,
     currentStreak: 0,
     longestStreak: 0,
-    history: {}
+    history: {},
+    planDate: "",
+    plan: []
   };
+}
+
+function defaultShopChallenge() {
+  return { sessionsPlayed: 0, bestScore: 0, bestCorrect: 0, bestStreak: 0, goldMedals: 0, silverMedals: 0, bronzeMedals: 0 };
 }
 
 function defaultProgress() {
@@ -568,7 +587,8 @@ function defaultProgress() {
     accessibilitySettings: defaultAccessibilitySettings(),
     playerProfile: { name: "Pemain", avatar: "avatar-1", theme: "purple", featuredBadge: "" },
     achievements: defaultAchievements(),
-    dailyChallenge: defaultDailyChallenge()
+    dailyChallenge: defaultDailyChallenge(),
+    shopChallenge: defaultShopChallenge()
   };
 }
 
@@ -632,6 +652,7 @@ function loadProgress() {
     const accessibilitySettings = defaultAccessibilitySettings();
     const achievements = defaultAchievements();
     const dailyChallenge = defaultDailyChallenge();
+    const shopChallenge = defaultShopChallenge();
 
     if (saved.achievements && typeof saved.achievements === "object") {
       achievementDefinitions.forEach((achievement) => {
@@ -714,6 +735,25 @@ function loadProgress() {
       }
       if (!dailyChallenge.scoreDate) dailyChallenge.bestScore = 0;
       if (!dailyChallenge.lastCompletedDate) dailyChallenge.currentStreak = 0;
+      if (isValidDateKey(daily.planDate) && Array.isArray(daily.plan) && daily.plan.length === totalCustomers) {
+        const validModules = ["money", "time", "measurement", "fraction"];
+        const validPlan = daily.plan.every((entry) =>
+          entry && validModules.includes(entry.module) && Number.isInteger(Number(entry.missionId)) &&
+          Number(entry.missionId) >= 1 && Number(entry.missionId) <= 10
+        );
+        if (validPlan) {
+          dailyChallenge.planDate = daily.planDate;
+          dailyChallenge.plan = daily.plan.map((entry) => ({ module: entry.module, missionId: Number(entry.missionId) }));
+        }
+      }
+    }
+
+    if (saved.shopChallenge && typeof saved.shopChallenge === "object") {
+      Object.keys(shopChallenge).forEach((key) => {
+        const value = Number(saved.shopChallenge[key]);
+        if (Number.isInteger(value) && value >= 0) shopChallenge[key] = value;
+      });
+      shopChallenge.bestCorrect = Math.min(shopChallenge.bestCorrect, totalCustomers);
     }
 
     if (saved.bestScores && typeof saved.bestScores === "object") {
@@ -872,6 +912,8 @@ function loadProgress() {
     achievements.timeKeeper ||= Number(timeProgress.bestScores[5]) >= 8;
     achievements.fractionHalfway ||= Number(fractionProgress.bestScores[5]) >= 8;
     achievements.fractionExpert ||= Number(fractionProgress.bestScores[10]) >= 8;
+    achievements.shopChallengeFirst ||= shopChallenge.sessionsPlayed >= 1;
+    achievements.shopChallengeGold ||= shopChallenge.goldMedals >= 1;
     if (!playerProfile.featuredBadge && achievementDefinitions.some((achievement) =>
       achievement.id === requestedBadge && achievements[achievement.id] === true
     )) {
@@ -893,7 +935,8 @@ function loadProgress() {
       accessibilitySettings,
       playerProfile,
       achievements,
-      dailyChallenge
+      dailyChallenge,
+      shopChallenge
     };
   } catch (error) {
     return defaultProgress();
@@ -936,7 +979,7 @@ function showNextAchievementToast() {
   }, 3000);
 }
 
-function checkAchievements({ missionScore = null, missionLevel = null, missionPassed = false, allowMissionAchievements = false, timeMissionLevel = null, fractionMissionLevel = null } = {}) {
+function checkAchievements({ missionScore = null, missionLevel = null, missionPassed = false, allowMissionAchievements = false, timeMissionLevel = null, fractionMissionLevel = null, shopChallengeCompleted = false, shopChallengeGold = false } = {}) {
   const totalStars = calculateTotalStars();
   const conditions = {
     efficientCashier: progress.stats.bestStreak >= 10
@@ -961,6 +1004,8 @@ function checkAchievements({ missionScore = null, missionLevel = null, missionPa
     conditions.fractionHalfway = fractionMissionLevel === 5;
     conditions.fractionExpert = fractionMissionLevel === 10;
   }
+  if (shopChallengeCompleted) conditions.shopChallengeFirst = true;
+  if (shopChallengeGold) conditions.shopChallengeGold = true;
 
   let unlockedCount = 0;
   achievementDefinitions.forEach((achievement) => {
@@ -1880,6 +1925,127 @@ function generateMixedQuestion() {
   };
 }
 
+const crossModuleDefinitions = {
+  money: { label: "Wang & Kedai", getHighest: () => progress.highestUnlockedLevel },
+  time: { label: "Masa & Jam", getHighest: () => progress.timeProgress.highestUnlockedLevel },
+  measurement: { label: "Ukuran", getHighest: () => progress.measurementProgress.highestUnlockedLevel },
+  fraction: { label: "Pecahan", getHighest: () => progress.fractionProgress.highestUnlockedLevel }
+};
+
+function createCrossModulePlan() {
+  const modules = Object.keys(crossModuleDefinitions).filter((moduleId) =>
+    crossModuleDefinitions[moduleId].getHighest() >= 1
+  );
+  const sequence = shuffle(modules);
+  while (sequence.length < totalCustomers) {
+    const previous = sequence.at(-1);
+    const beforePrevious = sequence.at(-2);
+    const candidates = modules.filter((moduleId) =>
+      modules.length === 1 || moduleId !== previous || moduleId !== beforePrevious
+    );
+    const counts = Object.fromEntries(modules.map((moduleId) => [moduleId, sequence.filter((value) => value === moduleId).length]));
+    const minimumCount = Math.min(...candidates.map((moduleId) => counts[moduleId]));
+    const balanced = candidates.filter((moduleId) => counts[moduleId] === minimumCount);
+    sequence.push(balanced[randomIndex(balanced.length)]);
+  }
+  return sequence.slice(0, totalCustomers).map((moduleId) => ({
+    module: moduleId,
+    missionId: randomIndex(Math.max(1, crossModuleDefinitions[moduleId].getHighest())) + 1
+  }));
+}
+
+function isCrossModulePlanEligible(plan) {
+  return Array.isArray(plan) && plan.length === totalCustomers && plan.every((entry) =>
+    crossModuleDefinitions[entry.module] && Number.isInteger(entry.missionId) &&
+    entry.missionId >= 1 && entry.missionId <= crossModuleDefinitions[entry.module].getHighest()
+  );
+}
+
+function generateCrossModuleQuestion(customer) {
+  const planEntry = crossModulePlan[currentCustomer - 1] || { module: "money", missionId: 1 };
+  const questionIndex = currentCustomer - 1;
+  let question;
+  if (planEntry.module === "money") {
+    const generatorLevel = planEntry.missionId >= 9 ? randomIndex(8) + 1 : planEntry.missionId;
+    question = {
+      ...questionGenerators[generatorLevel](),
+      skillCategory: levelSkillCategories[generatorLevel] || "mixed"
+    };
+  } else if (planEntry.module === "time") {
+    const generatedPlan = createTimeQuestionPlan(planEntry.missionId);
+    timeQuestionPlan[questionIndex] = generatedPlan[0];
+    question = generateTimeQuestion(customer, planEntry.missionId);
+  } else if (planEntry.module === "measurement") {
+    const generatedPlan = MeasurementModule.createPlan(planEntry.missionId, shuffle);
+    const adapterPlan = Array(totalCustomers);
+    adapterPlan[questionIndex] = generatedPlan[0];
+    question = MeasurementModule.generate(planEntry.missionId, questionIndex, customer, randomIndex, shuffle, adapterPlan);
+  } else {
+    const generatedPlan = FractionModule.createPlan(planEntry.missionId, shuffle);
+    const adapterPlan = Array(totalCustomers);
+    adapterPlan[questionIndex] = generatedPlan[0];
+    question = FractionModule.generate(planEntry.missionId, questionIndex, customer, randomIndex, shuffle, adapterPlan);
+  }
+  return { ...question, sourceModule: planEntry.module, sourceMissionId: planEntry.missionId };
+}
+
+function getMathematicalQuestionKey(question) {
+  return JSON.stringify({
+    module: question.sourceModule,
+    mission: question.sourceMissionId,
+    answer: question.answer,
+    kind: question.answerKind,
+    items: question.items?.map((item) => [item.name, item.price, item.quantity || 1]),
+    clocks: question.clocks?.map((clock) => clock.minutes),
+    duration: question.duration,
+    visual: question.visual,
+    fraction: question.fraction || question.parts || question.visualSpec
+  });
+}
+
+function startCrossModuleSession(mode) {
+  stopQuestionTimer();
+  prepareGameplayAssets();
+  gameMode = mode;
+  if (mode === "daily") activeDailyDate = getLocalDateKey();
+  randomSource = mode === "daily" ? createDateSeededRandom(activeDailyDate) : Math.random;
+  sessionActive = true;
+  homeModalOpen = false;
+  elements.homeModal.classList.add("hidden");
+  stars = 0;
+  shopChallengeScore = 0;
+  currentCustomer = 1;
+  currentStreak = 0;
+  sessionBestStreak = 0;
+  sessionModuleResults = {};
+  sessionQuestionKeys = new Set();
+  sessionCustomers = shuffle(customers);
+  const generatedPlan = createCrossModulePlan();
+  if (mode === "daily" && progress.dailyChallenge.planDate === activeDailyDate && isCrossModulePlanEligible(progress.dailyChallenge.plan)) {
+    crossModulePlan = progress.dailyChallenge.plan.map((entry) => ({ ...entry }));
+  } else {
+    crossModulePlan = generatedPlan;
+    if (mode === "daily") {
+      progress.dailyChallenge.planDate = activeDailyDate;
+      progress.dailyChallenge.plan = crossModulePlan.map((entry) => ({ ...entry }));
+      saveProgress();
+    }
+  }
+  timeQuestionPlan = [];
+  lastTimeHour = null;
+  lastTimeTemplateIndex = null;
+  questionLocked = true;
+  elements.practiceBadge.classList.remove("hidden");
+  elements.practiceBadge.textContent = mode === "daily" ? "☀️ CABARAN HARIAN" : "🏪 CABARAN KEDAI";
+  updateStats();
+  showScreen("game");
+  newQuestion();
+}
+
+function startShopChallenge() {
+  startCrossModuleSession("shop-challenge");
+}
+
 const questionGenerators = {
   1: () => generateAdditionQuestion(2),
   2: () => generateAdditionQuestion(3),
@@ -2086,8 +2252,7 @@ function showDailyChallenge() {
 }
 
 function startDailyChallenge() {
-  activeDailyDate = getLocalDateKey();
-  startGame(9, "daily");
+  startCrossModuleSession("daily");
 }
 
 function completeDailyChallenge(score) {
@@ -2290,6 +2455,11 @@ function showStatistics() {
   statElements.bestStreak.textContent = stats.bestStreak;
   statElements.missionsPlayed.textContent = stats.missionsPlayed;
   statElements.missionsPassed.textContent = stats.missionsPassed;
+  statElements.shopChallengeSessions.textContent = progress.shopChallenge.sessionsPlayed;
+  statElements.shopChallengeBestScore.textContent = progress.shopChallenge.bestScore.toLocaleString("ms-MY");
+  statElements.shopChallengeBestCorrect.textContent = `${progress.shopChallenge.bestCorrect}/${totalCustomers}`;
+  statElements.shopChallengeBestStreak.textContent = progress.shopChallenge.bestStreak;
+  statElements.shopChallengeGold.textContent = progress.shopChallenge.goldMedals;
   renderSkillStatistics();
   showScreen("stats");
   elements.statsBackButton.focus();
@@ -2591,7 +2761,9 @@ function renderFractionDisplay(question) {
 }
 
 function updateStats() {
-  elements.starCount.textContent = stars;
+  const scoreLabel = elements.starCount.closest(".stat-card")?.querySelector("small");
+  if (scoreLabel) scoreLabel.textContent = gameMode === "shop-challenge" ? "Mata" : "Bintang";
+  elements.starCount.textContent = gameMode === "shop-challenge" ? shopChallengeScore.toLocaleString("ms-MY") : stars;
   elements.customerProgress.textContent = `Pelanggan ${currentCustomer} / ${totalCustomers}`;
 }
 
@@ -2666,10 +2838,13 @@ function newQuestion() {
   elements.questionTimer.classList.remove("timer-low");
 
   const customer = sessionCustomers[currentCustomer - 1];
+  const isCrossModuleSession = gameMode === "shop-challenge" || gameMode === "daily";
   const isTimeSession = gameMode === "time-mission" || gameMode === "time-practice";
   const isMeasurementSession = gameMode === "measurement-mission" || gameMode === "measurement-practice";
   const isFractionSession = gameMode === "fraction-mission" || gameMode === "fraction-practice";
-  const question = isTimeSession
+  let question = isCrossModuleSession
+    ? generateCrossModuleQuestion(customer)
+    : isTimeSession
     ? generateTimeQuestion(customer, currentTimeLevel)
     : isMeasurementSession
       ? MeasurementModule.generate(
@@ -2690,6 +2865,14 @@ function newQuestion() {
           fractionQuestionPlan
         )
         : questionGenerators[currentLevel]();
+  if (isCrossModuleSession) {
+    let key = getMathematicalQuestionKey(question);
+    for (let attempt = 0; attempt < 5 && sessionQuestionKeys.has(key); attempt += 1) {
+      question = generateCrossModuleQuestion(customer);
+      key = getMathematicalQuestionKey(question);
+    }
+    sessionQuestionKeys.add(key);
+  }
   correctAnswer = question.answer;
   answersUseCents = Boolean(question.usesCents);
   answersUseTime = Boolean(question.isTime);
@@ -2700,6 +2883,10 @@ function newQuestion() {
   currentMeasurementSubSkill = question.measurementSubSkill || "weight";
   currentFractionSubSkill = question.fractionSubSkill || "visualFraction";
   currentSkillCategory = question.skillCategory || levelSkillCategories[currentLevel] || "mixed";
+  if (isCrossModuleSession) {
+    const moduleId = question.sourceModule || "money";
+    sessionModuleResults[moduleId] ||= { answered: 0, correct: 0 };
+  }
 
   elements.questionText.textContent = question.isTime || question.isMeasurement || question.isFraction
     ? question.context.question
@@ -2841,7 +3028,8 @@ function showDailyGameOver() {
   elements.sessionStars.classList.add("hidden");
   elements.newStarRecord.classList.add("hidden");
   elements.levelUnlocked.classList.remove("hidden");
-  elements.levelUnlocked.textContent = `🔥 Streak: ${daily.currentStreak} hari`;
+  const modules = Object.keys(sessionModuleResults).map((id) => crossModuleDefinitions[id]?.label).filter(Boolean);
+  elements.levelUnlocked.textContent = `🔥 Streak: ${daily.currentStreak} hari • Modul: ${modules.join(", ")}`;
   elements.nextLevelButton.classList.add("hidden");
   elements.chooseLevelButton.classList.add("hidden");
   elements.playAgainButton.textContent = "Cuba Lagi";
@@ -2851,15 +3039,77 @@ function showDailyGameOver() {
   elements.playAgainButton.focus();
 }
 
+function getShopChallengeMedal(correct) {
+  if (correct >= 9) return { id: "gold", icon: "🥇", label: "Emas" };
+  if (correct >= 6) return { id: "silver", icon: "🥈", label: "Perak" };
+  return { id: "bronze", icon: "🥉", label: "Gangsa" };
+}
+
+function showShopChallengeGameOver() {
+  sessionActive = false;
+  elements.homeGameButton.disabled = true;
+  const medal = getShopChallengeMedal(stars);
+  const records = progress.shopChallenge;
+  records.sessionsPlayed += 1;
+  records.bestScore = Math.max(records.bestScore, shopChallengeScore);
+  records.bestCorrect = Math.max(records.bestCorrect, stars);
+  records.bestStreak = Math.max(records.bestStreak, sessionBestStreak);
+  records[`${medal.id}Medals`] += 1;
+  const achievementCount = checkAchievements({
+    shopChallengeCompleted: true,
+    shopChallengeGold: medal.id === "gold"
+  });
+  saveProgress();
+
+  const ranked = Object.entries(sessionModuleResults)
+    .filter(([, record]) => record.answered > 0)
+    .map(([moduleId, record]) => ({ moduleId, ...record, accuracy: record.correct / record.answered }))
+    .sort((a, b) => b.accuracy - a.accuracy || b.correct - a.correct);
+  const strongest = ranked[0];
+  const practice = ranked.at(-1);
+  elements.gameOverTitle.textContent = "CABARAN KEDAI SELESAI!";
+  elements.resultLevel.textContent = `${medal.icon} ${medal.label.toUpperCase()}`;
+  elements.finalLabel.textContent = "Jumlah betul";
+  elements.finalScoreIcon.textContent = "✅";
+  elements.finalScore.textContent = `${stars} / ${totalCustomers}`;
+  elements.finalAccuracy.textContent = `${shopChallengeScore.toLocaleString("ms-MY")} mata`;
+  elements.finalAccuracy.closest(".final-accuracy").firstChild.textContent = "Skor: ";
+  elements.finalBest.closest(".final-best").classList.remove("hidden");
+  elements.finalBest.closest(".final-best").firstChild.textContent = "Best Streak: ";
+  elements.finalBest.textContent = String(sessionBestStreak);
+  elements.finalRating.classList.remove("hidden");
+  elements.finalRating.textContent = strongest
+    ? `Paling kuat: ${crossModuleDefinitions[strongest.moduleId].label}`
+    : "Bagus kerana mencuba!";
+  elements.levelUnlocked.classList.remove("hidden");
+  elements.levelUnlocked.textContent = practice
+    ? `Jom cuba latihan ${crossModuleDefinitions[practice.moduleId].label} untuk tambah yakin!`
+    : "Jom cuba lagi untuk tingkatkan kemahiran!";
+  elements.sessionStars.classList.add("hidden");
+  elements.newStarRecord.classList.add("hidden");
+  elements.nextLevelButton.classList.add("hidden");
+  elements.chooseLevelButton.classList.add("hidden");
+  elements.playAgainButton.textContent = "Main Lagi";
+  elements.resultMenuButton.classList.remove("hidden");
+  showScreen("results");
+  if (achievementCount === 0) audioManager.play("sessionComplete");
+  elements.playAgainButton.focus();
+}
+
 function showGameOver() {
   stopQuestionTimer();
   questionLocked = true;
+  elements.finalAccuracy.closest(".final-accuracy").firstChild.textContent = "Ketepatan: ";
   if (gameMode === "practice") {
     showPracticeGameOver();
     return;
   }
   if (gameMode === "daily") {
     showDailyGameOver();
+    return;
+  }
+  if (gameMode === "shop-challenge") {
+    showShopChallengeGameOver();
     return;
   }
   if (gameMode === "time-practice") {
@@ -3138,8 +3388,19 @@ function handleAnswer(event) {
   const isCorrect = selectedValue === correctAnswer;
   recordQuestionResult(isCorrect);
 
+  if (gameMode === "shop-challenge" || gameMode === "daily") {
+    const moduleId = crossModulePlan[currentCustomer - 1]?.module || "money";
+    sessionModuleResults[moduleId] ||= { answered: 0, correct: 0 };
+    sessionModuleResults[moduleId].answered += 1;
+    if (isCorrect) sessionModuleResults[moduleId].correct += 1;
+  }
+
   if (isCorrect) {
     stars += 1;
+    if (gameMode === "shop-challenge") {
+      shopChallengeScore += currentStreak === 1 ? 100 : 100 + Math.min(currentStreak, 5) * 10;
+      sessionBestStreak = Math.max(sessionBestStreak, currentStreak);
+    }
     audioManager.play("correct");
     button.classList.add("correct");
     elements.feedback.textContent = praiseMessages[randomIndex(praiseMessages.length)];
@@ -3341,6 +3602,12 @@ function openHomeConfirmation() {
   stopQuestionTimer();
   elements.homeGameButton.disabled = true;
   elements.homeModal.classList.remove("hidden");
+  const modalTitle = elements.homeModal.querySelector("h2");
+  const modalCopy = elements.homeModal.querySelector("p");
+  if (modalTitle) modalTitle.textContent = gameMode === "shop-challenge" ? "Keluar daripada Cabaran Kedai?" : "Keluar ke Menu Utama?";
+  if (modalCopy) modalCopy.textContent = gameMode === "shop-challenge"
+    ? "Kemajuan sesi ini tidak akan disimpan."
+    : "Sesi ini belum selesai dan tidak akan direkod.";
   elements.homeContinueButton.focus();
 }
 
@@ -3433,6 +3700,7 @@ elements.homeGameButton.addEventListener("click", openHomeConfirmation);
 elements.homeConfirmButton.addEventListener("click", exitCurrentSession);
 elements.homeContinueButton.addEventListener("click", continueCurrentSession);
 elements.dailyMenuButton.addEventListener("click", showDailyChallenge);
+elements.shopChallengeMenuButton.addEventListener("click", startShopChallenge);
 elements.dailyStartButton.addEventListener("click", startDailyChallenge);
 elements.dailyBackButton.addEventListener("click", showMainMenu);
 elements.settingsMenuButton.addEventListener("click", showSettings);
@@ -3447,7 +3715,7 @@ document.addEventListener("click", (event) => {
     "#practice-back-button, #profile-menu-button, #profile-save-button, #profile-cancel-button, " +
     "#achievements-menu-button, #achievements-back-button, #home-game-button, " +
     "#home-confirm-button, #home-continue-button, " +
-    "#daily-menu-button, #daily-start-button, #daily-back-button, " +
+    "#daily-menu-button, #daily-start-button, #daily-back-button, #shop-challenge-menu-button, " +
     "#settings-menu-button, #settings-save-button, #settings-back-button, " +
     "#skill-recommendation-button, " +
     "#money-category-button, #time-category-button, #measurement-category-button, #fraction-category-button, " +
@@ -3465,6 +3733,7 @@ elements.answers.addEventListener("click", handleAnswer);
 elements.itemsList.addEventListener("error", handleItemImageError, true);
 elements.playAgainButton.addEventListener("click", () => {
   if (gameMode === "daily") startDailyChallenge();
+  else if (gameMode === "shop-challenge") startShopChallenge();
   else if (gameMode === "measurement-mission" || gameMode === "measurement-practice") {
     startMeasurementGame(currentMeasurementLevel, gameMode);
   }

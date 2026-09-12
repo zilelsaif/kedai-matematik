@@ -48,9 +48,9 @@ if errorlevel 1 (
 )
 
 echo.
-echo [3/4] Gunakan Java Android Studio...
+echo [3/4] Gunakan JDK 21 LTS...
 
-set "JAVA_HOME=C:\Program Files\Android\Android Studio\jbr"
+set "JAVA_HOME=C:\Program Files\Microsoft\jdk-21.0.12.101-hotspot"
 set "PATH=%JAVA_HOME%\bin;%PATH%"
 
 java -version
