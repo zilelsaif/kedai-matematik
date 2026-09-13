@@ -10,7 +10,14 @@
   <title>Kedai Matematik</title>
   <script>
     try {
-      const savedProgress = JSON.parse(localStorage.getItem("kedaiMatematikProgress"));
+      let savedProgress = null;
+      try {
+        const savedProfiles = JSON.parse(localStorage.getItem("kedaiMatematikProfiles"));
+        savedProgress = savedProfiles?.items?.[savedProfiles.activeProfileId]?.data || null;
+      } catch (error) {}
+      if (!savedProgress) {
+        try { savedProgress = JSON.parse(localStorage.getItem("kedaiMatematikProgress")); } catch (error) {}
+      }
       const savedTheme = savedProgress?.playerProfile?.theme;
       if (["purple", "blue", "green", "orange"].includes(savedTheme)) {
         document.documentElement.dataset.playerTheme = savedTheme;
@@ -83,8 +90,8 @@
     <section class="main-hub-screen hidden" id="main-menu-screen" aria-labelledby="main-menu-title">
       <div class="main-hub-panel">
         <header class="main-hub-header">
-          <button class="asset-back-button" id="title-back-button" type="button"><img data-src="assets/ui/icon-back.webp" alt=""><span>Title</span></button>
-          <div><p class="eyebrow">Selamat datang ke</p><h2 id="main-menu-title">MAIN MENU</h2></div>
+          <button class="asset-back-button" id="title-back-button" type="button"><img data-src="assets/ui/icon-back.webp" alt=""><span>Tajuk</span></button>
+          <div><p class="eyebrow">Selamat datang ke</p><h2 id="main-menu-title">MENU UTAMA</h2></div>
           <button class="hub-player" id="profile-switch-button" type="button" aria-label="Tukar pemain">
             <span id="menu-player-avatar" aria-hidden="true">🐻</span>
             <span class="menu-player-copy"><strong id="menu-player-greeting">Hai, Pemain!</strong><small class="hidden" id="menu-player-badge"></small></span>
@@ -164,7 +171,7 @@
               <li>Mod Latihan tidak mengubah progression misi.</li>
               <li>Statistik membantu mengenal pasti topik untuk lebih latihan.</li>
             </ul>
-            <a class="privacy-policy-link" href="privacy.html">Privacy Policy</a>
+            <a class="privacy-policy-link" href="privacy.html">Dasar Privasi</a>
           </aside>
           <div class="settings-actions">
             <button class="play-again-button" id="settings-save-button" type="submit">Simpan</button>
@@ -255,7 +262,7 @@
         <p class="eyebrow">Prestasi juruwang</p>
         <h2 id="stats-title">STATISTIK KEDAI</h2>
         <div class="stats-grid">
-          <article class="stats-card stats-stars"><span aria-hidden="true">⭐</span><small>Jumlah Bintang</small><strong id="stats-total-stars">0 / 30</strong></article>
+          <article class="stats-card stats-stars"><span aria-hidden="true">⭐</span><small>Bintang Wang</small><strong id="stats-total-stars">0 / 30</strong></article>
           <article class="stats-card"><span aria-hidden="true">✅</span><small>Jawapan Betul</small><strong id="stats-total-correct">0</strong></article>
           <article class="stats-card"><span aria-hidden="true">🧮</span><small>Soalan Dijawab</small><strong id="stats-total-questions">0</strong></article>
           <article class="stats-card"><span aria-hidden="true">🎯</span><small>Ketepatan</small><strong id="stats-accuracy">0%</strong></article>
@@ -275,7 +282,7 @@
             <span><small>Sesi</small><strong id="shop-challenge-sessions">0</strong></span>
             <span><small>Skor Terbaik</small><strong id="shop-challenge-best-score">0</strong></span>
             <span><small>Betul Terbaik</small><strong id="shop-challenge-best-correct">0/10</strong></span>
-            <span><small>Best Streak</small><strong id="shop-challenge-best-streak">0</strong></span>
+            <span><small>Rentetan Terbaik</small><strong id="shop-challenge-best-streak">0</strong></span>
             <span><small>Emas</small><strong id="shop-challenge-gold">0</strong></span>
           </div>
         </section>

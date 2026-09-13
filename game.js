@@ -1,6 +1,6 @@
 "use strict";
 
-const GAME_VERSION = "1.9.0";
+const GAME_VERSION = "1.9.1";
 const STORAGE_KEY = "kedaiMatematikProgress";
 const PROFILES_STORAGE_KEY = "kedaiMatematikProfiles";
 const MAX_PROFILES = 6;
@@ -550,6 +550,11 @@ let sessionActive = false;
 let homeModalOpen = false;
 let homePausedMilliseconds = 0;
 let achievementToastTimer = null;
+let profileEditorTargetId = "";
+let profileEditorReturnScreen = "menu";
+let activeModal = null;
+let modalReturnFocus = null;
+let modalEscapeAction = null;
 let crossModulePlan = [];
 let shopChallengeScore = 0;
 let sessionBestStreak = 0;
@@ -715,8 +720,69 @@ function getPlayerTheme(themeId) {
   return playerThemes.find((theme) => theme.id === themeId) || playerThemes[0];
 }
 
-function playerAvatarMarkup(avatar, className = "player-avatar-image") {
-  return `<img class="${className}" src="${avatar.image}" alt="${escapeHtml(avatar.name)}"><span class="player-avatar-fallback" aria-hidden="true">${avatar.icon}</span>`;
+function playerAvatarMarkup(avatar, className = "") {
+  const classes = ["player-avatar-image", className].filter(Boolean).join(" ");
+  return `<img class="${classes}" src="${avatar.image}" alt="${escapeHtml(avatar.name)}"><span class="player-avatar-fallback" aria-hidden="true">${avatar.icon}</span>`;
+}
+
+function clearTransientUiState() {
+  if (achievementToastTimer !== null) clearTimeout(achievementToastTimer);
+  achievementToastTimer = null;
+  achievementToastQueue.length = 0;
+  elements.achievementToast.classList.add("hidden");
+  elements.feedback.textContent = "";
+  elements.feedback.className = "feedback";
+}
+
+function getFocusableElements(container) {
+  return [...container.querySelectorAll('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])')]
+    .filter((element) => !element.closest(".hidden"));
+}
+
+function openAccessibleModal(modal, initialFocus, onEscape) {
+  if (activeModal && activeModal !== modal) closeAccessibleModal(false);
+  modalReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  activeModal = modal;
+  modalEscapeAction = typeof onEscape === "function" ? onEscape : null;
+  document.querySelector("main")?.setAttribute("inert", "");
+  modal.classList.remove("hidden");
+  (initialFocus || getFocusableElements(modal)[0])?.focus();
+}
+
+function closeAccessibleModal(restoreFocus = true) {
+  if (!activeModal) return;
+  const returnFocus = modalReturnFocus;
+  activeModal.classList.add("hidden");
+  activeModal = null;
+  modalReturnFocus = null;
+  modalEscapeAction = null;
+  document.querySelector("main")?.removeAttribute("inert");
+  if (restoreFocus && returnFocus?.isConnected) returnFocus.focus();
+}
+
+function handleModalKeyboard(event) {
+  if (!activeModal) return;
+  if (event.key === "Escape" && modalEscapeAction) {
+    event.preventDefault();
+    modalEscapeAction();
+    return;
+  }
+  if (event.key !== "Tab") return;
+  const focusable = getFocusableElements(activeModal);
+  if (!focusable.length) {
+    event.preventDefault();
+    activeModal.focus();
+    return;
+  }
+  const first = focusable[0];
+  const last = focusable.at(-1);
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
 }
 
 function getAchievement(achievementId) {
@@ -2133,7 +2199,7 @@ function startCrossModuleSession(mode) {
   randomSource = mode === "daily" ? createDateSeededRandom(activeDailyDate) : Math.random;
   sessionActive = true;
   homeModalOpen = false;
-  elements.homeModal.classList.add("hidden");
+  closeAccessibleModal(false);
   stars = 0;
   shopChallengeScore = 0;
   currentCustomer = 1;
@@ -2474,8 +2540,8 @@ function renderThemeOptions() {
   renderThemePicker(elements.themeOptions, selectedProfileTheme);
 }
 
-function renderProfileBadges() {
-  const unlocked = achievementDefinitions.filter((achievement) => progress.achievements[achievement.id] === true);
+function renderProfileBadges(profileData = progress) {
+  const unlocked = achievementDefinitions.filter((achievement) => profileData.achievements[achievement.id] === true);
   elements.profileBadges.innerHTML = unlocked.length
     ? unlocked.map((achievement) => `<span class="profile-badge-chip">${achievement.icon} ${achievement.name}</span>`).join("")
     : "<p>Belum ada badge. Jom main lagi!</p>";
@@ -2485,17 +2551,21 @@ function renderProfileBadges() {
     ...unlocked.map((achievement) => `<option value="${achievement.id}">${achievement.icon} ${achievement.name}</option>`)
   ].join("");
   elements.featuredBadgeSelect.value = unlocked.some((achievement) =>
-    achievement.id === progress.playerProfile.featuredBadge
-  ) ? progress.playerProfile.featuredBadge : "";
+    achievement.id === profileData.playerProfile.featuredBadge
+  ) ? profileData.playerProfile.featuredBadge : "";
 }
 
-function showPlayerProfile() {
-  selectedProfileAvatar = progress.playerProfile.avatar;
-  selectedProfileTheme = progress.playerProfile.theme;
-  elements.profileNameInput.value = progress.playerProfile.name;
+function showPlayerProfile(profileId = activeProfileId, returnScreen = "menu") {
+  const profileData = getProfileData(profileId);
+  if (!profileData) return;
+  profileEditorTargetId = profileId;
+  profileEditorReturnScreen = returnScreen;
+  selectedProfileAvatar = profileData.playerProfile.avatar;
+  selectedProfileTheme = profileData.playerProfile.theme;
+  elements.profileNameInput.value = profileData.playerProfile.name;
   renderAvatarOptions();
   renderThemeOptions();
-  renderProfileBadges();
+  renderProfileBadges(profileData);
   applyPlayerTheme(selectedProfileTheme);
   updateProfilePreview();
   showScreen("profile");
@@ -2518,19 +2588,44 @@ function handleThemeSelection(event) {
 }
 
 function savePlayerProfile() {
+  const targetId = profileEditorTargetId || activeProfileId;
+  const targetData = getProfileData(targetId);
+  if (!targetData) return;
   const requestedBadge = elements.featuredBadgeSelect.value;
   const featuredBadge = achievementDefinitions.some((achievement) =>
-    achievement.id === requestedBadge && progress.achievements[achievement.id] === true
+    achievement.id === requestedBadge && targetData.achievements[achievement.id] === true
   ) ? requestedBadge : "";
-  progress.playerProfile = {
+  targetData.playerProfile = {
     name: sanitizePlayerName(elements.profileNameInput.value),
     avatar: playerAvatars.some((avatar) => avatar.id === selectedProfileAvatar) ? selectedProfileAvatar : "avatar-1",
     theme: playerThemes.some((theme) => theme.id === selectedProfileTheme) ? selectedProfileTheme : "purple",
     featuredBadge
   };
+  profileStore.items[targetId].data = targetData;
+  if (targetId === activeProfileId) {
+    progress = targetData;
+    applyPlayerTheme(progress.playerProfile.theme);
+    applyAccessibilitySettings(progress.accessibilitySettings);
+  } else {
+    applyPlayerTheme(progress.playerProfile.theme);
+  }
+  persistProfileStore();
+  if (profileEditorReturnScreen === "parent") {
+    showScreen("parent");
+    renderParentDashboard();
+  } else showMainMenu();
+  profileEditorTargetId = "";
+}
+
+function cancelPlayerProfileEdit() {
   applyPlayerTheme(progress.playerProfile.theme);
-  saveProgress();
-  showMainMenu();
+  applyAccessibilitySettings(progress.accessibilitySettings);
+  const destination = profileEditorReturnScreen;
+  profileEditorTargetId = "";
+  if (destination === "parent") {
+    showScreen("parent");
+    renderParentDashboard();
+  } else showMainMenu();
 }
 
 function getProfileData(profileId) {
@@ -2541,6 +2636,8 @@ function getProfileData(profileId) {
 function switchProfile(profileId, destination = "menu") {
   if (!profileStore.items[profileId]) return false;
   if (sessionActive) cleanupActiveSession();
+  clearTransientUiState();
+  closeAccessibleModal(false);
   saveProgress();
   activeProfileId = profileId;
   profileStore.activeProfileId = profileId;
@@ -2586,12 +2683,11 @@ function openProfileCreateForm() {
   selectedNewProfileTheme = "purple";
   renderAvatarPicker(elements.newProfileAvatarOptions, selectedNewProfileAvatar);
   renderThemePicker(elements.newProfileThemeOptions, selectedNewProfileTheme);
-  elements.profileCreateModal.classList.remove("hidden");
-  elements.newProfileName.focus();
+  openAccessibleModal(elements.profileCreateModal, elements.newProfileName, closeProfileCreateForm);
 }
 
 function closeProfileCreateForm() {
-  elements.profileCreateModal.classList.add("hidden");
+  closeAccessibleModal();
   elements.profileCreateForm.reset();
   elements.newProfileName.setCustomValidity("");
 }
@@ -2646,7 +2742,7 @@ function renderParentDashboard() {
   const data = getProfileData(selectedId);
   const starsTotal = totalAcademicStars(data);
   const accuracy = data.stats.totalQuestions ? Math.round(data.stats.totalCorrect / data.stats.totalQuestions * 100) : 0;
-  elements.parentOverview.innerHTML = `<div class="parent-profile-hero"><span class="parent-profile-avatar">${playerAvatarMarkup(getPlayerAvatar(data.playerProfile.avatar))}</span><div><h3>${escapeHtml(data.playerProfile.name)}</h3><p>⭐ ${starsTotal} / 120</p><small>Tarikh laporan: ${new Date().toLocaleDateString("ms-MY")}</small></div></div><div class="parent-overview-grid"><span><small>Selesai</small><strong>${Math.round(starsTotal / 120 * 100)}%</strong></span><span><small>Soalan</small><strong>${data.stats.totalQuestions}</strong></span><span><small>Ketepatan</small><strong>${accuracy}%</strong></span><span><small>Best Streak</small><strong>${data.stats.bestStreak}</strong></span><span><small>Sesi</small><strong>${data.stats.missionsPlayed}</strong></span><span><small>Lulus</small><strong>${data.stats.missionsPassed}</strong></span></div>`;
+  elements.parentOverview.innerHTML = `<div class="parent-profile-hero"><span class="parent-profile-avatar">${playerAvatarMarkup(getPlayerAvatar(data.playerProfile.avatar))}</span><div><h3>${escapeHtml(data.playerProfile.name)}</h3><p>⭐ Jumlah Bintang Akademik: ${starsTotal} / 120</p><small>Tarikh laporan: ${new Date().toLocaleDateString("ms-MY")}</small></div></div><div class="parent-overview-grid"><span><small>Selesai</small><strong>${Math.round(starsTotal / 120 * 100)}%</strong></span><span><small>Soalan</small><strong>${data.stats.totalQuestions}</strong></span><span><small>Ketepatan</small><strong>${accuracy}%</strong></span><span><small>Rentetan Terbaik</small><strong>${data.stats.bestStreak}</strong></span><span><small>Sesi</small><strong>${data.stats.missionsPlayed}</strong></span><span><small>Lulus</small><strong>${data.stats.missionsPassed}</strong></span></div>`;
   const modules = [
     ["money", "Wang & Kedai", data.stars], ["time", "Masa & Jam", data.timeProgress.stars],
     ["measurement", "Ukuran", data.measurementProgress.stars], ["fraction", "Pecahan", data.fractionProgress.stars]
@@ -2682,8 +2778,11 @@ function openParentGate() {
   elements.parentGateQuestion.textContent = `Berapakah ${left} + ${right}?`;
   elements.parentGateAnswer.value = "";
   elements.parentGateFeedback.textContent = "";
-  elements.parentGate.classList.remove("hidden");
-  elements.parentGateAnswer.focus();
+  openAccessibleModal(elements.parentGate, elements.parentGateAnswer, closeParentGate);
+}
+
+function closeParentGate() {
+  closeAccessibleModal();
 }
 
 function handleParentGate(event) {
@@ -2693,9 +2792,10 @@ function handleParentGate(event) {
     elements.parentGateAnswer.select();
     return;
   }
-  elements.parentGate.classList.add("hidden");
+  closeAccessibleModal(false);
   showScreen("parent");
   renderParentDashboard();
+  elements.parentBackButton.focus();
 }
 
 function resetSelectedProfile() {
@@ -2705,7 +2805,13 @@ function resetSelectedProfile() {
   const replacement = defaultProgress();
   replacement.playerProfile = { ...existing.playerProfile, featuredBadge: "" };
   profileStore.items[id].data = replacement;
-  if (id === activeProfileId) progress = replacement;
+  if (id === activeProfileId) {
+    clearTransientUiState();
+    cleanupActiveSession();
+    progress = replacement;
+    applyPlayerTheme(progress.playerProfile.theme);
+    applyAccessibilitySettings(progress.accessibilitySettings);
+  }
   persistProfileStore();
   renderParentDashboard();
 }
@@ -2717,9 +2823,13 @@ function deleteSelectedProfile() {
   delete profileStore.items[id];
   profileStore.order = profileStore.order.filter((profileId) => profileId !== id);
   if (id === activeProfileId) {
+    clearTransientUiState();
+    cleanupActiveSession();
     activeProfileId = profileStore.order[0];
     profileStore.activeProfileId = activeProfileId;
     progress = getProfileData(activeProfileId);
+    applyPlayerTheme(progress.playerProfile.theme);
+    applyAccessibilitySettings(progress.accessibilitySettings);
   }
   persistProfileStore();
   renderParentDashboard();
@@ -3106,7 +3216,13 @@ function stopQuestionTimer() {
 }
 
 function isTimedMission() {
-  return gameMode === "mission" && currentLevel === 10;
+  const finalMissionByMode = {
+    mission: currentLevel,
+    "time-mission": currentTimeLevel,
+    "measurement-mission": currentMeasurementLevel,
+    "fraction-mission": currentFractionLevel
+  };
+  return finalMissionByMode[gameMode] === 10;
 }
 
 function updateQuestionTimer() {
@@ -3405,7 +3521,7 @@ function showShopChallengeGameOver() {
   elements.finalAccuracy.textContent = `${shopChallengeScore.toLocaleString("ms-MY")} mata`;
   elements.finalAccuracy.closest(".final-accuracy").firstChild.textContent = "Skor: ";
   elements.finalBest.closest(".final-best").classList.remove("hidden");
-  elements.finalBest.closest(".final-best").firstChild.textContent = "Best Streak: ";
+  elements.finalBest.closest(".final-best").firstChild.textContent = "Rentetan Terbaik: ";
   elements.finalBest.textContent = String(sessionBestStreak);
   elements.finalRating.classList.remove("hidden");
   elements.finalRating.textContent = strongest
@@ -3767,7 +3883,7 @@ function startGame(levelId = currentLevel, mode = gameMode) {
     : Math.random;
   sessionActive = true;
   homeModalOpen = false;
-  elements.homeModal.classList.add("hidden");
+  closeAccessibleModal(false);
   currentLevel = levelId;
   if (isPractice) currentPracticeType = levelId;
   stars = 0;
@@ -3795,7 +3911,7 @@ function startTimeGame(levelId = 1, mode = "time-mission") {
   randomSource = Math.random;
   sessionActive = true;
   homeModalOpen = false;
-  elements.homeModal.classList.add("hidden");
+  closeAccessibleModal(false);
   stars = 0;
   currentCustomer = 1;
   sessionCustomers = shuffle(customers);
@@ -3823,7 +3939,7 @@ function startMeasurementGame(levelId = 1, mode = "measurement-mission") {
   randomSource = Math.random;
   sessionActive = true;
   homeModalOpen = false;
-  elements.homeModal.classList.add("hidden");
+  closeAccessibleModal(false);
   stars = 0;
   currentCustomer = 1;
   sessionCustomers = shuffle(customers);
@@ -3849,7 +3965,7 @@ function startFractionGame(levelId = 1, mode = "fraction-mission") {
   randomSource = Math.random;
   sessionActive = true;
   homeModalOpen = false;
-  elements.homeModal.classList.add("hidden");
+  closeAccessibleModal(false);
   stars = 0;
   currentCustomer = 1;
   sessionCustomers = shuffle(customers);
@@ -3912,7 +4028,7 @@ function cleanupActiveSession() {
   stopQuestionTimer();
   audioManager.stopAll();
   elements.homeGameButton.disabled = true;
-  elements.homeModal.classList.add("hidden");
+  closeAccessibleModal(false);
   elements.answers.querySelectorAll("button").forEach((button) => {
     button.disabled = true;
   });
@@ -3931,21 +4047,20 @@ function openHomeConfirmation() {
     : 0;
   stopQuestionTimer();
   elements.homeGameButton.disabled = true;
-  elements.homeModal.classList.remove("hidden");
+  openAccessibleModal(elements.homeModal, elements.homeContinueButton, continueCurrentSession);
   const modalTitle = elements.homeModal.querySelector("h2");
   const modalCopy = elements.homeModal.querySelector("p");
   if (modalTitle) modalTitle.textContent = gameMode === "shop-challenge" ? "Keluar daripada Cabaran Kedai?" : "Keluar ke Menu Utama?";
   if (modalCopy) modalCopy.textContent = gameMode === "shop-challenge"
     ? "Kemajuan sesi ini tidak akan disimpan."
     : "Sesi ini belum selesai dan tidak akan direkod.";
-  elements.homeContinueButton.focus();
 }
 
 function continueCurrentSession() {
   if (!homeModalOpen || !sessionActive) return;
   homeModalOpen = false;
   questionLocked = false;
-  elements.homeModal.classList.add("hidden");
+  closeAccessibleModal(true);
   elements.homeGameButton.disabled = false;
   if (isTimedMission()) startQuestionTimer(homePausedMilliseconds || 1);
   homePausedMilliseconds = 0;
@@ -4026,11 +4141,11 @@ elements.newProfileThemeOptions.addEventListener("click", (event) => {
 elements.profileCreateCancel.addEventListener("click", closeProfileCreateForm);
 elements.parentMenuButton.addEventListener("click", openParentGate);
 elements.parentGateForm.addEventListener("submit", handleParentGate);
-elements.parentGateCancel.addEventListener("click", () => elements.parentGate.classList.add("hidden"));
+elements.parentGateCancel.addEventListener("click", closeParentGate);
 elements.parentBackButton.addEventListener("click", showMainMenu);
 elements.parentProfileSelect.addEventListener("change", renderParentDashboard);
 elements.parentAddProfile.addEventListener("click", () => { showProfilePicker(); openProfileCreateForm(); });
-elements.parentEditProfile.addEventListener("click", () => { const id = elements.parentProfileSelect.value; if (switchProfile(id)) showPlayerProfile(); });
+elements.parentEditProfile.addEventListener("click", () => showPlayerProfile(elements.parentProfileSelect.value, "parent"));
 elements.parentSwitchProfile.addEventListener("click", () => switchProfile(elements.parentProfileSelect.value, "parent"));
 elements.parentResetProfile.addEventListener("click", resetSelectedProfile);
 elements.parentDeleteProfile.addEventListener("click", deleteSelectedProfile);
@@ -4051,9 +4166,9 @@ elements.statsBackButton.addEventListener("click", showMainMenu);
 statElements.skillRecommendationButton.addEventListener("click", startRecommendedPractice);
 elements.practiceMenuButton.addEventListener("click", showPracticeSelect);
 elements.practiceBackButton.addEventListener("click", showMainMenu);
-elements.profileMenuButton.addEventListener("click", showPlayerProfile);
+elements.profileMenuButton.addEventListener("click", () => showPlayerProfile(activeProfileId, "menu"));
 elements.profileSaveButton.addEventListener("click", savePlayerProfile);
-elements.profileCancelButton.addEventListener("click", showMainMenu);
+elements.profileCancelButton.addEventListener("click", cancelPlayerProfileEdit);
 elements.profileNameInput.addEventListener("input", updateProfilePreview);
 elements.avatarOptions.addEventListener("click", handleAvatarSelection);
 elements.themeOptions.addEventListener("click", handleThemeSelection);
@@ -4072,6 +4187,7 @@ elements.settingsBackButton.addEventListener("click", showMainMenu);
 elements.soundToggleButton.addEventListener("click", toggleSound);
 elements.fullscreenButton.addEventListener("click", toggleFullscreen);
 document.addEventListener("fullscreenchange", updateFullscreenButton);
+document.addEventListener("keydown", handleModalKeyboard);
 document.addEventListener("error", (event) => {
   if (!(event.target instanceof HTMLImageElement) || !event.target.classList.contains("player-avatar-image")) return;
   event.target.classList.add("hidden");

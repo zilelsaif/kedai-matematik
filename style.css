@@ -2461,10 +2461,13 @@ html.text-large .measurement-copy b,
   .parent-profile-select { align-items: stretch; flex-direction: column; }
 }
 
+@page { size: A4 portrait; margin: 12mm; }
+
 @media print {
   body { background: #fff !important; }
   body > main > section, #game-header, .parent-management, .parent-profile-select, .parent-dashboard > .screen-heading, .parent-gate { display: none !important; }
   #parent-screen { display: block !important; padding: 0; }
   #parent-report { display: grid !important; width: 100%; max-height: none; overflow: visible; border: 0; box-shadow: none; }
   #parent-report::before { content: "Kedai Matematik — Laporan Pembelajaran"; color: #35206f; font-size: 24pt; font-weight: 900; text-align: center; }
+  .parent-overview, .parent-module-grid article, .parent-insights, .parent-detail-grid article, .parent-achievement-summary { break-inside: avoid; page-break-inside: avoid; }
 }
