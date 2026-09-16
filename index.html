@@ -142,6 +142,13 @@
         <section><h3>KEMAJUAN MODUL</h3><div class="parent-module-grid" id="parent-module-grid"></div></section>
         <section class="parent-insights" id="parent-insights"></section>
         <section class="parent-detail-grid"><article id="parent-shop-summary"></article><article id="parent-daily-summary"></article><article id="parent-achievement-summary"></article></section>
+        <section class="parent-support-card hidden" id="parent-support-card" aria-labelledby="parent-support-title">
+          <div>
+            <h3 id="parent-support-title">❤️ Sokong Pembangunan</h3>
+            <p>Kedai Matematik disediakan secara percuma. Jika anda menghargai projek ini, anda boleh membantu pembangunan dan penyelenggaraannya secara sukarela.</p>
+          </div>
+          <button class="secondary-button" id="support-open-button" type="button">Lihat QR Sokongan</button>
+        </section>
         <section class="parent-management"><h3>URUS PEMAIN</h3><div><button class="secondary-button" id="parent-add-profile" type="button">Tambah Profil</button><button class="secondary-button" id="parent-edit-profile" type="button">Edit Profil</button><button class="secondary-button" id="parent-switch-profile" type="button">Jadikan Aktif</button><button class="secondary-button" id="parent-reset-profile" type="button">Reset Kemajuan</button><button class="secondary-button danger-button" id="parent-delete-profile" type="button">Padam Profil</button><button class="play-again-button" id="parent-print-report" type="button">Cetak Laporan</button></div></section>
       </div>
     </section>
@@ -441,6 +448,22 @@
       </fieldset>
       <div class="profile-create-actions"><button class="play-again-button" type="submit">Simpan Pemain</button><button class="secondary-button" id="profile-create-cancel" type="button">Batal</button></div>
     </form>
+  </div>
+
+  <div class="support-modal hidden" id="support-modal" role="dialog" aria-modal="true" aria-labelledby="support-modal-title">
+    <div class="support-modal-card">
+      <h2 id="support-modal-title">❤️ Sokong Pembangunan Kedai Matematik</h2>
+      <p>Kedai Matematik dibangunkan dan disediakan secara percuma untuk pembelajaran kanak-kanak.</p>
+      <p>Jika anda menghargai projek ini dan ingin membantu pembangunan, penyelenggaraan serta penambahan kandungan pada masa hadapan, anda boleh memberi sokongan secara sukarela melalui QR di bawah.</p>
+      <div class="support-disclaimer">
+        <strong>Sokongan ini adalah sumbangan sukarela sahaja.</strong>
+        <p>Ia tidak membuka kandungan premium, ciri tambahan atau kelebihan khas.</p>
+        <p>Semua kandungan Kedai Matematik kekal boleh digunakan secara percuma.</p>
+      </div>
+      <img class="support-qr-image" id="support-qr-image" data-src="assets/support/support-qr.webp" alt="QR sokongan pembangunan Kedai Matematik">
+      <p class="support-scan-note">Imbas menggunakan aplikasi perbankan atau eWallet yang menyokong QR.</p>
+      <button class="secondary-button" id="support-close-button" type="button">Tutup</button>
+    </div>
   </div>
 
   <aside class="achievement-toast hidden" id="achievement-toast" role="status" aria-live="polite">

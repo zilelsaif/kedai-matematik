@@ -2461,11 +2461,35 @@ html.text-large .measurement-copy b,
   .parent-profile-select { align-items: stretch; flex-direction: column; }
 }
 
+.parent-support-card { display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 3px solid #e0cff8; border-radius: 18px; padding: 14px 16px; background: linear-gradient(135deg, #fffaf0, #f4efff); box-shadow: 0 5px 0 rgba(73,49,157,.1); }
+.parent-support-card.hidden { display: none; }
+.parent-support-card h3 { margin: 0 0 5px; color: var(--purple-dark); }
+.parent-support-card p { max-width: 700px; margin: 0; color: #5f6280; font-weight: 700; line-height: 1.4; }
+.parent-support-card .secondary-button { flex: 0 0 auto; }
+.support-modal { position: fixed; z-index: 180; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(31,20,77,.72); backdrop-filter: blur(3px); }
+.support-modal.hidden { display: none; }
+.support-modal-card { width: min(640px, 100%); max-height: calc(100vh - 32px); overflow: auto; padding: 22px; border: 5px solid #fff; border-radius: 26px; background: var(--cream); box-shadow: var(--shadow); text-align: center; }
+.support-modal-card h2 { margin: 0 0 10px; color: var(--purple-dark); font-size: clamp(1.35rem, 3vw, 2rem); }
+.support-modal-card > p { margin: 7px auto; color: #555a78; font-weight: 700; line-height: 1.42; }
+.support-disclaimer { margin: 13px 0; padding: 11px 13px; border: 3px solid #f0cf65; border-radius: 16px; background: #fff9dc; color: #4f4668; }
+.support-disclaimer strong { display: block; color: #6a418d; }
+.support-disclaimer p { margin: 4px 0; font-weight: 750; }
+.support-qr-image { display: block; width: auto; max-width: min(100%, 390px); height: auto; max-height: min(48vh, 585px); margin: 12px auto 8px; object-fit: contain; }
+.support-scan-note { font-size: .9rem; }
+
+@media (max-width: 640px) {
+  .parent-support-card { align-items: stretch; flex-direction: column; padding: 11px; text-align: center; }
+  .support-modal { padding: 7px; }
+  .support-modal-card { max-height: calc(100vh - 14px); padding: 14px 11px; border-width: 4px; border-radius: 20px; }
+  .support-modal-card > p, .support-disclaimer { font-size: .82rem; }
+  .support-qr-image { max-width: min(100%, 330px); max-height: 46vh; }
+}
+
 @page { size: A4 portrait; margin: 12mm; }
 
 @media print {
   body { background: #fff !important; }
-  body > main > section, #game-header, .parent-management, .parent-profile-select, .parent-dashboard > .screen-heading, .parent-gate { display: none !important; }
+  body > main > section, #game-header, .parent-management, .parent-support-card, .parent-profile-select, .parent-dashboard > .screen-heading, .parent-gate, .support-modal { display: none !important; }
   #parent-screen { display: block !important; padding: 0; }
   #parent-report { display: grid !important; width: 100%; max-height: none; overflow: visible; border: 0; box-shadow: none; }
   #parent-report::before { content: "Kedai Matematik — Laporan Pembelajaran"; color: #35206f; font-size: 24pt; font-weight: 900; text-align: center; }

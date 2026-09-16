@@ -7,6 +7,7 @@ const MAX_PROFILES = 6;
 const SOUND_STORAGE_KEY = "kedaiMatematikSoundEnabled";
 const LEGACY_SOUND_STORAGE_KEY = "kedaiMatematikSound";
 const totalCustomers = 10;
+const SUPPORT_DEV_PREVIEW = false;
 
 const audioFiles = {
   buttonClick: "assets/audio/button-click.mp3",
@@ -432,6 +433,11 @@ const elements = {
   parentResetProfile: document.querySelector("#parent-reset-profile"),
   parentDeleteProfile: document.querySelector("#parent-delete-profile"),
   parentPrintReport: document.querySelector("#parent-print-report"),
+  parentSupportCard: document.querySelector("#parent-support-card"),
+  supportOpenButton: document.querySelector("#support-open-button"),
+  supportModal: document.querySelector("#support-modal"),
+  supportQrImage: document.querySelector("#support-qr-image"),
+  supportCloseButton: document.querySelector("#support-close-button"),
   settingsForm: document.querySelector("#accessibility-form"),
   settingsSaveButton: document.querySelector("#settings-save-button"),
   settingsBackButton: document.querySelector("#settings-back-button"),
@@ -783,6 +789,29 @@ function handleModalKeyboard(event) {
     event.preventDefault();
     first.focus();
   }
+}
+
+function isWebSupportEnabled() {
+  return SUPPORT_DEV_PREVIEW || window.location.hostname === "kedai-matematik.pages.dev";
+}
+
+function initializeWebSupport() {
+  const enabled = isWebSupportEnabled();
+  elements.parentSupportCard.classList.toggle("hidden", !enabled);
+  if (!enabled) {
+    elements.supportQrImage.removeAttribute("src");
+    return;
+  }
+  elements.supportQrImage.src = elements.supportQrImage.dataset.src;
+}
+
+function openSupportModal() {
+  if (!isWebSupportEnabled()) return;
+  openAccessibleModal(elements.supportModal, elements.supportCloseButton, closeSupportModal);
+}
+
+function closeSupportModal() {
+  closeAccessibleModal();
 }
 
 function getAchievement(achievementId) {
@@ -4150,6 +4179,8 @@ elements.parentSwitchProfile.addEventListener("click", () => switchProfile(eleme
 elements.parentResetProfile.addEventListener("click", resetSelectedProfile);
 elements.parentDeleteProfile.addEventListener("click", deleteSelectedProfile);
 elements.parentPrintReport.addEventListener("click", () => window.print());
+elements.supportOpenButton.addEventListener("click", openSupportModal);
+elements.supportCloseButton.addEventListener("click", closeSupportModal);
 elements.moneyCategoryButton.addEventListener("click", () => showLevelSelect());
 elements.timeCategoryButton.addEventListener("click", () => showTimeLevelSelect());
 elements.measurementCategoryButton.addEventListener("click", () => showMeasurementLevelSelect());
@@ -4200,7 +4231,7 @@ document.addEventListener("click", (event) => {
     "#achievements-menu-button, #achievements-back-button, #home-game-button, " +
     "#home-confirm-button, #home-continue-button, " +
     "#daily-menu-button, #daily-start-button, #daily-back-button, #shop-challenge-menu-button, #parent-menu-button, " +
-    "#profile-picker-back, #profile-picker-add, .profile-picker-card, #parent-back-button, #parent-print-report, " +
+    "#profile-picker-back, #profile-picker-add, .profile-picker-card, #parent-back-button, #parent-print-report, #support-open-button, #support-close-button, " +
     "#settings-menu-button, #settings-save-button, #settings-back-button, " +
     "#skill-recommendation-button, " +
     "#money-category-button, #time-category-button, #measurement-category-button, #fraction-category-button, " +
@@ -4254,5 +4285,6 @@ if (!document.fullscreenEnabled) {
   elements.fullscreenButton.title = "Skrin penuh tidak disokong";
 }
 updateFullscreenButton();
+initializeWebSupport();
 renderLevelCards();
 showTitleScreen();
