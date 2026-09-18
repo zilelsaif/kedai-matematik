@@ -1,6 +1,6 @@
 "use strict";
 
-const GAME_VERSION = "1.9.1";
+const GAME_VERSION = "1.9.2";
 const STORAGE_KEY = "kedaiMatematikProgress";
 const PROFILES_STORAGE_KEY = "kedaiMatematikProfiles";
 const MAX_PROFILES = 6;
@@ -343,6 +343,8 @@ const elements = {
   titleBackButton: document.querySelector("#title-back-button"),
   menuHighestMission: document.querySelector("#menu-highest-mission"),
   menuBestScore: document.querySelector("#menu-best-score"),
+  menuRecommendation: document.querySelector("#menu-recommendation"),
+  menuRecommendationText: document.querySelector("#menu-recommendation-text"),
   moneyStarTotal: document.querySelector("#money-star-total"),
   timeStarTotal: document.querySelector("#time-star-total"),
   measurementStarTotal: document.querySelector("#measurement-star-total"),
@@ -486,6 +488,8 @@ const elements = {
   finalBest: document.querySelector("#final-best"),
   finalRating: document.querySelector("#final-rating"),
   levelUnlocked: document.querySelector("#level-unlocked"),
+  smartTip: document.querySelector("#smart-tip"),
+  smartTipText: document.querySelector("#smart-tip-text"),
   playAgainButton: document.querySelector("#play-again-button"),
   chooseLevelButton: document.querySelector("#choose-level-button"),
   nextLevelButton: document.querySelector("#next-level-button"),
@@ -611,6 +615,10 @@ function defaultAchievements() {
   return Object.fromEntries(achievementDefinitions.map((achievement) => [achievement.id, false]));
 }
 
+function defaultAchievementUnlockedAt() {
+  return Object.fromEntries(achievementDefinitions.map((achievement) => [achievement.id, null]));
+}
+
 function defaultDailyChallenge() {
   return {
     lastCompletedDate: "",
@@ -644,6 +652,7 @@ function defaultProgress() {
     accessibilitySettings: defaultAccessibilitySettings(),
     playerProfile: { name: "Pemain", avatar: "avatar-1", theme: "purple", featuredBadge: "" },
     achievements: defaultAchievements(),
+    achievementUnlockedAt: defaultAchievementUnlockedAt(),
     dailyChallenge: defaultDailyChallenge(),
     shopChallenge: defaultShopChallenge()
   };
@@ -862,12 +871,21 @@ function loadProgress(savedInput = null) {
     const fractionSkillStats = defaultFractionSkillStats();
     const accessibilitySettings = defaultAccessibilitySettings();
     const achievements = defaultAchievements();
+    const achievementUnlockedAt = defaultAchievementUnlockedAt();
     const dailyChallenge = defaultDailyChallenge();
     const shopChallenge = defaultShopChallenge();
 
     if (saved.achievements && typeof saved.achievements === "object") {
       achievementDefinitions.forEach((achievement) => {
         achievements[achievement.id] = saved.achievements[achievement.id] === true;
+      });
+    }
+    if (saved.achievementUnlockedAt && typeof saved.achievementUnlockedAt === "object") {
+      achievementDefinitions.forEach((achievement) => {
+        const value = saved.achievementUnlockedAt[achievement.id];
+        if (achievements[achievement.id] && typeof value === "string" && !Number.isNaN(Date.parse(value))) {
+          achievementUnlockedAt[achievement.id] = value;
+        }
       });
     }
 
@@ -1146,6 +1164,7 @@ function loadProgress(savedInput = null) {
       accessibilitySettings,
       playerProfile,
       achievements,
+      achievementUnlockedAt,
       dailyChallenge,
       shopChallenge
     };
@@ -1223,6 +1242,7 @@ function checkAchievements({ missionScore = null, missionLevel = null, missionPa
   achievementDefinitions.forEach((achievement) => {
     if (conditions[achievement.id] && !progress.achievements[achievement.id]) {
       progress.achievements[achievement.id] = true;
+      progress.achievementUnlockedAt[achievement.id] = new Date().toISOString();
       queueAchievementNotification(achievement);
       unlockedCount += 1;
     }
@@ -2276,8 +2296,38 @@ const questionGenerators = {
   10: generateMixedQuestion
 };
 
+const smartTipLibrary = {
+  money: ["Tambah harga satu demi satu supaya kiraan lebih mudah disemak.", "Untuk mencari baki, tolak jumlah belian daripada wang yang dibayar.", "Seratus sen bersamaan dengan satu Ringgit. Susun Ringgit dan sen dengan kemas."],
+  time: ["Setengah jam ialah 30 minit, manakala suku jam ialah 15 minit.", "Untuk mencari tempoh, kira perjalanan masa dari waktu mula hingga waktu tamat.", "Jarum minit yang panjang membantu membaca minit; jarum jam yang pendek menunjukkan jam."],
+  measurement: ["Pilih unit yang sesuai: g atau kg untuk berat, mL atau L untuk minuman.", "Ingat: 1000 g = 1 kg, 1000 mL = 1 L dan 100 cm = 1 m.", "Samakan unit dahulu sebelum menambah ukuran."],
+  fraction: ["Pecahan menunjukkan berapa bahagian dipilih daripada bahagian yang sama besar.", "1/2 ialah satu daripada dua bahagian sama besar; 1/4 ialah satu daripada empat.", "Untuk pecahan kumpulan, kira jumlah barang dahulu kemudian cari bahagiannya.", "Pecahan setara kelihatan berbeza tetapi mewakili bahagian yang sama.", "Semasa membanding pecahan, gunakan visual bahagian sama besar untuk membantu."]
+};
+
+function getCurrentSmartTip() {
+  let moduleId = null;
+  let level = 1;
+  if (gameMode === "mission" || gameMode === "practice") { moduleId = "money"; level = currentLevel; }
+  else if (gameMode === "time-mission" || gameMode === "time-practice") { moduleId = "time"; level = currentTimeLevel; }
+  else if (gameMode === "measurement-mission" || gameMode === "measurement-practice") { moduleId = "measurement"; level = currentMeasurementLevel; }
+  else if (gameMode === "fraction-mission" || gameMode === "fraction-practice") { moduleId = "fraction"; level = currentFractionLevel; }
+  if (!moduleId) return "";
+  const tips = smartTipLibrary[moduleId];
+  if (moduleId === "money") return tips[[4, 5, 6, 8].includes(level) ? 1 : (level === 7 ? 2 : 0)];
+  if (moduleId === "time") return tips[level === 4 || level === 5 || level >= 8 ? 1 : (level <= 3 ? 0 : 2)];
+  if (moduleId === "measurement") return tips[[2, 6, 7, 8].includes(level) ? 1 : (level === 9 ? 0 : 2)];
+  if (moduleId === "fraction") return tips[level === 5 ? 2 : (level === 6 ? 3 : (level === 7 ? 4 : (level === 2 || level === 3 ? 1 : 0)))];
+  return tips[0];
+}
+
+function renderSmartTip() {
+  const tip = getCurrentSmartTip();
+  elements.smartTipText.textContent = tip;
+  elements.smartTip.classList.toggle("hidden", !tip);
+}
+
 function showScreen(screenName) {
   if (screenName !== "game") stopQuestionTimer();
+  if (screenName === "results") renderSmartTip();
 
   const screens = {
     title: elements.titleScreen,
@@ -2760,6 +2810,60 @@ function getModuleAccuracy(data, moduleId) {
   return totals.answered ? Math.round(totals.correct / totals.answered * 100) : 0;
 }
 
+const learningModuleDefinitions = [
+  { id: "money", label: "Wang & Kedai", progressKey: null, missions: levels, practiceId: 1 },
+  { id: "time", label: "Masa & Jam", progressKey: "timeProgress", missions: timeMissions, practiceId: "time-1" },
+  { id: "measurement", label: "Ukuran", progressKey: "measurementProgress", missions: measurementMissions, practiceId: "measurement-1" },
+  { id: "fraction", label: "Pecahan", progressKey: "fractionProgress", missions: fractionMissions, practiceId: "fraction-1" }
+];
+
+function getModuleProgress(data, module) {
+  return module.progressKey ? data[module.progressKey] : data;
+}
+
+function getLearningRecommendation(data) {
+  if ((data.stats?.totalQuestions || 0) < 5) {
+    return { text: "Mulakan Misi 1 Wang & Kedai", action: "mission", module: "money", level: 1 };
+  }
+  const weakModule = learningModuleDefinitions
+    .map((module) => ({
+      ...module,
+      accuracy: getModuleAccuracy(data, module.id),
+      answered: module.id === "money"
+        ? ["addition", "quantity", "change", "moneyCents", "mixed"].reduce((sum, id) => sum + (data.skillStats[id]?.answered || 0), 0)
+        : (data.skillStats[module.id]?.answered || 0)
+    }))
+    .filter((module) => module.answered >= 5 && module.accuracy < 70)
+    .sort((a, b) => a.accuracy - b.accuracy || b.answered - a.answered)[0];
+  if (weakModule) {
+    return { text: `Cuba Latihan ${weakModule.label}`, action: "practice", practiceId: weakModule.practiceId };
+  }
+  for (const module of learningModuleDefinitions) {
+    const moduleProgress = getModuleProgress(data, module);
+    const highest = Math.min(moduleProgress.highestUnlockedLevel || 1, module.missions.length);
+    for (let level = 1; level <= highest; level += 1) {
+      if ((moduleProgress.bestScores[level] ?? -1) < 8) {
+        const mission = module.missions.find((entry) => entry.id === level);
+        return { text: `Cuba ${mission?.name || `Misi ${level}`} (${module.label})`, action: "mission", module: module.id, level };
+      }
+    }
+  }
+  return { text: "Hebat! Cuba Cabaran Kedai", action: "shop" };
+}
+
+function getRecentAchievements(data, limit = 3) {
+  return achievementDefinitions
+    .map((achievement, index) => ({ ...achievement, index, unlockedAt: data.achievementUnlockedAt?.[achievement.id] || null }))
+    .filter((achievement) => data.achievements[achievement.id] === true)
+    .sort((a, b) => {
+      if (a.unlockedAt && b.unlockedAt) return Date.parse(b.unlockedAt) - Date.parse(a.unlockedAt);
+      if (a.unlockedAt) return -1;
+      if (b.unlockedAt) return 1;
+      return b.index - a.index;
+    })
+    .slice(0, limit);
+}
+
 function renderParentDashboard() {
   const selectedId = elements.parentProfileSelect.value && profileStore.items[elements.parentProfileSelect.value]
     ? elements.parentProfileSelect.value : activeProfileId;
@@ -2784,7 +2888,8 @@ function renderParentDashboard() {
   const ranked = modules.map(([id, label]) => ({ id, label, accuracy: getModuleAccuracy(data, id), answered: id === "money" ? ["addition", "quantity", "change", "moneyCents", "mixed"].reduce((n, key) => n + data.skillStats[key].answered, 0) : data.skillStats[id].answered })).filter((entry) => entry.answered >= 5).sort((a, b) => b.accuracy - a.accuracy);
   const strongest = ranked[0];
   const needsPractice = ranked.at(-1);
-  elements.parentInsights.innerHTML = ranked.length ? `<p><strong>✅ Paling Kuat:</strong> ${strongest.label} — ${strongest.accuracy}%</p><p><strong>📚 Perlu lebih latihan:</strong> ${needsPractice.label} — ${needsPractice.accuracy}%</p><p class="parent-recommendation">${needsPractice.accuracy < 70 ? `Cuba Mod Latihan ${needsPractice.label}.` : "Prestasi baik! Cuba Cabaran Kedai untuk latihan campuran."}</p>` : "<p>Main beberapa misi lagi untuk mendapatkan cadangan.</p>";
+  const recommendation = getLearningRecommendation(data);
+  elements.parentInsights.innerHTML = ranked.length ? `<p><strong>✅ Paling Kuat:</strong> ${strongest.label} — ${strongest.accuracy}%</p><p><strong>📚 Perlu lebih latihan:</strong> ${needsPractice.label} — ${needsPractice.accuracy}%</p><p class="parent-recommendation">Cadangan: ${recommendation.text}.</p>` : `<p class="parent-recommendation">Cadangan: ${recommendation.text}.</p>`;
   const shop = data.shopChallenge;
   elements.parentShopSummary.innerHTML = `<h3>🏪 Cabaran Kedai</h3><p>Sesi: ${shop.sessionsPlayed}</p><p>Skor terbaik: ${shop.bestScore.toLocaleString("ms-MY")}</p><p>Betul terbaik: ${shop.bestCorrect}/10</p><p>Emas: ${shop.goldMedals}</p>`;
   const todayRecord = data.dailyChallenge.history[getLocalDateKey()];
@@ -2795,7 +2900,8 @@ function renderParentDashboard() {
   }).join("<br>");
   elements.parentDailySummary.innerHTML = `<h3>☀️ Cabaran Harian</h3><p>Streak: ${data.dailyChallenge.currentStreak} hari</p><p>Terbaik hari ini: ${todayRecord?.completed ? `${todayRecord.bestScore}/10` : "Belum dimainkan"}</p><p class="parent-daily-history"><strong>7 hari terakhir</strong><br>${dailyHistory}</p>`;
   const unlocked = achievementDefinitions.filter((achievement) => data.achievements[achievement.id]);
-  elements.parentAchievementSummary.innerHTML = `<h3>🏆 Pencapaian</h3><p>${unlocked.length} / ${achievementDefinitions.length} dibuka</p><p>${unlocked.slice(-3).map((achievement) => `${achievement.icon} ${achievement.name}`).join("<br>") || "Belum ada pencapaian"}</p>`;
+  const recentAchievements = getRecentAchievements(data);
+  elements.parentAchievementSummary.innerHTML = `<h3>🏆 Pencapaian</h3><p>${unlocked.length} / ${achievementDefinitions.length} dibuka</p><p>${recentAchievements.map((achievement) => `${achievement.icon} ${achievement.name}`).join("<br>") || "Belum ada pencapaian"}</p>`;
   elements.parentAddProfile.disabled = profileStore.order.length >= MAX_PROFILES;
   elements.parentDeleteProfile.disabled = profileStore.order.length <= 1;
 }
@@ -2896,6 +3002,10 @@ function handlePracticeSelection(event) {
 
   const rawPracticeId = card.dataset.practice;
   const practiceId = /^\d+$/.test(rawPracticeId) ? Number(rawPracticeId) : rawPracticeId;
+  startPracticeById(practiceId);
+}
+
+function startPracticeById(practiceId) {
   const practice = practiceTypes.find((entry) => entry.id === practiceId);
   if (!practice) return;
   if (practice.category === "time") return startTimeGame(practice.timeLevel, "time-practice");
@@ -2987,14 +3097,17 @@ function renderSkillStatistics() {
 function startRecommendedPractice() {
   const rawPracticeId = statElements.skillRecommendationButton.dataset.practice;
   const practiceId = /^\d+$/.test(rawPracticeId) ? Number(rawPracticeId) : rawPracticeId;
-  const practice = practiceTypes.find((entry) => entry.id === practiceId);
-  if (!practice) return;
-  if (practice.category === "time") return startTimeGame(practice.timeLevel, "time-practice");
-  if (practice.category === "measurement") {
-    return startMeasurementGame(practice.measurementLevel, "measurement-practice");
-  }
-  if (practice.category === "fraction") return startFractionGame(practice.fractionLevel, "fraction-practice");
-  startGame(practiceId, "practice");
+  startPracticeById(practiceId);
+}
+
+function runMenuRecommendation() {
+  const recommendation = getLearningRecommendation(progress);
+  if (recommendation.action === "practice") return startPracticeById(recommendation.practiceId);
+  if (recommendation.action === "shop") return startShopChallenge();
+  if (recommendation.module === "time") return startTimeGame(recommendation.level, "time-mission");
+  if (recommendation.module === "measurement") return startMeasurementGame(recommendation.level, "measurement-mission");
+  if (recommendation.module === "fraction") return startFractionGame(recommendation.level, "fraction-mission");
+  startGame(recommendation.level, "mission");
 }
 
 function showMainMenu() {
@@ -3008,6 +3121,7 @@ function showMainMenu() {
   elements.timeStarTotal.textContent = `⭐ ${Object.values(progress.timeProgress.stars).reduce((sum, value) => sum + (Number(value) || 0), 0)}/30`;
   elements.measurementStarTotal.textContent = `⭐ ${Object.values(progress.measurementProgress.stars).reduce((sum, value) => sum + (Number(value) || 0), 0)}/30`;
   elements.fractionStarTotal.textContent = `⭐ ${Object.values(progress.fractionProgress.stars).reduce((sum, value) => sum + (Number(value) || 0), 0)}/30`;
+  elements.menuRecommendationText.textContent = getLearningRecommendation(progress).text;
   applyPlayerTheme(progress.playerProfile.theme);
   elements.menuPlayerAvatar.innerHTML = playerAvatarMarkup(getPlayerAvatar(progress.playerProfile.avatar), "menu-player-avatar-image");
   elements.menuPlayerGreeting.textContent = `Hai, ${progress.playerProfile.name}!`;
@@ -4195,6 +4309,7 @@ elements.howToButton.addEventListener("click", toggleHowTo);
 elements.statisticsButton.addEventListener("click", showStatistics);
 elements.statsBackButton.addEventListener("click", showMainMenu);
 statElements.skillRecommendationButton.addEventListener("click", startRecommendedPractice);
+elements.menuRecommendation.addEventListener("click", runMenuRecommendation);
 elements.practiceMenuButton.addEventListener("click", showPracticeSelect);
 elements.practiceBackButton.addEventListener("click", showMainMenu);
 elements.profileMenuButton.addEventListener("click", () => showPlayerProfile(activeProfileId, "menu"));
@@ -4233,7 +4348,7 @@ document.addEventListener("click", (event) => {
     "#daily-menu-button, #daily-start-button, #daily-back-button, #shop-challenge-menu-button, #parent-menu-button, " +
     "#profile-picker-back, #profile-picker-add, .profile-picker-card, #parent-back-button, #parent-print-report, #support-open-button, #support-close-button, " +
     "#settings-menu-button, #settings-save-button, #settings-back-button, " +
-    "#skill-recommendation-button, " +
+    "#skill-recommendation-button, #menu-recommendation, " +
     "#money-category-button, #time-category-button, #measurement-category-button, #fraction-category-button, " +
     "#time-level-back-button, #measurement-level-back-button, #fraction-level-back-button, " +
     "#result-menu-button, #back-to-menu-button, #play-again-button, #choose-level-button, " +

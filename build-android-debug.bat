@@ -24,7 +24,8 @@ if exist "favicon.svg" (
     copy /Y "favicon.svg" "www\favicon.svg" >nul
 )
 
-robocopy "assets" "www\assets" /MIR >nul
+if exist "www\assets\support" rmdir /S /Q "www\assets\support"
+robocopy "assets" "www\assets" /MIR /XD "%CD%\assets\support" >nul
 
 if errorlevel 8 (
     echo.

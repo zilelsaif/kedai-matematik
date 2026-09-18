@@ -152,13 +152,30 @@ const FractionModule = (() => {
   const introPoolMap = Object.fromEntries([1, 2, 3].map((levelId) => [levelId, introPools(levelId)]));
 
   function objectPool() {
-    const specs = [];
-    [2, 4, 8].forEach((denominator) => {
+    // Misi 4 menilai bahagian berwarna daripada satu objek. Simpan visual
+    // berbeza tanpa menjadikan pertukaran bentuk sebagai soalan matematik baru.
+    const mathematicalSpecs = [];
+    for (let denominator = 2; denominator <= 7; denominator += 1) {
       for (let numerator = 1; numerator < denominator; numerator += 1) {
-        ["circle", "bar", "grid"].forEach((shape) => specs.push({ numerator, denominator, shape,
-          object: objects[(numerator + denominator + specs.length) % objects.length] }));
+        mathematicalSpecs.push({ numerator, denominator });
       }
-    });
+    }
+    for (let numerator = 1; numerator <= 6; numerator += 1) {
+      mathematicalSpecs.push({ numerator, denominator: 8 });
+    }
+
+    const specs = mathematicalSpecs.map((spec, index) => ({
+      ...spec,
+      shape: ["circle", "bar", "grid"][index % 3],
+      object: objects[index % objects.length]
+    }));
+    // Enam alternatif visual mengekalkan jumlah konfigurasi yang kaya,
+    // sementara 27 sasaran matematik kekal benar-benar berbeza.
+    mathematicalSpecs.slice(0, 6).forEach((spec, index) => specs.push({
+      ...spec,
+      shape: ["grid", "circle", "bar"][index % 3],
+      object: objects[(index + 3) % objects.length]
+    }));
     return specs;
   }
 
