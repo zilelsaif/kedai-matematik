@@ -1,6 +1,6 @@
 "use strict";
 
-const GAME_VERSION = "1.9.2";
+const GAME_VERSION = "1.9.3";
 const STORAGE_KEY = "kedaiMatematikProgress";
 const PROFILES_STORAGE_KEY = "kedaiMatematikProfiles";
 const MAX_PROFILES = 6;
@@ -138,16 +138,14 @@ const levelSkillCategories = {
 };
 
 const playerAvatars = [
-  { id: "avatar-1", icon: "👧", image: "assets/customers/Aynaa.webp", name: "Aynaa" },
-  { id: "avatar-2", icon: "👦", image: "assets/customers/Ammar.webp", name: "Ammar" },
-  { id: "avatar-3", icon: "👧🏻", image: "assets/customers/Mei-Ling.webp", name: "Mei Ling" },
-  { id: "avatar-4", icon: "👦🏽", image: "assets/customers/Kumar.webp", name: "Kumar" },
-  { id: "avatar-5", icon: "👧🏽", image: "assets/customers/Sofia.webp", name: "Sofia" },
-  { id: "avatar-6", icon: "🧑🏻", image: "assets/customers/Azzam.webp", name: "Azzam" },
-  { id: "avatar-7", icon: "👦🏻", image: "assets/customers/Ayyash.webp", name: "Ayyash" },
-  { id: "avatar-8", icon: "👩🏻", image: "assets/customers/Ivy-Chian.webp", name: "Ivy" },
-  { id: "avatar-9", icon: "👩🏽", image: "assets/customers/Maria.webp", name: "Maria" },
-  { id: "avatar-10", icon: "🧒🏻", image: "assets/customers/Affan.webp", name: "Affan" }
+  { id: "profile-avatar-01", icon: "🙂", image: "assets/profile-avatars/avatar-01.webp", name: "Avatar pemain 1" },
+  { id: "profile-avatar-02", icon: "🙂", image: "assets/profile-avatars/avatar-02.webp", name: "Avatar pemain 2" },
+  { id: "profile-avatar-03", icon: "🙂", image: "assets/profile-avatars/avatar-03.webp", name: "Avatar pemain 3" },
+  { id: "profile-avatar-04", icon: "🙂", image: "assets/profile-avatars/avatar-04.webp", name: "Avatar pemain 4" },
+  { id: "profile-avatar-05", icon: "🙂", image: "assets/profile-avatars/avatar-05.webp", name: "Avatar pemain 5" },
+  { id: "profile-avatar-06", icon: "🙂", image: "assets/profile-avatars/avatar-06.webp", name: "Avatar pemain 6" },
+  { id: "profile-avatar-07", icon: "🙂", image: "assets/profile-avatars/avatar-07.webp", name: "Avatar pemain 7" },
+  { id: "profile-avatar-08", icon: "🙂", image: "assets/profile-avatars/avatar-08.webp", name: "Avatar pemain 8" }
 ];
 
 const playerThemes = [
@@ -158,8 +156,12 @@ const playerThemes = [
 ];
 
 const legacyAvatarMap = {
-  "😀": "avatar-1", "😎": "avatar-3", "🐻": "avatar-1", "🐱": "avatar-2",
-  "🦊": "avatar-3", "⭐": "avatar-4", "🧒": "avatar-5", "👧": "avatar-6"
+  "avatar-1": "profile-avatar-01", "avatar-2": "profile-avatar-02", "avatar-3": "profile-avatar-03",
+  "avatar-4": "profile-avatar-04", "avatar-5": "profile-avatar-05", "avatar-6": "profile-avatar-06",
+  "avatar-7": "profile-avatar-07", "avatar-8": "profile-avatar-08", "avatar-9": "profile-avatar-01",
+  "avatar-10": "profile-avatar-02", "😀": "profile-avatar-01", "😎": "profile-avatar-03",
+  "🐻": "profile-avatar-01", "🐱": "profile-avatar-02", "🦊": "profile-avatar-03",
+  "⭐": "profile-avatar-04", "🧒": "profile-avatar-05", "👧": "profile-avatar-06"
 };
 
 const achievementDefinitions = [
@@ -439,7 +441,12 @@ const elements = {
   supportOpenButton: document.querySelector("#support-open-button"),
   supportModal: document.querySelector("#support-modal"),
   supportQrImage: document.querySelector("#support-qr-image"),
+  supportQrEnlarge: document.querySelector("#support-qr-enlarge"),
   supportCloseButton: document.querySelector("#support-close-button"),
+  supportQrLightbox: document.querySelector("#support-qr-lightbox"),
+  supportQrLarge: document.querySelector("#support-qr-large"),
+  supportQrLightboxClose: document.querySelector("#support-qr-lightbox-close"),
+  supportQrLightboxDone: document.querySelector("#support-qr-lightbox-done"),
   settingsForm: document.querySelector("#accessibility-form"),
   settingsSaveButton: document.querySelector("#settings-save-button"),
   settingsBackButton: document.querySelector("#settings-back-button"),
@@ -550,9 +557,9 @@ let measurementQuestionPlan = [];
 let currentFractionLevel = 1;
 let currentFractionSubSkill = "half";
 let fractionQuestionPlan = [];
-let selectedProfileAvatar = "avatar-1";
+let selectedProfileAvatar = "profile-avatar-01";
 let selectedProfileTheme = "purple";
-let selectedNewProfileAvatar = "avatar-1";
+let selectedNewProfileAvatar = "profile-avatar-01";
 let selectedNewProfileTheme = "purple";
 let randomSource = Math.random;
 let activeDailyDate = "";
@@ -650,7 +657,7 @@ function defaultProgress() {
     stats: defaultStats(),
     skillStats: defaultSkillStats(),
     accessibilitySettings: defaultAccessibilitySettings(),
-    playerProfile: { name: "Pemain", avatar: "avatar-1", theme: "purple", featuredBadge: "" },
+    playerProfile: { name: "Pemain", avatar: "profile-avatar-01", theme: "purple", featuredBadge: "" },
     achievements: defaultAchievements(),
     achievementUnlockedAt: defaultAchievementUnlockedAt(),
     dailyChallenge: defaultDailyChallenge(),
@@ -809,9 +816,11 @@ function initializeWebSupport() {
   elements.parentSupportCard.classList.toggle("hidden", !enabled);
   if (!enabled) {
     elements.supportQrImage.removeAttribute("src");
+    elements.supportQrLarge.removeAttribute("src");
     return;
   }
   elements.supportQrImage.src = elements.supportQrImage.dataset.src;
+  elements.supportQrLarge.src = elements.supportQrLarge.dataset.src;
 }
 
 function openSupportModal() {
@@ -821,6 +830,18 @@ function openSupportModal() {
 
 function closeSupportModal() {
   closeAccessibleModal();
+}
+
+function openSupportQrLightbox() {
+  if (!isWebSupportEnabled()) return;
+  closeAccessibleModal(false);
+  openAccessibleModal(elements.supportQrLightbox, elements.supportQrLightboxClose, closeSupportQrLightbox);
+}
+
+function closeSupportQrLightbox() {
+  closeAccessibleModal(false);
+  openSupportModal();
+  elements.supportQrEnlarge.focus();
 }
 
 function getAchievement(achievementId) {
@@ -892,7 +913,7 @@ function loadProgress(savedInput = null) {
     const savedAvatar = saved.playerProfile?.avatar;
     const avatarId = playerAvatars.some((avatar) => avatar.id === savedAvatar)
       ? savedAvatar
-      : legacyAvatarMap[savedAvatar] || "avatar-1";
+      : legacyAvatarMap[savedAvatar] || "profile-avatar-01";
     const themeId = playerThemes.some((theme) => theme.id === saved.playerProfile?.theme)
       ? saved.playerProfile.theme
       : "purple";
@@ -2597,8 +2618,8 @@ function updateProfilePreview() {
 
 function renderAvatarPicker(container, selectedAvatarId) {
   container.innerHTML = playerAvatars.map((avatar) => `
-    <button class="avatar-option${avatar.id === selectedAvatarId ? " selected" : ""}" type="button" data-avatar="${avatar.id}" aria-label="Pilih avatar ${avatar.name}" aria-pressed="${avatar.id === selectedAvatarId}" aria-selected="${avatar.id === selectedAvatarId}">
-      <span class="avatar-option-visual">${playerAvatarMarkup(avatar)}</span><small>${avatar.name}</small>
+    <button class="avatar-option${avatar.id === selectedAvatarId ? " selected" : ""}" type="button" data-avatar="${avatar.id}" aria-label="${avatar.name}" aria-pressed="${avatar.id === selectedAvatarId}" aria-selected="${avatar.id === selectedAvatarId}">
+      <span class="avatar-option-visual">${playerAvatarMarkup(avatar)}</span>
     </button>
   `).join("");
 }
@@ -2676,7 +2697,7 @@ function savePlayerProfile() {
   ) ? requestedBadge : "";
   targetData.playerProfile = {
     name: sanitizePlayerName(elements.profileNameInput.value),
-    avatar: playerAvatars.some((avatar) => avatar.id === selectedProfileAvatar) ? selectedProfileAvatar : "avatar-1",
+    avatar: playerAvatars.some((avatar) => avatar.id === selectedProfileAvatar) ? selectedProfileAvatar : "profile-avatar-01",
     theme: playerThemes.some((theme) => theme.id === selectedProfileTheme) ? selectedProfileTheme : "purple",
     featuredBadge
   };
@@ -2758,7 +2779,7 @@ function showProfilePicker() {
 function openProfileCreateForm() {
   if (profileStore.order.length >= MAX_PROFILES) return;
   elements.newProfileName.value = "";
-  selectedNewProfileAvatar = "avatar-1";
+  selectedNewProfileAvatar = "profile-avatar-01";
   selectedNewProfileTheme = "purple";
   renderAvatarPicker(elements.newProfileAvatarOptions, selectedNewProfileAvatar);
   renderThemePicker(elements.newProfileThemeOptions, selectedNewProfileTheme);
@@ -2782,7 +2803,7 @@ function createLocalProfile(event) {
   elements.newProfileName.setCustomValidity("");
   const data = defaultProgress();
   data.playerProfile.name = sanitizePlayerName(elements.newProfileName.value);
-  data.playerProfile.avatar = playerAvatars.some((avatar) => avatar.id === selectedNewProfileAvatar) ? selectedNewProfileAvatar : "avatar-1";
+  data.playerProfile.avatar = playerAvatars.some((avatar) => avatar.id === selectedNewProfileAvatar) ? selectedNewProfileAvatar : "profile-avatar-01";
   data.playerProfile.theme = playerThemes.some((theme) => theme.id === selectedNewProfileTheme) ? selectedNewProfileTheme : "purple";
   saveProgress();
   const id = createProfileId();
@@ -3127,7 +3148,8 @@ function showMainMenu() {
   elements.menuPlayerGreeting.textContent = `Hai, ${progress.playerProfile.name}!`;
   const featuredBadge = getAchievement(progress.playerProfile.featuredBadge);
   const badgeIsValid = featuredBadge && progress.achievements[featuredBadge.id] === true;
-  elements.menuPlayerBadge.textContent = badgeIsValid ? `${featuredBadge.icon} ${featuredBadge.name}` : "";
+  const badgeLabel = featuredBadge?.id === "onTime" ? "Tepat Masa" : featuredBadge?.name;
+  elements.menuPlayerBadge.textContent = badgeIsValid ? `${featuredBadge.icon} ${badgeLabel}` : "";
   elements.menuPlayerBadge.classList.toggle("hidden", !badgeIsValid);
   elements.howToCard.classList.add("hidden");
   elements.howToButton.setAttribute("aria-expanded", "false");
@@ -3300,6 +3322,10 @@ function renderVisualHelp(question) {
 }
 
 function handleItemImageError(event) {
+  if (event.target.matches?.(".measurement-item-visual img")) {
+    event.target.classList.add("hidden");
+    return;
+  }
   const image = event.target.closest?.(".item-image");
   if (!image) return;
 
@@ -3333,7 +3359,10 @@ function renderAnswers(choices) {
 function renderMeasurementDisplay(question) {
   elements.itemsList.classList.remove("three-items");
   elements.itemsList.innerHTML = `<article class="measurement-display" aria-label="Maklumat ukuran">
-    <span class="measurement-icon" aria-hidden="true">${question.visual.icon}</span>
+    <span class="measurement-visuals">${(question.visual.items || []).map((item) => item.image
+      ? `<span class="measurement-item-visual"><img src="${item.image}" alt="${escapeHtml(item.name)}"><span aria-hidden="true">${item.emoji}</span></span>`
+      : `<span class="measurement-item-emoji" role="img" aria-label="${escapeHtml(item.name)}">${item.emoji}</span>`
+    ).join("") || `<span class="measurement-item-emoji" aria-hidden="true">${question.visual.icon}</span>`}</span>
     <span class="measurement-copy"><strong>${question.visual.title}</strong><b>${question.visual.equation}</b></span>
   </article>`;
 }
@@ -4295,6 +4324,12 @@ elements.parentDeleteProfile.addEventListener("click", deleteSelectedProfile);
 elements.parentPrintReport.addEventListener("click", () => window.print());
 elements.supportOpenButton.addEventListener("click", openSupportModal);
 elements.supportCloseButton.addEventListener("click", closeSupportModal);
+elements.supportQrEnlarge.addEventListener("click", openSupportQrLightbox);
+elements.supportQrLightboxClose.addEventListener("click", closeSupportQrLightbox);
+elements.supportQrLightboxDone.addEventListener("click", closeSupportQrLightbox);
+elements.supportQrLightbox.addEventListener("click", (event) => {
+  if (event.target === elements.supportQrLightbox) closeSupportQrLightbox();
+});
 elements.moneyCategoryButton.addEventListener("click", () => showLevelSelect());
 elements.timeCategoryButton.addEventListener("click", () => showTimeLevelSelect());
 elements.measurementCategoryButton.addEventListener("click", () => showMeasurementLevelSelect());

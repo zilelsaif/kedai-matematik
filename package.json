@@ -1,6 +1,6 @@
 {
   "name": "kedai-matematik",
-  "version": "1.9.2",
+  "version": "1.9.3",
   "description": "Game pendidikan matematik kanak-kanak berasaskan web.",
   "main": "game.js",
   "scripts": {

@@ -72,7 +72,7 @@ Game direka untuk:
 
 ## 📦 Versi
 
-**v1.9.2**
+**v1.9.3**
 
 ## 👨‍💻 Pembangunan
 

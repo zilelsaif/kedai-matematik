@@ -470,9 +470,21 @@
         <p>Ia tidak membuka kandungan premium, ciri tambahan atau kelebihan khas.</p>
         <p>Semua kandungan Kedai Matematik kekal boleh digunakan secara percuma.</p>
       </div>
-      <img class="support-qr-image" id="support-qr-image" data-src="assets/support/support-qr.webp" alt="QR sokongan pembangunan Kedai Matematik">
+      <button class="support-qr-preview" id="support-qr-enlarge" type="button" aria-label="Besarkan QR sokongan">
+        <img class="support-qr-image" id="support-qr-image" data-src="assets/support/support-qr.webp" alt="QR sokongan pembangunan Kedai Matematik">
+      </button>
+      <small class="support-qr-hint">Tekan QR untuk besarkan</small>
       <p class="support-scan-note">Imbas menggunakan aplikasi perbankan atau eWallet yang menyokong QR.</p>
       <button class="secondary-button" id="support-close-button" type="button">Tutup</button>
+    </div>
+  </div>
+
+  <div class="support-qr-lightbox hidden" id="support-qr-lightbox" role="dialog" aria-modal="true" aria-labelledby="support-qr-lightbox-title">
+    <div class="support-qr-lightbox-card">
+      <h2 class="visually-hidden" id="support-qr-lightbox-title">QR Sokong Pembangunan</h2>
+      <button class="support-qr-lightbox-close" id="support-qr-lightbox-close" type="button" aria-label="Tutup paparan QR">×</button>
+      <img class="support-qr-large" id="support-qr-large" data-src="assets/support/support-qr.webp" alt="QR sokongan pembangunan Kedai Matematik dalam paparan besar">
+      <button class="secondary-button" id="support-qr-lightbox-done" type="button">Tutup</button>
     </div>
   </div>
 

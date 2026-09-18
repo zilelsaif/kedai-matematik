@@ -27,19 +27,54 @@ window.MeasurementModule = (() => {
     volume: [100, 200, 250, 300, 330, 500, 750, 1000, 1500, 2000],
     length: [10, 20, 25, 30, 50, 75, 100, 150, 200, 250]
   };
+  const itemVisuals = {
+    scale: { id: "scale", name: "Alat timbang", emoji: "⚖️", kind: "generic" },
+    tepung: { id: "tepung", name: "Tepung", emoji: "🥣", kind: "emoji" },
+    beras: { id: "beras", name: "Beras", emoji: "🍚", image: "assets/items/beras.png", kind: "asset" },
+    kentang: { id: "kentang", name: "Kentang", emoji: "🥔", image: "assets/items/kentang.png", kind: "asset" },
+    epal: { id: "epal", name: "Epal", emoji: "🍎", image: "assets/items/epal.png", kind: "asset" },
+    gula: { id: "gula", name: "Gula", emoji: "🧂", kind: "emoji" },
+    bawang: { id: "bawang", name: "Bawang", emoji: "🧅", image: "assets/items/bawang.png", kind: "asset" },
+    jus: { id: "jus", name: "Jus", emoji: "🧃", image: "assets/items/jus.png", kind: "asset" },
+    susu: { id: "susu", name: "Susu", emoji: "🥛", image: "assets/items/susu.png", kind: "asset" },
+    air: { id: "air", name: "Air", emoji: "💧", kind: "emoji" },
+    "minuman-kotak": { id: "minuman-kotak", name: "Minuman kotak", emoji: "🥤", image: "assets/items/air-kotak.png", kind: "asset" },
+    reben: { id: "reben", name: "Reben", emoji: "🎀", kind: "emoji" },
+    tali: { id: "tali", name: "Tali", emoji: "🧵", kind: "emoji" },
+    pita: { id: "pita", name: "Pita ukur", emoji: "📏", kind: "emoji" },
+    "kertas-pembungkus": { id: "kertas-pembungkus", name: "Kertas pembungkus", emoji: "🎁", kind: "emoji" },
+    "label-rak": { id: "label-rak", name: "Label rak", emoji: "🏷️", kind: "emoji" },
+    pensel: { id: "pensel", name: "Pensel", emoji: "✏️", image: "assets/items/pensel.png", kind: "asset" },
+    biskut: { id: "biskut", name: "Biskut", emoji: "🍪", image: "assets/items/biskut.png", kind: "asset" },
+    keju: { id: "keju", name: "Keju", emoji: "🧀", image: "assets/items/keju.png", kind: "asset" },
+    telur: { id: "telur", name: "Telur", emoji: "🥚", image: "assets/items/telur.png", kind: "asset" },
+    tembikai: { id: "tembikai", name: "Tembikai", emoji: "🍉", image: "assets/items/tembikai.png", kind: "asset" },
+    syampu: { id: "syampu", name: "Syampu", emoji: "🧴", image: "assets/items/syampu.png", kind: "asset" }
+  };
+  function visualItem(id, fallbackName = "Barang", fallbackEmoji = "📦") {
+    return itemVisuals[id] || { id, name: fallbackName, emoji: fallbackEmoji, kind: "emoji" };
+  }
+  function itemIdFromTitle(title) {
+    const normalized = title.toLowerCase();
+    return Object.keys(itemVisuals).find((id) => normalized.includes(id.replaceAll("-", " ")))
+      || (normalized.includes("minuman") ? "minuman-kotak" : null)
+      || (normalized.includes("botol") || normalized.includes("baldi") || normalized.includes("dispenser") ? "air" : null)
+      || (normalized.includes("kotak kecil") ? "kertas-pembungkus" : null)
+      || "scale";
+  }
   const products = [
-    { name: "tepung", icon: "⚖️" }, { name: "beras", icon: "🍚" },
-    { name: "kentang", icon: "🥔" }, { name: "epal", icon: "🍎" },
-    { name: "gula", icon: "🧂" }, { name: "bawang", icon: "🧅" }
+    { id: "tepung", name: "tepung", icon: "🥣" }, { id: "beras", name: "beras", icon: "🍚" },
+    { id: "kentang", name: "kentang", icon: "🥔" }, { id: "epal", name: "epal", icon: "🍎" },
+    { id: "gula", name: "gula", icon: "🧂" }, { id: "bawang", name: "bawang", icon: "🧅" }
   ];
   const drinks = [
-    { name: "jus", icon: "🧃" }, { name: "susu", icon: "🥛" },
-    { name: "air", icon: "💧" }, { name: "minuman kotak", icon: "🥤" }
+    { id: "jus", name: "jus", icon: "🧃" }, { id: "susu", name: "susu", icon: "🥛" },
+    { id: "air", name: "air", icon: "💧" }, { id: "minuman-kotak", name: "minuman kotak", icon: "🥤" }
   ];
   const wrappingMaterials = [
-    { name: "reben", icon: "🎀" }, { name: "tali", icon: "🧵" },
-    { name: "pita", icon: "📏" }, { name: "kertas pembungkus", icon: "🎁" },
-    { name: "label rak", icon: "🏷️" }
+    { id: "reben", name: "reben", icon: "🎀" }, { id: "tali", name: "tali", icon: "🧵" },
+    { id: "pita", name: "pita", icon: "📏" }, { id: "kertas-pembungkus", name: "kertas pembungkus", icon: "🎁" },
+    { id: "label-rak", name: "label rak", icon: "🏷️" }
   ];
 
   const unitSituations = [
@@ -115,7 +150,7 @@ window.MeasurementModule = (() => {
       answer, choices: createChoices(answer, Math.max(50, Math.min(amount, 250)), shuffle),
       isMeasurement: true, measurementDimension: "mass", measurementSubSkill: "weight",
       skillCategory: "measurement",
-      visual: { icon: product.icon, title: product.name, equation: `${quantity} × ${formatBase(amount, "mass")}` },
+      visual: { icon: product.icon, items: [visualItem(product.id)], title: product.name, equation: `${quantity} × ${formatBase(amount, "mass")}` },
       context: context(customer, randomIndex,
         `Saya mahu ${quantity} bungkus ${product.name}, setiap satu ${formatBase(amount, "mass")}.`,
         `${quantity} bungkus ${product.name} sedang ditimbang, setiap satu ${formatBase(amount, "mass")}.`,
@@ -129,7 +164,7 @@ window.MeasurementModule = (() => {
       answer, choices: createChoices(answer, 250, shuffle),
       isMeasurement: true, measurementDimension: "mass", measurementSubSkill: "massConversion",
       skillCategory: "measurement",
-      visual: { icon: "⚖️", title: "Gram kepada kilogram", equation: `${formatBase(answer, "mass")} = ?` },
+      visual: { icon: "🍚", items: [visualItem("beras")], title: "Gram kepada kilogram", equation: `${formatBase(answer, "mass")} = ?` },
       context: context(customer, randomIndex,
         `Tolong tukarkan ${formatBase(answer, "mass")} kepada kilogram dan gram.`,
         `Stok beras seberat ${formatBase(answer, "mass")} perlu dilabel dalam kilogram dan gram.`,
@@ -146,7 +181,7 @@ window.MeasurementModule = (() => {
       answer, choices: createChoices(answer, amount === 330 ? 100 : Math.max(50, Math.min(amount, 250)), shuffle),
       isMeasurement: true, measurementDimension: "volume", measurementSubSkill: "volume",
       skillCategory: "measurement",
-      visual: { icon: drink.icon, title: drink.name, equation: `${quantity} × ${formatBase(amount, "volume")}` },
+      visual: { icon: drink.icon, items: [visualItem(drink.id)], title: drink.name, equation: `${quantity} × ${formatBase(amount, "volume")}` },
       context: context(customer, randomIndex,
         `Saya membeli ${quantity} bekas ${drink.name}, setiap satu ${formatBase(amount, "volume")}.`,
         `${quantity} bekas ${drink.name} diisi, setiap satu ${formatBase(amount, "volume")}.`,
@@ -163,7 +198,7 @@ window.MeasurementModule = (() => {
       answer, choices: createChoices(answer, Math.max(5, Math.min(amount, 25)), shuffle),
       isMeasurement: true, measurementDimension: "length", measurementSubSkill: "length",
       skillCategory: "measurement",
-      visual: { icon: material.icon, title: material.name, equation: `${quantity} × ${formatBase(amount, "length")}` },
+      visual: { icon: material.icon, items: [visualItem(material.id)], title: material.name, equation: `${quantity} × ${formatBase(amount, "length")}` },
       context: context(customer, randomIndex,
         `Hadiah saya menggunakan ${quantity} bahagian ${material.name}, setiap satu ${formatBase(amount, "length")}.`,
         `${quantity} bahagian ${material.name} dipotong, setiap satu ${formatBase(amount, "length")}.`,
@@ -181,7 +216,7 @@ window.MeasurementModule = (() => {
       answer, choices: createChoices(answer, dimension === "length" ? 25 : 250, shuffle),
       isMeasurement: true, measurementDimension: dimension, measurementSubSkill: subSkill,
       skillCategory: "measurement",
-      visual: { icon: visual.icon, title: visual.title, equation: `${formatBase(first, dimension)} + ${formatBase(second, dimension)}` },
+      visual: { icon: visual.icon, items: visual.itemIds.map((id) => visualItem(id)), title: visual.title, equation: `${formatBase(first, dimension)} + ${formatBase(second, dimension)}` },
       context: context(customer, randomIndex, visual.customerDialog(first, second), visual.systemDialog(first, second),
         (name) => `Berapakah jumlah ${unitName} untuk ${name}?`, `Berapakah jumlah ${unitName} semuanya?`)
     };
@@ -189,7 +224,7 @@ window.MeasurementModule = (() => {
 
   function addWeightQuestion(customer, randomIndex, shuffle, spec) {
     return additionQuestion(customer, randomIndex, shuffle, "mass", "weight", {
-      icon: "⚖️", title: "Campur berat",
+      icon: "🍚", itemIds: ["beras", "tepung"], title: "Campur berat",
       customerDialog: (a, b) => `Timbang ${formatBase(a, "mass")} beras dan ${formatBase(b, "mass")} tepung untuk saya.`,
       systemDialog: (a, b) => `Stok ${formatBase(a, "mass")} dan ${formatBase(b, "mass")} sedang digabungkan.`
     }, spec);
@@ -197,7 +232,7 @@ window.MeasurementModule = (() => {
 
   function addVolumeQuestion(customer, randomIndex, shuffle, spec) {
     return additionQuestion(customer, randomIndex, shuffle, "volume", "volume", {
-      icon: "🧃", title: "Campur isipadu",
+      icon: "🧃", itemIds: ["jus", "susu"], title: "Campur isipadu",
       customerDialog: (a, b) => `Satukan ${formatBase(a, "volume")} jus dan ${formatBase(b, "volume")} susu untuk saya.`,
       systemDialog: (a, b) => `Dua bekas ${formatBase(a, "volume")} dan ${formatBase(b, "volume")} sedang disukat.`
     }, spec);
@@ -205,7 +240,7 @@ window.MeasurementModule = (() => {
 
   function addLengthQuestion(customer, randomIndex, shuffle, spec) {
     return additionQuestion(customer, randomIndex, shuffle, "length", "length", {
-      icon: "📏", title: "Campur panjang",
+      icon: "🎀", itemIds: ["reben", "tali"], title: "Campur panjang",
       customerDialog: (a, b) => `Sambungkan reben ${formatBase(a, "length")} dan ${formatBase(b, "length")} untuk hadiah saya.`,
       systemDialog: (a, b) => `Reben ${formatBase(a, "length")} dan ${formatBase(b, "length")} digunakan untuk membungkus hadiah.`
     }, spec);
@@ -213,13 +248,17 @@ window.MeasurementModule = (() => {
 
   function unitChoiceQuestion(customer, randomIndex, shuffle, spec) {
     const situation = spec?.situation || unitSituations[randomIndex(unitSituations.length)];
+    const itemId = itemIdFromTitle(situation.title);
+    const situationVisual = itemId === "scale"
+      ? { id: `situation-${situation.answer}`, name: situation.title, emoji: situation.icon, kind: "emoji" }
+      : visualItem(itemId, situation.title, situation.icon);
     const relatedChoices = situation.answer <= 2 ? [1, 2, 5, 3]
       : situation.answer <= 4 ? [3, 4, 1, 5] : [5, 6, 1, 3];
     return {
       answer: situation.answer, choices: shuffle(relatedChoices),
       isMeasurement: true, measurementDimension: "unit", measurementSubSkill: "unitChoice",
       skillCategory: "measurement",
-      visual: { icon: situation.icon, title: situation.title, equation: "Unit yang sesuai?" },
+      visual: { icon: situation.icon, items: [situationVisual], title: situation.title, equation: "Unit yang sesuai?" },
       context: { usesCustomer: randomIndex(2) === 0, dialog: situation.dialog,
         question: "Apakah unit ukuran yang paling sesuai?" }
     };
@@ -274,5 +313,5 @@ window.MeasurementModule = (() => {
     return unitChoiceQuestion(customer, randomIndex, shuffle, spec);
   }
 
-  return { missions, format, createPlan, generate };
+  return { missions, format, createPlan, generate, itemVisuals };
 })();
