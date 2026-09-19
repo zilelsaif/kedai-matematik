@@ -3175,6 +3175,13 @@ function toggleHowTo() {
   elements.howToButton.setAttribute("aria-expanded", String(willOpen));
 }
 
+function closeHowToWithEscape(event) {
+  if (event.key !== "Escape" || activeModal || elements.howToCard.classList.contains("hidden")) return;
+  elements.howToCard.classList.add("hidden");
+  elements.howToButton.setAttribute("aria-expanded", "false");
+  elements.howToButton.focus();
+}
+
 function showLevelSelect(message = "") {
   questionLocked = true;
   renderLevelCards();
@@ -4369,6 +4376,7 @@ elements.soundToggleButton.addEventListener("click", toggleSound);
 elements.fullscreenButton.addEventListener("click", toggleFullscreen);
 document.addEventListener("fullscreenchange", updateFullscreenButton);
 document.addEventListener("keydown", handleModalKeyboard);
+document.addEventListener("keydown", closeHowToWithEscape);
 document.addEventListener("error", (event) => {
   if (!(event.target instanceof HTMLImageElement) || !event.target.classList.contains("player-avatar-image")) return;
   event.target.classList.add("hidden");
