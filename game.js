@@ -352,6 +352,15 @@ const elements = {
   measurementStarTotal: document.querySelector("#measurement-star-total"),
   fractionStarTotal: document.querySelector("#fraction-star-total"),
   howToButton: document.querySelector("#how-to-button"),
+  tutorialOpenButton: document.querySelector("#tutorial-open-button"),
+  tutorialModal: document.querySelector("#tutorial-modal"),
+  tutorialIcon: document.querySelector("#tutorial-icon"),
+  tutorialTitle: document.querySelector("#tutorial-title"),
+  tutorialDescription: document.querySelector("#tutorial-description"),
+  tutorialDots: document.querySelector("#tutorial-dots"),
+  tutorialSkipButton: document.querySelector("#tutorial-skip-button"),
+  tutorialBackButton: document.querySelector("#tutorial-back-button"),
+  tutorialNextButton: document.querySelector("#tutorial-next-button"),
   statisticsButton: document.querySelector("#statistics-button"),
   practiceMenuButton: document.querySelector("#practice-menu-button"),
   practiceBackButton: document.querySelector("#practice-back-button"),
@@ -661,7 +670,8 @@ function defaultProgress() {
     achievements: defaultAchievements(),
     achievementUnlockedAt: defaultAchievementUnlockedAt(),
     dailyChallenge: defaultDailyChallenge(),
-    shopChallenge: defaultShopChallenge()
+    shopChallenge: defaultShopChallenge(),
+    onboardingCompleted: false
   };
 }
 
@@ -895,6 +905,11 @@ function loadProgress(savedInput = null) {
     const achievementUnlockedAt = defaultAchievementUnlockedAt();
     const dailyChallenge = defaultDailyChallenge();
     const shopChallenge = defaultShopChallenge();
+    // Data daripada versi lama dianggap sudah diperkenalkan supaya tutorial
+    // baharu tidak mengganggu pemain sedia ada.
+    const onboardingCompleted = typeof saved.onboardingCompleted === "boolean"
+      ? saved.onboardingCompleted
+      : true;
 
     if (saved.achievements && typeof saved.achievements === "object") {
       achievementDefinitions.forEach((achievement) => {
@@ -1187,7 +1202,8 @@ function loadProgress(savedInput = null) {
       achievements,
       achievementUnlockedAt,
       dailyChallenge,
-      shopChallenge
+      shopChallenge,
+      onboardingCompleted
     };
   } catch (error) {
     return defaultProgress();
@@ -3155,6 +3171,9 @@ function showMainMenu() {
   elements.howToButton.setAttribute("aria-expanded", "false");
   showScreen("menu");
   elements.moneyCategoryButton.focus();
+  if (progress.onboardingCompleted === false) {
+    requestAnimationFrame(() => openTutorial(true));
+  }
 }
 
 function showTitleScreen() {
@@ -3167,6 +3186,56 @@ function showTitleScreen() {
 function enterShop() {
   if (profileStore.order.length > 1) showProfilePicker();
   else showMainMenu();
+}
+
+const tutorialSteps = [
+  { icon: "👋", title: "Selamat Datang!", description: "Mari lihat cara bermain. Hanya tiga langkah mudah!" },
+  { icon: "📚", title: "Pilih Modul", description: "Pilih Wang, Masa, Ukuran atau Pecahan. Setiap modul ada 10 misi." },
+  { icon: "⭐", title: "Jawab & Kumpul Bintang", description: "Jawab 10 soalan. Dapat 8 betul untuk membuka misi seterusnya!" }
+];
+let tutorialStepIndex = 0;
+
+function renderTutorialStep() {
+  const step = tutorialSteps[tutorialStepIndex];
+  elements.tutorialIcon.textContent = step.icon;
+  elements.tutorialTitle.textContent = step.title;
+  elements.tutorialDescription.textContent = step.description;
+  elements.tutorialDots.innerHTML = tutorialSteps.map((_, index) =>
+    `<span class="${index === tutorialStepIndex ? "active" : ""}" aria-hidden="true"></span>`
+  ).join("");
+  elements.tutorialDots.setAttribute("aria-label", `Langkah ${tutorialStepIndex + 1} daripada ${tutorialSteps.length}`);
+  elements.tutorialBackButton.classList.toggle("hidden", tutorialStepIndex === 0);
+  elements.tutorialNextButton.textContent = tutorialStepIndex === tutorialSteps.length - 1 ? "Jom Mula!" : "Seterusnya";
+}
+
+function openTutorial(automatic = false) {
+  if (activeModal) return;
+  tutorialStepIndex = 0;
+  renderTutorialStep();
+  openAccessibleModal(elements.tutorialModal, automatic ? elements.tutorialSkipButton : elements.tutorialNextButton, closeTutorial);
+}
+
+function closeTutorial() {
+  progress.onboardingCompleted = true;
+  saveProgress();
+  closeAccessibleModal();
+}
+
+function showNextTutorialStep() {
+  if (tutorialStepIndex >= tutorialSteps.length - 1) {
+    closeTutorial();
+    return;
+  }
+  tutorialStepIndex += 1;
+  renderTutorialStep();
+  elements.tutorialNextButton.focus();
+}
+
+function showPreviousTutorialStep() {
+  if (tutorialStepIndex === 0) return;
+  tutorialStepIndex -= 1;
+  renderTutorialStep();
+  elements.tutorialBackButton.focus();
 }
 
 function toggleHowTo() {
@@ -4348,6 +4417,10 @@ elements.measurementLevelGrid.addEventListener("click", handleMeasurementLevelSe
 elements.fractionLevelBackButton.addEventListener("click", showMainMenu);
 elements.fractionLevelGrid.addEventListener("click", handleFractionLevelSelection);
 elements.howToButton.addEventListener("click", toggleHowTo);
+elements.tutorialOpenButton.addEventListener("click", () => openTutorial(false));
+elements.tutorialSkipButton.addEventListener("click", closeTutorial);
+elements.tutorialBackButton.addEventListener("click", showPreviousTutorialStep);
+elements.tutorialNextButton.addEventListener("click", showNextTutorialStep);
 elements.statisticsButton.addEventListener("click", showStatistics);
 elements.statsBackButton.addEventListener("click", showMainMenu);
 statElements.skillRecommendationButton.addEventListener("click", startRecommendedPractice);
@@ -4390,7 +4463,7 @@ document.addEventListener("click", (event) => {
     "#home-confirm-button, #home-continue-button, " +
     "#daily-menu-button, #daily-start-button, #daily-back-button, #shop-challenge-menu-button, #parent-menu-button, " +
     "#profile-picker-back, #profile-picker-add, .profile-picker-card, #parent-back-button, #parent-print-report, #support-open-button, #support-close-button, " +
-    "#settings-menu-button, #settings-save-button, #settings-back-button, " +
+    "#settings-menu-button, #settings-save-button, #settings-back-button, #tutorial-open-button, #tutorial-skip-button, #tutorial-back-button, #tutorial-next-button, " +
     "#skill-recommendation-button, #menu-recommendation, " +
     "#money-category-button, #time-category-button, #measurement-category-button, #fraction-category-button, " +
     "#time-level-back-button, #measurement-level-back-button, #fraction-level-back-button, " +

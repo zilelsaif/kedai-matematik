@@ -143,7 +143,10 @@
           <button class="hub-menu-card" id="settings-menu-button" type="button"><img data-src="assets/menu/icon-settings.webp" alt=""><span>Tetapan</span></button>
         </nav>
 
-        <button class="hub-how-to-button" id="how-to-button" type="button" aria-expanded="false" aria-controls="how-to-card">❔ Cara Main</button>
+        <div class="hub-help-actions">
+          <button class="hub-tutorial-button" id="tutorial-open-button" type="button">🧭 Tutorial Pantas</button>
+          <button class="hub-how-to-button" id="how-to-button" type="button" aria-expanded="false" aria-controls="how-to-card">❔ Cara Main</button>
+        </div>
         <section class="how-to-card hidden" id="how-to-card" aria-labelledby="how-to-title">
           <h3 id="how-to-title">CARA MAIN</h3>
           <p class="how-to-intro">Pilih modul, jawab soalan dan kumpulkan bintang. Cuba latihan dan cabaran untuk berlatih lagi!</p>
@@ -449,6 +452,21 @@
       </div>
     </section>
   </main>
+
+  <div class="tutorial-modal hidden" id="tutorial-modal" role="dialog" aria-modal="true" aria-labelledby="tutorial-title" aria-describedby="tutorial-description">
+    <div class="tutorial-card">
+      <button class="tutorial-skip" id="tutorial-skip-button" type="button">Langkau</button>
+      <p class="tutorial-kicker">Panduan pemain baharu</p>
+      <div class="tutorial-icon" id="tutorial-icon" aria-hidden="true">👋</div>
+      <h2 id="tutorial-title">Selamat Datang!</h2>
+      <p id="tutorial-description">Mari lihat cara bermain. Hanya tiga langkah mudah!</p>
+      <div class="tutorial-dots" id="tutorial-dots" aria-label="Langkah 1 daripada 3"></div>
+      <div class="tutorial-actions">
+        <button class="secondary-button hidden" id="tutorial-back-button" type="button">← Kembali</button>
+        <button class="play-again-button" id="tutorial-next-button" type="button">Seterusnya</button>
+      </div>
+    </div>
+  </div>
 
   <div class="home-modal hidden" id="home-modal" role="dialog" aria-modal="true" aria-labelledby="home-modal-title">
     <div class="home-modal-card">

@@ -1528,6 +1528,34 @@ html.visual-help-on .money-cents { text-decoration: underline 3px #ffd84d; text-
 
 .hub-categories { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
 .hub-category-card, .hub-menu-card, .hub-how-to-button { cursor: pointer; }
+.hub-help-actions { display: flex; margin-top: 12px; justify-content: center; gap: 8px; }
+.hub-tutorial-button,
+.hub-how-to-button { min-height: 42px; padding: 7px 14px; border: 3px solid #c9bdf0; border-radius: 14px; background: #fff; color: var(--purple-dark); cursor: pointer; font: inherit; font-size: .9rem; font-weight: 900; }
+.hub-tutorial-button:hover,
+.hub-tutorial-button:focus-visible,
+.hub-how-to-button:hover,
+.hub-how-to-button:focus-visible { border-color: var(--player-accent); background: var(--player-accent-soft); transform: translateY(-1px); }
+
+.tutorial-modal { position: fixed; z-index: 220; inset: 0; display: grid; padding: 16px; place-items: center; background: rgba(31,20,77,.78); }
+.tutorial-modal.hidden { display: none; }
+.tutorial-card { position: relative; width: min(520px, 100%); padding: 30px 24px 24px; border: 5px solid #fff; border-radius: 28px; background: #fff9e9; box-shadow: 0 12px 0 rgba(35,25,83,.28), 0 24px 50px rgba(20,16,55,.32); text-align: center; }
+.tutorial-skip { position: absolute; top: 12px; right: 14px; padding: 7px 10px; border: 0; border-radius: 999px; background: #eee8ff; color: #584598; cursor: pointer; font: inherit; font-size: .78rem; font-weight: 900; }
+.tutorial-kicker { margin: 0 54px 5px; color: #7a64c2; font-size: .75rem; font-weight: 1000; letter-spacing: .06em; text-transform: uppercase; }
+.tutorial-icon { margin: 4px 0 7px; font-size: 4rem; line-height: 1; }
+.tutorial-card h2 { margin: 0 0 8px; color: var(--purple-dark); font-size: clamp(1.8rem, 7vw, 2.6rem); }
+.tutorial-card > p:not(.tutorial-kicker) { max-width: 390px; min-height: 3em; margin: 0 auto 16px; color: #4e536b; font-size: 1.05rem; font-weight: 800; line-height: 1.45; }
+.tutorial-dots { display: flex; margin-bottom: 18px; justify-content: center; gap: 8px; }
+.tutorial-dots span { width: 12px; height: 12px; border-radius: 50%; background: #d8cff5; }
+.tutorial-dots span.active { width: 30px; border-radius: 999px; background: var(--player-accent); }
+.tutorial-actions { display: flex; justify-content: center; gap: 10px; }
+.tutorial-actions .hidden { display: none; }
+
+@media (max-width: 480px) {
+  .hub-help-actions { flex-wrap: wrap; }
+  .tutorial-card { padding: 28px 16px 18px; border-width: 4px; border-radius: 23px; }
+  .tutorial-icon { font-size: 3.4rem; }
+  .tutorial-actions .play-again-button, .tutorial-actions .secondary-button { min-height: 48px; padding: 9px 16px; }
+}
 .hub-category-card {
   display: flex;
   min-height: 118px;
