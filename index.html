@@ -34,6 +34,8 @@
   </script>
   <link rel="icon" type="image/svg+xml" href="assets/branding/favicon.svg">
   <link rel="preload" as="image" href="assets/branding/logo-main.webp" type="image/webp">
+  <link rel="preload" as="image" href="assets/landing/hero-desktop.webp" type="image/webp" media="(min-width: 641px)">
+  <link rel="preload" as="image" href="assets/landing/hero-mobile.webp" type="image/webp" media="(max-width: 640px)">
   <link rel="preload" as="image" href="assets/ui/icon-enter-shop.webp" type="image/webp">
   <link rel="preload" as="image" href="assets/ui/icon-sound-on.webp" type="image/webp">
   <link rel="preload" as="image" href="assets/ui/icon-sound-off.webp" type="image/webp">
@@ -68,6 +70,11 @@
     </header>
 
     <section class="title-screen" id="title-screen" aria-labelledby="title-screen-heading">
+      <picture class="title-hero" aria-hidden="true">
+        <source media="(max-width: 640px)" srcset="assets/landing/hero-mobile.webp" type="image/webp">
+        <img src="assets/landing/hero-desktop.webp" alt="" width="1600" height="900" fetchpriority="high" decoding="async">
+      </picture>
+      <div class="title-hero-shade" aria-hidden="true"></div>
       <div class="title-tools" aria-label="Tetapan paparan">
         <button class="asset-icon-button" id="sound-toggle-button" type="button" aria-label="Tutup bunyi" aria-pressed="false"><img src="assets/ui/icon-sound-on.webp" alt=""></button>
         <button class="asset-icon-button" id="fullscreen-button" type="button" aria-label="Buka skrin penuh" aria-pressed="false"><img src="assets/ui/icon-fullscreen.webp" alt=""></button>
@@ -76,11 +83,20 @@
       <img class="title-decor title-sparkle" src="assets/decor/deco-sparkle.webp" alt="" aria-hidden="true">
       <div class="title-stage">
         <h1 class="visually-hidden" id="title-screen-heading">Kedai Matematik</h1>
-        <img class="title-logo" src="assets/branding/logo-main.webp" alt="Kedai Matematik">
-        <p class="title-tagline">Jom kira, belajar dan urus kedai!</p>
-        <button class="enter-shop-button" id="start-menu-button" type="button"><img src="assets/ui/icon-enter-shop.webp" alt=""><span>MASUK KEDAI</span></button>
+        <div class="title-branding">
+          <img class="title-logo" src="assets/branding/logo-main.webp" alt="Kedai Matematik">
+          <p class="title-tagline">Jom kira, belajar dan urus kedai!</p>
+        </div>
+        <div class="title-actions">
+          <button class="enter-shop-button" id="start-menu-button" type="button"><img src="assets/ui/icon-enter-shop.webp" alt=""><span>MASUK KEDAI</span></button>
+          <ul class="title-highlights" aria-label="Kandungan permainan">
+            <li><span aria-hidden="true">📚</span><strong>4 Modul</strong></li>
+            <li><span aria-hidden="true">🎯</span><strong>40 Misi</strong></li>
+            <li><span aria-hidden="true">✨</span><strong>Cabaran Harian</strong></li>
+          </ul>
+        </div>
         <div class="title-mascot" aria-hidden="true">
-          <span class="title-mascot-bubble" id="helper-message">Jom masuk kedai!</span>
+          <span class="title-mascot-bubble" id="helper-message">Jom buka kedai!</span>
           <img src="assets/decor/mascot-shop.webp" alt="">
         </div>
       </div>
