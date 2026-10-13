@@ -1,6 +1,6 @@
 "use strict";
 
-const GAME_VERSION = "1.9.3";
+const GAME_VERSION = "1.9.5";
 const STORAGE_KEY = "kedaiMatematikProgress";
 const PROFILES_STORAGE_KEY = "kedaiMatematikProfiles";
 const MAX_PROFILES = 6;
@@ -492,6 +492,7 @@ const elements = {
   questionText: document.querySelector("#question-text"),
   answers: document.querySelector("#answers"),
   feedback: document.querySelector("#feedback"),
+  nextQuestionButton: document.querySelector("#next-question-button"),
   practiceBadge: document.querySelector("#practice-badge"),
   gameOverTitle: document.querySelector("#game-over-title"),
   resultLevel: document.querySelector("#result-level"),
@@ -553,7 +554,7 @@ let currentAnswerKind = "money";
 let currentMeasurementDimension = "mass";
 let questionLocked = true;
 let questionTimerId = null;
-let questionReviewTimerId = null;
+let awaitingWrongAdvance = false;
 let questionDeadline = 0;
 let currentStreak = 0;
 let currentSkillCategory = "mixed";
@@ -3465,13 +3466,6 @@ function stopQuestionTimer() {
   questionDeadline = 0;
 }
 
-function stopQuestionReviewTimer() {
-  if (questionReviewTimerId !== null) {
-    clearTimeout(questionReviewTimerId);
-    questionReviewTimerId = null;
-  }
-}
-
 function formatLearningAnswer(question) {
   if (question.isFraction) {
     if (currentAnswerKind === "fraction-count") return String(question.answer);
@@ -3499,33 +3493,61 @@ function buildWrongAnswerFeedback(question) {
 
   if (question.isFraction) {
     if (currentAnswerKind === "fraction-relation") {
-      return `Belum tepat — bagus mencuba! Samakan saiz bahagian atau bandingkan silang pembilang dan penyebut. Jawapannya: ${answer}.`;
+      const [left, right] = [question.visual?.left, question.visual?.right];
+      if (left && right) {
+        const leftCross = left.numerator * right.denominator;
+        const rightCross = right.numerator * left.denominator;
+        return `💡 Belum tepat — bagus mencuba! Banding silang: ${left.numerator} × ${right.denominator} = ${leftCross}, dan ${right.numerator} × ${left.denominator} = ${rightCross}. Jawapan betul: ${answer}.`;
+      }
+      return `💡 Belum tepat — bagus mencuba! Samakan saiz bahagian atau banding silang pembilang dan penyebut. Jawapan betul: ${answer}.`;
     }
     if (currentAnswerKind === "fraction-count") {
-      return `Belum tepat — bagus mencuba! Kira jumlah bahagian sama besar dahulu, kemudian kira bahagian yang diminta. Jawapannya: ${answer}.`;
+      const visual = question.visual || {};
+      if (visual.type === "complete") {
+        const missing = visual.denominator - visual.numerator;
+        return `💡 Belum tepat — bagus mencuba! ${visual.denominator} bahagian diperlukan dan ${visual.numerator} sudah berwarna. ${visual.denominator} − ${visual.numerator} = ${missing}. Jawapan betul: ${answer}.`;
+      }
+      if (visual.type === "target-count") {
+        return `💡 Belum tepat — bagus mencuba! Sasaran ialah ${visual.targetNumerator} daripada ${visual.denominator} bahagian sama besar. Jawapan betul: ${answer}.`;
+      }
+      if (visual.type === "colored-count") {
+        return `💡 Belum tepat — bagus mencuba! Kira petak yang berwarna satu demi satu. Jawapan betul: ${answer}.`;
+      }
+      return `💡 Belum tepat — bagus mencuba! Kira jumlah bahagian sama besar dahulu, kemudian kira bahagian yang diminta. Jawapan betul: ${answer}.`;
     }
-    return `Belum tepat — bagus mencuba! Pembilang ialah bahagian dipilih; penyebut ialah jumlah bahagian sama besar. Jawapannya: ${answer}.`;
+    if (question.visual?.type === "equivalent" && question.visual.source) {
+      const source = question.visual.source;
+      return `💡 Belum tepat — bagus mencuba! ${source.numerator}/${source.denominator} kekal sama apabila pembilang dan penyebut didarab atau dibahagi dengan nombor yang sama. Jawapan betul: ${answer}.`;
+    }
+    return `💡 Belum tepat — bagus mencuba! Pembilang ialah bahagian dipilih; penyebut ialah jumlah bahagian sama besar. Jawapan betul: ${answer}.`;
   }
 
   if (question.isMeasurement) {
     const equation = question.visual?.equation;
     if (equation && equation !== "Unit yang sesuai?") {
-      return `Belum tepat — bagus mencuba! Ikut langkah ini: ${equation} = ${answer}.`;
+      const cleanEquation = equation.replace(/\s*=\s*\?\s*$/, "");
+      return `💡 Belum tepat — bagus mencuba! Ikut langkah ini: ${cleanEquation}. Jawapan betul: ${answer}.`;
     }
-    return `Belum tepat — bagus mencuba! Padankan benda dengan unit yang sesuai. Jawapannya: ${answer}.`;
+    return `💡 Belum tepat — bagus mencuba! Padankan benda dengan unit yang sesuai. Jawapan betul: ${answer}.`;
   }
 
   if (question.isTime) {
     if (question.isTimeline && question.clocks?.length === 2) {
-      return `Belum tepat — bagus mencuba! Kira maju dari ${formatClockTime(question.clocks[0].minutes)} hingga ${formatClockTime(question.clocks[1].minutes)}. Tempohnya ${answer}.`;
+      return `💡 Belum tepat — bagus mencuba! Kira maju dari ${formatClockTime(question.clocks[0].minutes)} hingga ${formatClockTime(question.clocks[1].minutes)}. Jawapan betul: ${answer}.`;
     }
     if (question.isEndTime && question.clocks?.[0]) {
-      return `Belum tepat — bagus mencuba! Mula ${formatClockTime(question.clocks[0].minutes)}, kemudian tambah ${formatDuration(question.duration)}. Jawapannya: ${answer}.`;
+      return `💡 Belum tepat — bagus mencuba! Mula ${formatClockTime(question.clocks[0].minutes)}, kemudian tambah ${formatDuration(question.duration)}. Jawapan betul: ${answer}.`;
+    }
+    if (question.isSchedule) {
+      return `💡 Belum tepat — bagus mencuba! Cari aktiviti yang ditanya pada jadual, kemudian baca waktunya. Jawapan betul: ${answer}.`;
     }
     if (currentAnswerKind === "time-period") {
-      return `Belum tepat — bagus mencuba! Lihat waktu pada jam dan petunjuk aktiviti. Jawapannya: ${answer}.`;
+      return `💡 Belum tepat — bagus mencuba! Lihat waktu pada jam dan petunjuk aktiviti. Jawapan betul: ${answer}.`;
     }
-    return `Belum tepat — bagus mencuba! Jarum pendek menunjukkan jam, jarum panjang menunjukkan minit. Jawapannya: ${answer}.`;
+    if (currentAnswerKind === "clock-ampm") {
+      return `💡 Belum tepat — bagus mencuba! Baca jam dahulu, kemudian gunakan petunjuk pagi, petang atau malam. Jawapan betul: ${answer}.`;
+    }
+    return `💡 Belum tepat — bagus mencuba! Jarum pendek menunjukkan jam, jarum panjang menunjukkan minit. Jawapan betul: ${answer}.`;
   }
 
   const itemTerms = (question.items || []).map((item) => {
@@ -3539,9 +3561,39 @@ function buildWrongAnswerFeedback(question) {
   if (question.questionType === "change" && question.transaction) {
     const payment = question.usesCents ? formatMoney(question.transaction.paymentAmount) : `RM${question.transaction.paymentAmount}`;
     const total = question.usesCents ? formatMoney(question.transaction.total) : `RM${question.transaction.total}`;
-    return `Belum tepat — bagus mencuba! Baki = bayaran − jumlah belian: ${payment} − ${total} = ${answer}.`;
+    return `💡 Belum tepat — bagus mencuba! Baki = bayaran − jumlah belian: ${payment} − ${total}. Jawapan betul: ${answer}.`;
   }
-  return `Belum tepat — bagus mencuba! Campurkan nilai setiap barang: ${itemTerms.join(" + ")} = ${answer}.`;
+  if (itemTerms.length > 0) {
+    return `💡 Belum tepat — bagus mencuba! Campurkan nilai setiap barang: ${itemTerms.join(" + ")}. Jawapan betul: ${answer}.`;
+  }
+  return `💡 Belum tepat — bagus mencuba! Semak nilai yang diberi dan kira satu langkah demi satu langkah. Jawapan betul: ${answer}.`;
+}
+
+function revealCorrectAnswer() {
+  elements.answers.querySelectorAll(".answer-button").forEach((button) => {
+    if (Number(button.dataset.value) === correctAnswer) button.classList.add("correct-answer-review");
+  });
+}
+
+function showWrongAnswerReview(message) {
+  awaitingWrongAdvance = true;
+  revealCorrectAnswer();
+  elements.feedback.textContent = message;
+  elements.feedback.className = "feedback error feedback-review";
+  elements.nextQuestionButton.disabled = false;
+  elements.nextQuestionButton.classList.remove("hidden");
+  elements.homeGameButton.disabled = false;
+}
+
+function continueAfterWrongFeedback() {
+  if (!sessionActive || !awaitingWrongAdvance || homeModalOpen) return;
+  awaitingWrongAdvance = false;
+  elements.nextQuestionButton.disabled = true;
+  elements.nextQuestionButton.classList.add("hidden");
+  elements.homeGameButton.disabled = true;
+  elements.customerPanel.classList.remove("customer-active", "customer-wrong");
+  elements.customerPanel.classList.add("customer-exit");
+  elements.itemsAndQuestion.classList.add("question-waiting");
 }
 
 function isTimedMission() {
@@ -3593,8 +3645,7 @@ function handleTimeExpired() {
   elements.answers.querySelectorAll("button").forEach((button) => {
     button.disabled = true;
   });
-  elements.feedback.textContent = `Masa habis! ⏱️ ${buildWrongAnswerFeedback(currentQuestion)}`;
-  elements.feedback.className = "feedback error";
+  showWrongAnswerReview(`⏱️ Masa habis — tak apa! ${buildWrongAnswerFeedback(currentQuestion)}`);
   audioManager.play("wrong");
   elements.customerPanel.classList.remove("customer-active");
   elements.customerPanel.classList.add("customer-wrong");
@@ -3602,11 +3653,13 @@ function handleTimeExpired() {
 
 function newQuestion() {
   stopQuestionTimer();
-  stopQuestionReviewTimer();
   questionLocked = true;
+  awaitingWrongAdvance = false;
   elements.homeGameButton.disabled = true;
   elements.feedback.textContent = "";
   elements.feedback.className = "feedback";
+  elements.nextQuestionButton.disabled = true;
+  elements.nextQuestionButton.classList.add("hidden");
   elements.itemsAndQuestion.classList.add("question-waiting");
   elements.questionTimer.classList.toggle("hidden", !isTimedMission());
   elements.timerSeconds.textContent = "20s";
@@ -4185,8 +4238,7 @@ function handleAnswer(event) {
   } else {
     audioManager.play("wrong");
     button.classList.add("wrong");
-    elements.feedback.textContent = buildWrongAnswerFeedback(currentQuestion);
-    elements.feedback.className = "feedback error";
+    showWrongAnswerReview(buildWrongAnswerFeedback(currentQuestion));
   }
 
   elements.answers.querySelectorAll("button").forEach((answerButton) => {
@@ -4332,19 +4384,16 @@ function handleCustomerAnimationEnd(event) {
     elements.customerPanel.classList.contains("customer-correct") ||
     elements.customerPanel.classList.contains("customer-wrong")
   ) {
-    const needsReviewTime = elements.customerPanel.classList.contains("customer-wrong");
+    const needsManualReview = elements.customerPanel.classList.contains("customer-wrong");
     elements.customerPanel.classList.remove("customer-correct", "customer-wrong");
-    const continueToNextQuestion = () => {
-      questionReviewTimerId = null;
-      if (!sessionActive || homeModalOpen) return;
-      elements.customerPanel.classList.add("customer-exit");
-      elements.itemsAndQuestion.classList.add("question-waiting");
-    };
-    if (needsReviewTime) {
-      questionReviewTimerId = setTimeout(continueToNextQuestion, 4000);
-    } else {
-      continueToNextQuestion();
+    if (needsManualReview && awaitingWrongAdvance) {
+      elements.customerPanel.classList.add("customer-active");
+      elements.nextQuestionButton.focus({ preventScroll: true });
+      return;
     }
+    if (!sessionActive || homeModalOpen) return;
+    elements.customerPanel.classList.add("customer-exit");
+    elements.itemsAndQuestion.classList.add("question-waiting");
     return;
   }
 
@@ -4366,10 +4415,12 @@ function cleanupActiveSession() {
   homeModalOpen = false;
   homePausedMilliseconds = 0;
   questionLocked = true;
+  awaitingWrongAdvance = false;
   stopQuestionTimer();
-  stopQuestionReviewTimer();
   audioManager.stopAll();
   elements.homeGameButton.disabled = true;
+  elements.nextQuestionButton.disabled = true;
+  elements.nextQuestionButton.classList.add("hidden");
   closeAccessibleModal(false);
   elements.answers.querySelectorAll("button").forEach((button) => {
     button.disabled = true;
@@ -4381,10 +4432,10 @@ function cleanupActiveSession() {
 }
 
 function openHomeConfirmation() {
-  if (!sessionActive || questionLocked || homeModalOpen) return;
+  if (!sessionActive || (questionLocked && !awaitingWrongAdvance) || homeModalOpen) return;
   homeModalOpen = true;
   questionLocked = true;
-  homePausedMilliseconds = isTimedMission()
+  homePausedMilliseconds = isTimedMission() && !awaitingWrongAdvance
     ? Math.max(1, questionDeadline - Date.now())
     : 0;
   stopQuestionTimer();
@@ -4401,10 +4452,14 @@ function openHomeConfirmation() {
 function continueCurrentSession() {
   if (!homeModalOpen || !sessionActive) return;
   homeModalOpen = false;
-  questionLocked = false;
+  questionLocked = awaitingWrongAdvance;
   closeAccessibleModal(true);
   elements.homeGameButton.disabled = false;
-  if (isTimedMission()) startQuestionTimer(homePausedMilliseconds || 1);
+  if (awaitingWrongAdvance) {
+    elements.nextQuestionButton.focus({ preventScroll: true });
+  } else if (isTimedMission()) {
+    startQuestionTimer(homePausedMilliseconds || 1);
+  }
   homePausedMilliseconds = 0;
 }
 
@@ -4562,7 +4617,7 @@ document.addEventListener("click", (event) => {
     "#money-category-button, #time-category-button, #measurement-category-button, #fraction-category-button, " +
     "#time-level-back-button, #measurement-level-back-button, #fraction-level-back-button, " +
     "#result-menu-button, #back-to-menu-button, #play-again-button, #choose-level-button, " +
-    "#next-level-button, .level-card:not(:disabled), .practice-card, .avatar-option"
+    "#next-level-button, #next-question-button, .level-card:not(:disabled), .practice-card, .avatar-option"
   );
   if (mainButton) audioManager.play("buttonClick");
 });
@@ -4570,6 +4625,7 @@ elements.backToMenuButton.addEventListener("click", showMainMenu);
 elements.levelGrid.addEventListener("click", handleLevelSelection);
 elements.practiceGrid.addEventListener("click", handlePracticeSelection);
 elements.answers.addEventListener("click", handleAnswer);
+elements.nextQuestionButton.addEventListener("click", continueAfterWrongFeedback);
 // Acara error imej tidak bubble, jadi gunakan event delegation dalam capture phase.
 elements.itemsList.addEventListener("error", handleItemImageError, true);
 elements.playAgainButton.addEventListener("click", () => {
