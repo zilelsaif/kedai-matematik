@@ -544,6 +544,7 @@ let currentCustomer = 1;
 let sessionCustomers = [];
 let mixedQuestionPlan = [];
 let correctAnswer = 0;
+let currentQuestion = null;
 let answersUseCents = false;
 let answersUseTime = false;
 let answersUseMeasurement = false;
@@ -552,6 +553,7 @@ let currentAnswerKind = "money";
 let currentMeasurementDimension = "mass";
 let questionLocked = true;
 let questionTimerId = null;
+let questionReviewTimerId = null;
 let questionDeadline = 0;
 let currentStreak = 0;
 let currentSkillCategory = "mixed";
@@ -3463,6 +3465,85 @@ function stopQuestionTimer() {
   questionDeadline = 0;
 }
 
+function stopQuestionReviewTimer() {
+  if (questionReviewTimerId !== null) {
+    clearTimeout(questionReviewTimerId);
+    questionReviewTimerId = null;
+  }
+}
+
+function formatLearningAnswer(question) {
+  if (question.isFraction) {
+    if (currentAnswerKind === "fraction-count") return String(question.answer);
+    if (currentAnswerKind === "fraction-relation") {
+      return ({ 1: "kiri lebih besar", 2: "kanan lebih besar", 3: "kedua-duanya sama" })[question.answer] || "bandingkan kedua-dua pecahan";
+    }
+    const numerator = Math.floor(Number(question.answer) / 100);
+    const denominator = Number(question.answer) % 100;
+    return currentAnswerKind === "fraction-situation"
+      ? `${numerator} daripada ${denominator} barang`
+      : `${numerator}/${denominator}`;
+  }
+  if (question.isMeasurement) return MeasurementModule.format(question.answer, currentMeasurementDimension);
+  if (question.isTime) {
+    if (currentAnswerKind === "duration") return formatDuration(question.answer);
+    if (currentAnswerKind === "time-period") return formatTimePeriod(question.answer);
+    if (currentAnswerKind === "clock-ampm") return formatClockTimeAmPm(question.answer);
+    return formatClockTime(question.answer);
+  }
+  return question.usesCents ? formatMoney(question.answer) : `RM${question.answer}`;
+}
+
+function buildWrongAnswerFeedback(question) {
+  const answer = formatLearningAnswer(question);
+
+  if (question.isFraction) {
+    if (currentAnswerKind === "fraction-relation") {
+      return `Belum tepat — bagus mencuba! Samakan saiz bahagian atau bandingkan silang pembilang dan penyebut. Jawapannya: ${answer}.`;
+    }
+    if (currentAnswerKind === "fraction-count") {
+      return `Belum tepat — bagus mencuba! Kira jumlah bahagian sama besar dahulu, kemudian kira bahagian yang diminta. Jawapannya: ${answer}.`;
+    }
+    return `Belum tepat — bagus mencuba! Pembilang ialah bahagian dipilih; penyebut ialah jumlah bahagian sama besar. Jawapannya: ${answer}.`;
+  }
+
+  if (question.isMeasurement) {
+    const equation = question.visual?.equation;
+    if (equation && equation !== "Unit yang sesuai?") {
+      return `Belum tepat — bagus mencuba! Ikut langkah ini: ${equation} = ${answer}.`;
+    }
+    return `Belum tepat — bagus mencuba! Padankan benda dengan unit yang sesuai. Jawapannya: ${answer}.`;
+  }
+
+  if (question.isTime) {
+    if (question.isTimeline && question.clocks?.length === 2) {
+      return `Belum tepat — bagus mencuba! Kira maju dari ${formatClockTime(question.clocks[0].minutes)} hingga ${formatClockTime(question.clocks[1].minutes)}. Tempohnya ${answer}.`;
+    }
+    if (question.isEndTime && question.clocks?.[0]) {
+      return `Belum tepat — bagus mencuba! Mula ${formatClockTime(question.clocks[0].minutes)}, kemudian tambah ${formatDuration(question.duration)}. Jawapannya: ${answer}.`;
+    }
+    if (currentAnswerKind === "time-period") {
+      return `Belum tepat — bagus mencuba! Lihat waktu pada jam dan petunjuk aktiviti. Jawapannya: ${answer}.`;
+    }
+    return `Belum tepat — bagus mencuba! Jarum pendek menunjukkan jam, jarum panjang menunjukkan minit. Jawapannya: ${answer}.`;
+  }
+
+  const itemTerms = (question.items || []).map((item) => {
+    const unitPrice = question.usesCents ? item.priceCents : item.price;
+    const quantity = item.quantity || 1;
+    const value = unitPrice * quantity;
+    return quantity > 1
+      ? `${quantity} × ${question.usesCents ? formatMoney(unitPrice) : `RM${unitPrice}`}`
+      : (question.usesCents ? formatMoney(value) : `RM${value}`);
+  });
+  if (question.questionType === "change" && question.transaction) {
+    const payment = question.usesCents ? formatMoney(question.transaction.paymentAmount) : `RM${question.transaction.paymentAmount}`;
+    const total = question.usesCents ? formatMoney(question.transaction.total) : `RM${question.transaction.total}`;
+    return `Belum tepat — bagus mencuba! Baki = bayaran − jumlah belian: ${payment} − ${total} = ${answer}.`;
+  }
+  return `Belum tepat — bagus mencuba! Campurkan nilai setiap barang: ${itemTerms.join(" + ")} = ${answer}.`;
+}
+
 function isTimedMission() {
   const finalMissionByMode = {
     mission: currentLevel,
@@ -3512,7 +3593,7 @@ function handleTimeExpired() {
   elements.answers.querySelectorAll("button").forEach((button) => {
     button.disabled = true;
   });
-  elements.feedback.textContent = "Masa habis! ⏱️";
+  elements.feedback.textContent = `Masa habis! ⏱️ ${buildWrongAnswerFeedback(currentQuestion)}`;
   elements.feedback.className = "feedback error";
   audioManager.play("wrong");
   elements.customerPanel.classList.remove("customer-active");
@@ -3521,6 +3602,7 @@ function handleTimeExpired() {
 
 function newQuestion() {
   stopQuestionTimer();
+  stopQuestionReviewTimer();
   questionLocked = true;
   elements.homeGameButton.disabled = true;
   elements.feedback.textContent = "";
@@ -3568,6 +3650,7 @@ function newQuestion() {
     sessionQuestionKeys.add(key);
   }
   correctAnswer = question.answer;
+  currentQuestion = question;
   answersUseCents = Boolean(question.usesCents);
   answersUseTime = Boolean(question.isTime);
   answersUseMeasurement = Boolean(question.isMeasurement);
@@ -4102,7 +4185,7 @@ function handleAnswer(event) {
   } else {
     audioManager.play("wrong");
     button.classList.add("wrong");
-    elements.feedback.textContent = tryAgainMessages[randomIndex(tryAgainMessages.length)];
+    elements.feedback.textContent = buildWrongAnswerFeedback(currentQuestion);
     elements.feedback.className = "feedback error";
   }
 
@@ -4249,9 +4332,19 @@ function handleCustomerAnimationEnd(event) {
     elements.customerPanel.classList.contains("customer-correct") ||
     elements.customerPanel.classList.contains("customer-wrong")
   ) {
+    const needsReviewTime = elements.customerPanel.classList.contains("customer-wrong");
     elements.customerPanel.classList.remove("customer-correct", "customer-wrong");
-    elements.customerPanel.classList.add("customer-exit");
-    elements.itemsAndQuestion.classList.add("question-waiting");
+    const continueToNextQuestion = () => {
+      questionReviewTimerId = null;
+      if (!sessionActive || homeModalOpen) return;
+      elements.customerPanel.classList.add("customer-exit");
+      elements.itemsAndQuestion.classList.add("question-waiting");
+    };
+    if (needsReviewTime) {
+      questionReviewTimerId = setTimeout(continueToNextQuestion, 4000);
+    } else {
+      continueToNextQuestion();
+    }
     return;
   }
 
@@ -4274,6 +4367,7 @@ function cleanupActiveSession() {
   homePausedMilliseconds = 0;
   questionLocked = true;
   stopQuestionTimer();
+  stopQuestionReviewTimer();
   audioManager.stopAll();
   elements.homeGameButton.disabled = true;
   closeAccessibleModal(false);
