@@ -36,7 +36,8 @@ const practiceCategories = {
   money: { icon: "🛒", label: "WANG & KEDAI" },
   time: { icon: "🕐", label: "MASA & JAM" },
   measurement: { icon: "⚖️", label: "UKURAN" },
-  fraction: { icon: "🍰", iconImage: "assets/menu/icon-fraction.webp", label: "PECAHAN" }
+  fraction: { icon: "🍰", iconImage: "assets/menu/icon-fraction.webp", label: "PECAHAN" },
+  geometry: { icon: "🔷", label: "BENTUK & RUANG" }
 };
 
 const practiceTypes = [
@@ -79,7 +80,10 @@ const practiceTypes = [
   { id: "fraction-7", name: "Banding Pecahan", category: "fraction", fractionLevel: 7 },
   { id: "fraction-8", name: "Lengkapkan Keseluruhan", category: "fraction", fractionLevel: 8 },
   { id: "fraction-9", name: "Campuran Pecahan", category: "fraction", fractionLevel: 9 },
-  { id: "fraction-10", name: "Kedai Sibuk: Pecahan", category: "fraction", fractionLevel: 10 }
+  { id: "fraction-10", name: "Kedai Sibuk: Pecahan", category: "fraction", fractionLevel: 10 },
+  { id: "geometry-1", name: "Latihan Bentuk 2D", category: "geometry", geometryLevel: 1 },
+  { id: "geometry-2", name: "Latihan Bentuk Objek", category: "geometry", geometryLevel: 2 },
+  { id: "geometry-3", name: "Latihan Bentuk 3D", category: "geometry", geometryLevel: 3 }
 ];
 
 const timeMissions = [
@@ -97,6 +101,7 @@ const timeMissions = [
 
 const measurementMissions = MeasurementModule.missions;
 const fractionMissions = FractionModule.missions;
+const geometryMissions = GeometryModule.missions;
 
 const skillDefinitions = [
   { id: "addition", name: "Tambah", icon: "➕", practiceId: 1 },
@@ -106,7 +111,8 @@ const skillDefinitions = [
   { id: "mixed", name: "Campuran", icon: "🎯", practiceId: 9 },
   { id: "time", name: "Masa & Jam", icon: "🕐", practiceId: "time-1" },
   { id: "measurement", name: "Ukuran", icon: "⚖️", practiceId: "measurement-1" },
-  { id: "fraction", name: "Pecahan", icon: "🍰", iconImage: "assets/menu/icon-fraction.webp", practiceId: "fraction-1" }
+  { id: "fraction", name: "Pecahan", icon: "🍰", iconImage: "assets/menu/icon-fraction.webp", practiceId: "fraction-1" },
+  { id: "geometry", name: "Bentuk & Ruang", icon: "🔷", practiceId: "geometry-1" }
 ];
 
 const timeContextTemplates = [
@@ -337,6 +343,7 @@ const elements = {
   timeLevelScreen: document.querySelector("#time-level-screen"),
   measurementLevelScreen: document.querySelector("#measurement-level-screen"),
   fractionLevelScreen: document.querySelector("#fraction-level-screen"),
+  geometryLevelScreen: document.querySelector("#geometry-level-screen"),
   levelScreen: document.querySelector("#level-screen"),
   gameScreen: document.querySelector("#game-screen"),
   gameOverScreen: document.querySelector("#game-over-screen"),
@@ -351,6 +358,7 @@ const elements = {
   timeStarTotal: document.querySelector("#time-star-total"),
   measurementStarTotal: document.querySelector("#measurement-star-total"),
   fractionStarTotal: document.querySelector("#fraction-star-total"),
+  geometryStarTotal: document.querySelector("#geometry-star-total"),
   howToButton: document.querySelector("#how-to-button"),
   tutorialOpenButton: document.querySelector("#tutorial-open-button"),
   tutorialModal: document.querySelector("#tutorial-modal"),
@@ -369,6 +377,7 @@ const elements = {
   timeCategoryButton: document.querySelector("#time-category-button"),
   measurementCategoryButton: document.querySelector("#measurement-category-button"),
   fractionCategoryButton: document.querySelector("#fraction-category-button"),
+  geometryCategoryButton: document.querySelector("#geometry-category-button"),
   timeLevelBackButton: document.querySelector("#time-level-back-button"),
   timeLevelGrid: document.querySelector("#time-level-grid"),
   timeLevelNotice: document.querySelector("#time-level-notice"),
@@ -378,6 +387,9 @@ const elements = {
   fractionLevelBackButton: document.querySelector("#fraction-level-back-button"),
   fractionLevelGrid: document.querySelector("#fraction-level-grid"),
   fractionLevelNotice: document.querySelector("#fraction-level-notice"),
+  geometryLevelBackButton: document.querySelector("#geometry-level-back-button"),
+  geometryLevelGrid: document.querySelector("#geometry-level-grid"),
+  geometryLevelNotice: document.querySelector("#geometry-level-notice"),
   profileMenuButton: document.querySelector("#profile-menu-button"),
   profileSaveButton: document.querySelector("#profile-save-button"),
   profileCancelButton: document.querySelector("#profile-cancel-button"),
@@ -550,6 +562,7 @@ let answersUseCents = false;
 let answersUseTime = false;
 let answersUseMeasurement = false;
 let answersUseFraction = false;
+let answersUseGeometry = false;
 let currentAnswerKind = "money";
 let currentMeasurementDimension = "mass";
 let questionLocked = true;
@@ -569,6 +582,9 @@ let measurementQuestionPlan = [];
 let currentFractionLevel = 1;
 let currentFractionSubSkill = "half";
 let fractionQuestionPlan = [];
+let currentGeometryLevel = 1;
+let currentGeometrySubSkill = "shape2D";
+let geometryQuestionPlan = [];
 let selectedProfileAvatar = "profile-avatar-01";
 let selectedProfileTheme = "purple";
 let selectedNewProfileAvatar = "profile-avatar-01";
@@ -620,6 +636,11 @@ function defaultFractionSkillStats() {
     .map((id) => [id, { answered: 0, correct: 0 }]));
 }
 
+function defaultGeometrySkillStats() {
+  return Object.fromEntries(["shape2D", "objectShape", "solid3D"]
+    .map((id) => [id, { answered: 0, correct: 0 }]));
+}
+
 function defaultSkillStats() {
   return Object.fromEntries(
     skillDefinitions.map((skill) => [skill.id, { answered: 0, correct: 0 }])
@@ -666,6 +687,8 @@ function defaultProgress() {
     measurementSkillStats: defaultMeasurementSkillStats(),
     fractionProgress: { highestUnlockedLevel: 1, bestScores: {}, stars: {} },
     fractionSkillStats: defaultFractionSkillStats(),
+    geometryProgress: { highestUnlockedLevel: 1, bestScores: {}, stars: {} },
+    geometrySkillStats: defaultGeometrySkillStats(),
     stats: defaultStats(),
     skillStats: defaultSkillStats(),
     accessibilitySettings: defaultAccessibilitySettings(),
@@ -903,6 +926,8 @@ function loadProgress(savedInput = null) {
     const measurementSkillStats = defaultMeasurementSkillStats();
     const fractionProgress = { highestUnlockedLevel: 1, bestScores: {}, stars: {} };
     const fractionSkillStats = defaultFractionSkillStats();
+    const geometryProgress = { highestUnlockedLevel: 1, bestScores: {}, stars: {} };
+    const geometrySkillStats = defaultGeometrySkillStats();
     const accessibilitySettings = defaultAccessibilitySettings();
     const achievements = defaultAchievements();
     const achievementUnlockedAt = defaultAchievementUnlockedAt();
@@ -1155,6 +1180,31 @@ function loadProgress(savedInput = null) {
       });
     }
 
+    if (saved.geometryProgress && typeof saved.geometryProgress === "object") {
+      const savedGeometry = saved.geometryProgress;
+      const highestGeometry = Number(savedGeometry.highestUnlockedLevel);
+      const implementedCount = geometryMissions.filter((mission) => mission.implemented).length;
+      if (Number.isInteger(highestGeometry)) {
+        geometryProgress.highestUnlockedLevel = Math.min(Math.max(highestGeometry, 1), implementedCount);
+      }
+      geometryMissions.filter((mission) => mission.implemented).forEach((mission) => {
+        const score = Number(savedGeometry.bestScores?.[mission.id]);
+        const rating = Number(savedGeometry.stars?.[mission.id]);
+        if (Number.isInteger(score) && score >= 0 && score <= totalCustomers) geometryProgress.bestScores[mission.id] = score;
+        if (Number.isInteger(rating) && rating >= 0 && rating <= 3) geometryProgress.stars[mission.id] = rating;
+      });
+    }
+
+    if (saved.geometrySkillStats && typeof saved.geometrySkillStats === "object") {
+      Object.keys(geometrySkillStats).forEach((key) => {
+        const record = saved.geometrySkillStats[key];
+        const answered = Number(record?.answered);
+        const correct = Number(record?.correct);
+        if (Number.isInteger(answered) && answered >= 0) geometrySkillStats[key].answered = answered;
+        if (Number.isInteger(correct) && correct >= 0) geometrySkillStats[key].correct = Math.min(correct, geometrySkillStats[key].answered);
+      });
+    }
+
     if (saved.accessibilitySettings && typeof saved.accessibilitySettings === "object") {
       Object.keys(accessibilitySettings).forEach((key) => {
         if (typeof saved.accessibilitySettings[key] === "boolean") {
@@ -1198,6 +1248,8 @@ function loadProgress(savedInput = null) {
       measurementSkillStats,
       fractionProgress,
       fractionSkillStats,
+      geometryProgress,
+      geometrySkillStats,
       stats: savedStats,
       skillStats: savedSkillStats,
       accessibilitySettings,
@@ -1303,9 +1355,13 @@ function recordQuestionResult(isCorrect) {
   const fractionSubRecord = currentSkillCategory === "fraction"
     ? progress.fractionSkillStats[currentFractionSubSkill]
     : null;
+  const geometrySubRecord = currentSkillCategory === "geometry"
+    ? progress.geometrySkillStats[currentGeometrySubSkill]
+    : null;
   if (timeSubRecord) timeSubRecord.answered += 1;
   if (measurementSubRecord) measurementSubRecord.answered += 1;
   if (fractionSubRecord) fractionSubRecord.answered += 1;
+  if (geometrySubRecord) geometrySubRecord.answered += 1;
 
   if (isCorrect) {
     progress.stats.totalCorrect += 1;
@@ -1313,6 +1369,7 @@ function recordQuestionResult(isCorrect) {
     if (timeSubRecord) timeSubRecord.correct += 1;
     if (measurementSubRecord) measurementSubRecord.correct += 1;
     if (fractionSubRecord) fractionSubRecord.correct += 1;
+    if (geometrySubRecord) geometrySubRecord.correct += 1;
     currentStreak += 1;
     progress.stats.bestStreak = Math.max(progress.stats.bestStreak, currentStreak);
   } else {
@@ -2340,7 +2397,8 @@ const smartTipLibrary = {
   money: ["Tambah harga satu demi satu supaya kiraan lebih mudah disemak.", "Untuk mencari baki, tolak jumlah belian daripada wang yang dibayar.", "Seratus sen bersamaan dengan satu Ringgit. Susun Ringgit dan sen dengan kemas."],
   time: ["Setengah jam ialah 30 minit, manakala suku jam ialah 15 minit.", "Untuk mencari tempoh, kira perjalanan masa dari waktu mula hingga waktu tamat.", "Jarum minit yang panjang membantu membaca minit; jarum jam yang pendek menunjukkan jam."],
   measurement: ["Pilih unit yang sesuai: g atau kg untuk berat, mL atau L untuk minuman.", "Ingat: 1000 g = 1 kg, 1000 mL = 1 L dan 100 cm = 1 m.", "Samakan unit dahulu sebelum menambah ukuran."],
-  fraction: ["Pecahan menunjukkan berapa bahagian dipilih daripada bahagian yang sama besar.", "1/2 ialah satu daripada dua bahagian sama besar; 1/4 ialah satu daripada empat.", "Untuk pecahan kumpulan, kira jumlah barang dahulu kemudian cari bahagiannya.", "Pecahan setara kelihatan berbeza tetapi mewakili bahagian yang sama.", "Semasa membanding pecahan, gunakan visual bahagian sama besar untuk membantu."]
+  fraction: ["Pecahan menunjukkan berapa bahagian dipilih daripada bahagian yang sama besar.", "1/2 ialah satu daripada dua bahagian sama besar; 1/4 ialah satu daripada empat.", "Untuk pecahan kumpulan, kira jumlah barang dahulu kemudian cari bahagiannya.", "Pecahan setara kelihatan berbeza tetapi mewakili bahagian yang sama.", "Semasa membanding pecahan, gunakan visual bahagian sama besar untuk membantu."],
+  geometry: ["Perhatikan sisi lurus dan bucu untuk mengenal bentuk 2D.", "Cari bentuk barang, bukan warna atau saiznya.", "Bentuk 3D mempunyai permukaan dan boleh dilihat dari pelbagai arah."]
 };
 
 function getCurrentSmartTip() {
@@ -2350,12 +2408,14 @@ function getCurrentSmartTip() {
   else if (gameMode === "time-mission" || gameMode === "time-practice") { moduleId = "time"; level = currentTimeLevel; }
   else if (gameMode === "measurement-mission" || gameMode === "measurement-practice") { moduleId = "measurement"; level = currentMeasurementLevel; }
   else if (gameMode === "fraction-mission" || gameMode === "fraction-practice") { moduleId = "fraction"; level = currentFractionLevel; }
+  else if (gameMode === "geometry-mission" || gameMode === "geometry-practice") { moduleId = "geometry"; level = currentGeometryLevel; }
   if (!moduleId) return "";
   const tips = smartTipLibrary[moduleId];
   if (moduleId === "money") return tips[[4, 5, 6, 8].includes(level) ? 1 : (level === 7 ? 2 : 0)];
   if (moduleId === "time") return tips[level === 4 || level === 5 || level >= 8 ? 1 : (level <= 3 ? 0 : 2)];
   if (moduleId === "measurement") return tips[[2, 6, 7, 8].includes(level) ? 1 : (level === 9 ? 0 : 2)];
   if (moduleId === "fraction") return tips[level === 5 ? 2 : (level === 6 ? 3 : (level === 7 ? 4 : (level === 2 || level === 3 ? 1 : 0)))];
+  if (moduleId === "geometry") return tips[Math.min(level - 1, tips.length - 1)];
   return tips[0];
 }
 
@@ -2383,6 +2443,7 @@ function showScreen(screenName) {
     timeLevels: elements.timeLevelScreen,
     measurementLevels: elements.measurementLevelScreen,
     fractionLevels: elements.fractionLevelScreen,
+    geometryLevels: elements.geometryLevelScreen,
     levels: elements.levelScreen,
     game: elements.gameScreen,
     results: elements.gameOverScreen
@@ -2470,6 +2531,33 @@ function handleFractionLevelSelection(event) {
   const levelId = Number(card?.dataset.fractionLevel);
   if (!card || card.disabled || levelId > progress.fractionProgress.highestUnlockedLevel) return;
   startFractionGame(levelId, "fraction-mission");
+}
+
+function showGeometryLevelSelect(message = "") {
+  questionLocked = true;
+  elements.geometryLevelNotice.textContent = message;
+  elements.geometryLevelGrid.innerHTML = geometryMissions.filter((mission) => mission.implemented).map((mission) => {
+    const unlocked = mission.id <= progress.geometryProgress.highestUnlockedLevel;
+    const best = progress.geometryProgress.bestScores[mission.id];
+    const rating = progress.geometryProgress.stars[mission.id] || 0;
+    return `<button class="level-card geometry-level-card ${unlocked ? "unlocked" : "locked"}" type="button" data-geometry-level="${mission.id}" ${unlocked ? "" : "disabled"}>
+      ${unlocked ? "" : '<span class="level-lock" aria-hidden="true">🔒</span>'}
+      <span class="level-number">Misi Bentuk ${mission.id}</span>
+      <span class="level-name">🔷 ${mission.name}</span>
+      <span class="level-character">Bersama ${mission.character}</span>
+      <span class="level-stars">${formatStarRating(rating)}</span>
+      <span class="level-best">${Number.isInteger(best) ? `⭐ Rekod: ${best}/10` : (unlocked ? "Jom cuba!" : "Selesaikan misi sebelumnya")}</span>
+    </button>`;
+  }).join("");
+  showScreen("geometryLevels");
+  elements.geometryLevelGrid.querySelector("button:not(:disabled)")?.focus();
+}
+
+function handleGeometryLevelSelection(event) {
+  const card = event.target.closest("[data-geometry-level]");
+  const levelId = Number(card?.dataset.geometryLevel);
+  if (!card || card.disabled || levelId > progress.geometryProgress.highestUnlockedLevel) return;
+  startGeometryGame(levelId, "geometry-mission");
 }
 
 function showSettings() {
@@ -3053,6 +3141,7 @@ function startPracticeById(practiceId) {
     return startMeasurementGame(practice.measurementLevel, "measurement-practice");
   }
   if (practice.category === "fraction") return startFractionGame(practice.fractionLevel, "fraction-practice");
+  if (practice.category === "geometry") return startGeometryGame(practice.geometryLevel, "geometry-practice");
   startGame(practiceId, "practice");
 }
 
@@ -3161,6 +3250,7 @@ function showMainMenu() {
   elements.timeStarTotal.textContent = `⭐ ${Object.values(progress.timeProgress.stars).reduce((sum, value) => sum + (Number(value) || 0), 0)}/30`;
   elements.measurementStarTotal.textContent = `⭐ ${Object.values(progress.measurementProgress.stars).reduce((sum, value) => sum + (Number(value) || 0), 0)}/30`;
   elements.fractionStarTotal.textContent = `⭐ ${Object.values(progress.fractionProgress.stars).reduce((sum, value) => sum + (Number(value) || 0), 0)}/30`;
+  elements.geometryStarTotal.textContent = `⭐ ${Object.values(progress.geometryProgress.stars).reduce((sum, value) => sum + (Number(value) || 0), 0)}/9`;
   elements.menuRecommendationText.textContent = getLearningRecommendation(progress).text;
   applyPlayerTheme(progress.playerProfile.theme);
   elements.menuPlayerAvatar.innerHTML = playerAvatarMarkup(getPlayerAvatar(progress.playerProfile.avatar), "menu-player-avatar-image");
@@ -3390,7 +3480,10 @@ function renderVisualHelp(question) {
   if (question.isFraction) {
     hints.push("🍰 Garisan menunjukkan semua bahagian yang sama besar. Kira bahagian berwarna dan jumlah bahagiannya.");
   }
-  if (!question.isTime && !question.isMeasurement && !question.isFraction) {
+  if (question.isGeometry) {
+    hints.push("🔷 Perhatikan sisi, bucu dan permukaan. Bentuk tidak berubah apabila dipusing atau dibesarkan.");
+  }
+  if (!question.isTime && !question.isMeasurement && !question.isFraction && !question.isGeometry) {
     hints.push("💵 Setiap wang mempunyai label nilai. Kira menggunakan nilai itu, bukan warnanya.");
   }
   elements.visualHelp.textContent = hints.join("  ");
@@ -3417,7 +3510,9 @@ function handleItemImageError(event) {
 
 function renderAnswers(choices) {
   elements.answers.innerHTML = choices.map((choice) =>
-    `<button class="answer-button" type="button" data-value="${choice}" disabled>${answersUseFraction
+    `<button class="answer-button${answersUseGeometry ? " geometry-answer-button" : ""}" type="button" data-value="${choice}" disabled>${answersUseGeometry
+      ? GeometryModule.format(choice, currentAnswerKind)
+      : answersUseFraction
       ? FractionModule.format(choice, currentAnswerKind)
       : answersUseMeasurement
       ? MeasurementModule.format(choice, currentMeasurementDimension)
@@ -3451,6 +3546,11 @@ function renderFractionDisplay(question) {
   elements.itemsList.innerHTML = FractionModule.render(question, progress.accessibilitySettings.visualHelp);
 }
 
+function renderGeometryDisplay(question) {
+  elements.itemsList.classList.remove("three-items");
+  elements.itemsList.innerHTML = GeometryModule.render(question, progress.accessibilitySettings.visualHelp);
+}
+
 function updateStats() {
   const scoreLabel = elements.starCount.closest(".stat-card")?.querySelector("small");
   if (scoreLabel) scoreLabel.textContent = gameMode === "shop-challenge" ? "Mata" : "Bintang";
@@ -3467,6 +3567,11 @@ function stopQuestionTimer() {
 }
 
 function formatLearningAnswer(question) {
+  if (question.isGeometry) {
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = GeometryModule.format(question.answer, currentAnswerKind);
+    return wrapper.textContent.trim() || "pilihan yang ditunjukkan";
+  }
   if (question.isFraction) {
     if (currentAnswerKind === "fraction-count") return String(question.answer);
     if (currentAnswerKind === "fraction-relation") {
@@ -3490,6 +3595,8 @@ function formatLearningAnswer(question) {
 
 function buildWrongAnswerFeedback(question) {
   const answer = formatLearningAnswer(question);
+
+  if (question.isGeometry) return `💡 Belum tepat — bagus mencuba! ${GeometryModule.explain(question, answer)}`;
 
   if (question.isFraction) {
     if (currentAnswerKind === "fraction-relation") {
@@ -3671,6 +3778,7 @@ function newQuestion() {
   const isTimeSession = gameMode === "time-mission" || gameMode === "time-practice";
   const isMeasurementSession = gameMode === "measurement-mission" || gameMode === "measurement-practice";
   const isFractionSession = gameMode === "fraction-mission" || gameMode === "fraction-practice";
+  const isGeometrySession = gameMode === "geometry-mission" || gameMode === "geometry-practice";
   let question = isCrossModuleSession
     ? generateCrossModuleQuestion(customer)
     : isTimeSession
@@ -3693,6 +3801,15 @@ function newQuestion() {
           shuffle,
           fractionQuestionPlan
         )
+        : isGeometrySession
+          ? GeometryModule.generate(
+            currentGeometryLevel,
+            currentCustomer - 1,
+            customer,
+            randomIndex,
+            shuffle,
+            geometryQuestionPlan
+          )
         : questionGenerators[currentLevel]();
   if (isCrossModuleSession) {
     let key = getMathematicalQuestionKey(question);
@@ -3708,17 +3825,19 @@ function newQuestion() {
   answersUseTime = Boolean(question.isTime);
   answersUseMeasurement = Boolean(question.isMeasurement);
   answersUseFraction = Boolean(question.isFraction);
+  answersUseGeometry = Boolean(question.isGeometry);
   currentAnswerKind = question.answerKind || (question.usesCents ? "money-cents" : "money");
   currentMeasurementDimension = question.measurementDimension || "mass";
   currentMeasurementSubSkill = question.measurementSubSkill || "weight";
   currentFractionSubSkill = question.fractionSubSkill || "visualFraction";
+  currentGeometrySubSkill = question.geometryLevel === 1 ? "shape2D" : (question.geometryLevel === 2 ? "objectShape" : "solid3D");
   currentSkillCategory = question.skillCategory || levelSkillCategories[currentLevel] || "mixed";
   if (isCrossModuleSession) {
     const moduleId = question.sourceModule || "money";
     sessionModuleResults[moduleId] ||= { answered: 0, correct: 0 };
   }
 
-  elements.questionText.textContent = question.isTime || question.isMeasurement || question.isFraction
+  elements.questionText.textContent = question.isTime || question.isMeasurement || question.isFraction || question.isGeometry
     ? question.context.question
     : question.questionType === "change"
     ? `Berapa baki ${customer.name}?`
@@ -3731,13 +3850,14 @@ function newQuestion() {
       : `RM${question.transaction.paymentAmount}`;
   }
 
-  if (question.isTime || question.isMeasurement || question.isFraction) {
+  if (question.isTime || question.isMeasurement || question.isFraction || question.isGeometry) {
     elements.moneyVisualStage.replaceChildren();
     elements.moneyVisualStage.classList.add("hidden");
     elements.customerAction.textContent = "";
     elements.itemsAndQuestion.classList.toggle("time-question", Boolean(question.isTime));
     elements.itemsAndQuestion.classList.toggle("measurement-question", Boolean(question.isMeasurement));
     elements.itemsAndQuestion.classList.toggle("fraction-question", Boolean(question.isFraction));
+    elements.itemsAndQuestion.classList.toggle("geometry-question", Boolean(question.isGeometry));
     elements.customerName.textContent = question.context.usesCustomer
       ? `${customer.name}: “${question.context.dialog}”`
       : question.context.dialog;
@@ -3761,16 +3881,21 @@ function newQuestion() {
       elements.clockStage.classList.add("hidden");
       elements.clockStage.innerHTML = "";
       renderMeasurementDisplay(question);
-    } else {
+    } else if (question.isFraction) {
       elements.clockStage.classList.add("hidden");
       elements.clockStage.innerHTML = "";
       renderFractionDisplay(question);
+    } else {
+      elements.clockStage.classList.add("hidden");
+      elements.clockStage.innerHTML = "";
+      renderGeometryDisplay(question);
     }
   } else {
     elements.customerAction.textContent = " membeli:";
     elements.itemsAndQuestion.classList.remove("time-question");
     elements.itemsAndQuestion.classList.remove("measurement-question");
     elements.itemsAndQuestion.classList.remove("fraction-question");
+    elements.itemsAndQuestion.classList.remove("geometry-question");
     elements.customerName.textContent = customer.name;
     elements.customerAvatar.classList.remove("hidden");
     elements.customerAvatar.parentElement.classList.remove("shop-dialog-badge");
@@ -3954,6 +4079,10 @@ function showGameOver() {
     showPracticeGameOver();
     return;
   }
+  if (gameMode === "geometry-practice") {
+    showPracticeGameOver();
+    return;
+  }
   if (gameMode === "time-mission") {
     showTimeGameOver();
     return;
@@ -3964,6 +4093,10 @@ function showGameOver() {
   }
   if (gameMode === "fraction-mission") {
     showFractionGameOver();
+    return;
+  }
+  if (gameMode === "geometry-mission") {
+    showGeometryGameOver();
     return;
   }
 
@@ -4207,6 +4340,62 @@ function showFractionGameOver() {
   elements.playAgainButton.focus();
 }
 
+function showGeometryGameOver() {
+  sessionActive = false;
+  elements.homeGameButton.disabled = true;
+  const previousBest = progress.geometryProgress.bestScores[currentGeometryLevel] || 0;
+  const previousStars = progress.geometryProgress.stars[currentGeometryLevel] || 0;
+  const previousHighest = progress.geometryProgress.highestUnlockedLevel;
+  const rating = getStarRating(stars);
+  const passed = stars >= 8;
+  const implementedCount = geometryMissions.filter((mission) => mission.implemented).length;
+
+  progress.geometryProgress.bestScores[currentGeometryLevel] = Math.max(previousBest, stars);
+  progress.geometryProgress.stars[currentGeometryLevel] = Math.max(previousStars, rating);
+  progress.stats.missionsPlayed += 1;
+  if (passed) progress.stats.missionsPassed += 1;
+  if (passed && currentGeometryLevel < implementedCount) {
+    progress.geometryProgress.highestUnlockedLevel = Math.max(
+      progress.geometryProgress.highestUnlockedLevel,
+      currentGeometryLevel + 1
+    );
+  }
+  saveProgress();
+
+  const mission = geometryMissions.find((entry) => entry.id === currentGeometryLevel);
+  const nextMissionUnlocked = currentGeometryLevel < implementedCount &&
+    progress.geometryProgress.highestUnlockedLevel >= currentGeometryLevel + 1;
+  const unlockedNewMission = progress.geometryProgress.highestUnlockedLevel > previousHighest;
+
+  elements.gameOverTitle.textContent = "BENTUK SELESAI!";
+  elements.resultLevel.textContent = `Misi Bentuk ${currentGeometryLevel} — ${mission?.name || "Bentuk & Ruang"}`;
+  elements.finalLabel.textContent = "Keputusan kamu";
+  elements.finalScoreIcon.textContent = "🔷";
+  elements.finalScore.textContent = `${stars} / ${totalCustomers}`;
+  elements.finalAccuracy.textContent = `${Math.round(stars / totalCustomers * 100)}%`;
+  elements.sessionStars.textContent = formatStarRating(rating);
+  elements.sessionStars.classList.remove("hidden");
+  elements.newStarRecord.classList.toggle("hidden", rating <= previousStars);
+  elements.finalBest.closest(".final-best").classList.remove("hidden");
+  elements.finalBest.closest(".final-best").firstChild.textContent = "Rekod Terbaik: ";
+  elements.finalBest.textContent = `${progress.geometryProgress.bestScores[currentGeometryLevel]} / 10`;
+  elements.finalRating.textContent = getRating(stars);
+  elements.finalRating.classList.remove("hidden");
+  elements.levelUnlocked.textContent = currentGeometryLevel === implementedCount && passed
+    ? "🏆 Hebat! Asas Bentuk & Ruang selesai!"
+    : "🎉 Misi Bentuk Baru Dibuka!";
+  elements.levelUnlocked.classList.toggle("hidden", !(unlockedNewMission || (currentGeometryLevel === implementedCount && passed)));
+  elements.nextLevelButton.textContent = "Misi Bentuk Seterusnya";
+  elements.nextLevelButton.classList.toggle("hidden", !nextMissionUnlocked);
+  elements.playAgainButton.textContent = "Main Lagi";
+  elements.chooseLevelButton.textContent = "Pilih Misi Bentuk";
+  elements.chooseLevelButton.classList.remove("hidden");
+  elements.resultMenuButton.classList.remove("hidden");
+  showScreen("results");
+  audioManager.play(unlockedNewMission ? "missionUnlock" : "sessionComplete");
+  elements.playAgainButton.focus();
+}
+
 function handleAnswer(event) {
   const button = event.target.closest(".answer-button");
   if (!button || questionLocked) return;
@@ -4362,6 +4551,33 @@ function startFractionGame(levelId = 1, mode = "fraction-mission") {
   newQuestion();
 }
 
+function startGeometryGame(levelId = 1, mode = "geometry-mission") {
+  const mission = geometryMissions.find((entry) => entry.id === levelId);
+  if (!mission?.implemented || !["geometry-mission", "geometry-practice"].includes(mode)) return;
+  if (mode === "geometry-mission" && levelId > progress.geometryProgress.highestUnlockedLevel) return;
+  stopQuestionTimer();
+  prepareGameplayAssets();
+  gameMode = mode;
+  currentGeometryLevel = levelId;
+  if (mode === "geometry-practice") currentPracticeType = `geometry-${levelId}`;
+  randomSource = Math.random;
+  sessionActive = true;
+  homeModalOpen = false;
+  closeAccessibleModal(false);
+  stars = 0;
+  currentCustomer = 1;
+  const guide = customers.find((customer) => customer.name === mission.character) || customers[0];
+  sessionCustomers = Array.from({ length: totalCustomers }, () => guide);
+  currentStreak = 0;
+  geometryQuestionPlan = GeometryModule.createPlan(levelId, shuffle);
+  questionLocked = true;
+  elements.practiceBadge.classList.toggle("hidden", mode !== "geometry-practice");
+  elements.practiceBadge.textContent = "🔷 LATIHAN BENTUK";
+  updateStats();
+  showScreen("game");
+  newQuestion();
+}
+
 function handleCustomerAnimationEnd(event) {
   if (!sessionActive || homeModalOpen) return;
   if (event.target !== elements.customerPanel) return;
@@ -4470,6 +4686,15 @@ function exitCurrentSession() {
 }
 
 function goToNextLevel() {
+  if (gameMode === "geometry-mission") {
+    const nextGeometryLevel = currentGeometryLevel + 1;
+    if (nextGeometryLevel <= progress.geometryProgress.highestUnlockedLevel && geometryMissions[nextGeometryLevel - 1]?.implemented) {
+      startGeometryGame(nextGeometryLevel, "geometry-mission");
+      return;
+    }
+    showGeometryLevelSelect();
+    return;
+  }
   if (gameMode === "fraction-mission") {
     const nextFractionLevel = currentFractionLevel + 1;
     if (nextFractionLevel <= progress.fractionProgress.highestUnlockedLevel && fractionMissions[nextFractionLevel - 1]?.implemented) {
@@ -4559,12 +4784,15 @@ elements.moneyCategoryButton.addEventListener("click", () => showLevelSelect());
 elements.timeCategoryButton.addEventListener("click", () => showTimeLevelSelect());
 elements.measurementCategoryButton.addEventListener("click", () => showMeasurementLevelSelect());
 elements.fractionCategoryButton.addEventListener("click", () => showFractionLevelSelect());
+elements.geometryCategoryButton.addEventListener("click", () => showGeometryLevelSelect());
 elements.timeLevelBackButton.addEventListener("click", showMainMenu);
 elements.timeLevelGrid.addEventListener("click", handleTimeLevelSelection);
 elements.measurementLevelBackButton.addEventListener("click", showMainMenu);
 elements.measurementLevelGrid.addEventListener("click", handleMeasurementLevelSelection);
 elements.fractionLevelBackButton.addEventListener("click", showMainMenu);
 elements.fractionLevelGrid.addEventListener("click", handleFractionLevelSelection);
+elements.geometryLevelBackButton.addEventListener("click", showMainMenu);
+elements.geometryLevelGrid.addEventListener("click", handleGeometryLevelSelection);
 elements.howToButton.addEventListener("click", toggleHowTo);
 elements.tutorialOpenButton.addEventListener("click", () => openTutorial(false));
 elements.tutorialSkipButton.addEventListener("click", closeTutorial);
@@ -4614,8 +4842,8 @@ document.addEventListener("click", (event) => {
     "#profile-picker-back, #profile-picker-add, .profile-picker-card, #parent-back-button, #parent-print-report, #support-open-button, #support-close-button, " +
     "#settings-menu-button, #settings-save-button, #settings-back-button, #tutorial-open-button, #tutorial-skip-button, #tutorial-back-button, #tutorial-next-button, " +
     "#skill-recommendation-button, #menu-recommendation, " +
-    "#money-category-button, #time-category-button, #measurement-category-button, #fraction-category-button, " +
-    "#time-level-back-button, #measurement-level-back-button, #fraction-level-back-button, " +
+    "#money-category-button, #time-category-button, #measurement-category-button, #fraction-category-button, #geometry-category-button, " +
+    "#time-level-back-button, #measurement-level-back-button, #fraction-level-back-button, #geometry-level-back-button, " +
     "#result-menu-button, #back-to-menu-button, #play-again-button, #choose-level-button, " +
     "#next-level-button, #next-question-button, .level-card:not(:disabled), .practice-card, .avatar-option"
   );
@@ -4635,11 +4863,13 @@ elements.playAgainButton.addEventListener("click", () => {
     startMeasurementGame(currentMeasurementLevel, gameMode);
   }
   else if (gameMode === "fraction-mission" || gameMode === "fraction-practice") startFractionGame(currentFractionLevel, gameMode);
+  else if (gameMode === "geometry-mission" || gameMode === "geometry-practice") startGeometryGame(currentGeometryLevel, gameMode);
   else if (gameMode === "time-mission" || gameMode === "time-practice") startTimeGame(currentTimeLevel, gameMode);
   else startGame(currentLevel, gameMode);
 });
 elements.chooseLevelButton.addEventListener("click", () => {
-  if (gameMode === "practice" || gameMode === "time-practice" || gameMode === "measurement-practice" || gameMode === "fraction-practice") showPracticeSelect();
+  if (gameMode === "practice" || gameMode === "time-practice" || gameMode === "measurement-practice" || gameMode === "fraction-practice" || gameMode === "geometry-practice") showPracticeSelect();
+  else if (gameMode === "geometry-mission") showGeometryLevelSelect();
   else if (gameMode === "fraction-mission") showFractionLevelSelect();
   else if (gameMode === "measurement-mission") showMeasurementLevelSelect();
   else if (gameMode === "time-mission") showTimeLevelSelect();

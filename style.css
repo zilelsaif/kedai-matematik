@@ -220,9 +220,9 @@ h1 { margin: 0; font-size: clamp(1.65rem, 3.6vw, 3rem); line-height: 1; letter-s
   min-height: calc(100vh - 48px);
 }
 
-.menu-screen.hidden, .level-screen.hidden, .stats-screen.hidden, .practice-screen.hidden, .profile-screen.hidden, .daily-screen.hidden, .settings-screen.hidden, .category-screen.hidden, .time-level-screen.hidden, .measurement-level-screen.hidden, .fraction-level-screen.hidden, .profile-picker-screen.hidden, .parent-screen.hidden { display: none; }
+.menu-screen.hidden, .level-screen.hidden, .stats-screen.hidden, .practice-screen.hidden, .profile-screen.hidden, .daily-screen.hidden, .settings-screen.hidden, .category-screen.hidden, .time-level-screen.hidden, .measurement-level-screen.hidden, .fraction-level-screen.hidden, .geometry-level-screen.hidden, .profile-picker-screen.hidden, .parent-screen.hidden { display: none; }
 
-.category-screen, .time-level-screen, .measurement-level-screen, .fraction-level-screen { min-height: calc(100vh - 48px); padding: 22px; border: 5px solid #fff; border-radius: 30px; background: var(--cream); box-shadow: var(--shadow); }
+.category-screen, .time-level-screen, .measurement-level-screen, .fraction-level-screen, .geometry-level-screen { min-height: calc(100vh - 48px); padding: 22px; border: 5px solid #fff; border-radius: 30px; background: var(--cream); box-shadow: var(--shadow); }
 .category-grid { display: grid; grid-template-columns: repeat(2, minmax(260px, 1fr)); gap: 24px; width: min(900px, 100%); margin: 8vh auto 0; }
 .category-card { display: grid; place-items: center; gap: 9px; min-height: 270px; padding: 26px; border: 5px solid #fff; border-bottom: 10px solid var(--purple-dark); border-radius: 32px; color: var(--ink); cursor: pointer; box-shadow: 0 12px 25px rgba(51,35,112,.18); transition: transform .15s, filter .15s; }
 .category-card:hover, .category-card:focus-visible { filter: brightness(1.04); outline: 5px solid var(--yellow); outline-offset: 3px; transform: translateY(-5px); }
@@ -2387,6 +2387,67 @@ html.text-large .measurement-copy b,
 /* v1.6 — visual Pecahan yang ringan, boleh diguna semula dan responsif. */
 .fraction-level-grid { grid-template-columns: repeat(5, minmax(145px, 1fr)); }
 .fraction-level-card { border-color: #f0b7c9; }
+
+/* Bentuk & Ruang — asas geometri menggunakan rajah SVG ringan. */
+.geometry-hub-card { background: #eef8ff; border-color: #8dc7eb; }
+.geometry-menu-icon { display: grid; place-items: center; width: 90px; height: 90px; flex: 0 0 90px; }
+.geometry-menu-icon svg { width: 100%; height: 100%; overflow: visible; fill: #ffd84f; stroke: #362276; stroke-width: 5; stroke-linejoin: round; filter: drop-shadow(0 4px 0 rgba(54,34,118,.12)); }
+.geometry-level-grid { grid-template-columns: repeat(3, minmax(180px, 1fr)); max-width: 930px; margin-inline: auto; }
+.geometry-level-card { border-color: #8dc7eb; background: #f4fbff; }
+.geometry-level-card .level-character { color: #27506f; font-size: .82rem; font-weight: 850; }
+.items-and-question.geometry-question { grid-template-columns: minmax(300px, .9fr) 1.1fr; }
+.items-and-question.geometry-question .items-list { display: block; min-width: 0; }
+.geometry-display { display: grid; place-items: center; align-content: center; gap: 8px; min-height: 270px; padding: 14px; border: 4px solid #82c3e9; border-radius: 24px; background: linear-gradient(#f8fdff,#e9f7ff); color: var(--purple-dark); text-align: center; }
+.geometry-display > strong { font-size: 1.1rem; }
+.geometry-svg { width: min(190px, 72%); max-height: 190px; overflow: visible; }
+.geometry-object-illustration, .geometry-solid-object { display: grid; place-items: center; gap: 3px; min-width: 0; }
+.geometry-object-illustration .geometry-svg { width: 112px; height: 112px; }
+.geometry-object-illustration > span { margin-top: -36px; z-index: 1; color: #382073; font-weight: 950; }
+.geometry-solid-object .geometry-svg { width: 130px; height: 110px; }
+.geometry-shelf, .geometry-compare { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; }
+.geometry-shelf span { display: grid; place-items: center; width: 60px; height: 60px; border: 3px solid #6045ae; border-radius: 14px; background: #fff; color: #ff9d2e; font-size: 2rem; font-weight: 900; }
+.geometry-compare .geometry-svg { width: 135px; }
+.geometry-feature-card { display: grid; place-items: center; gap: 7px; min-height: 135px; padding: 12px; border: 3px dashed #7358bd; border-radius: 18px; background: #fff9d7; }
+.geometry-feature-card span { font-size: 2.5rem; }
+.geometry-visual-note { max-width: 30ch; color: #375268; font-weight: 750; }
+.geometry-answer-button { font-size: 1.22rem; }
+.geometry-answer-visual { display: grid; place-items: center; gap: 2px; line-height: 1.05; }
+.geometry-answer-visual .geometry-svg { width: 72px; height: 62px; max-height: 62px; }
+.geometry-answer-visual .geometry-object-illustration .geometry-svg { width: 72px; height: 62px; }
+.geometry-answer-visual .geometry-object-illustration > span { margin-top: -23px; font-size: .75rem; }
+.geometry-answer-visual .geometry-solid-object .geometry-svg { width: 76px; height: 58px; }
+.geometry-answer-visual strong, .geometry-solid-object strong { font-size: .82rem; }
+.practice-badge.hidden { display: none; }
+
+@media (max-width: 900px) {
+  .geometry-menu-icon { width: 65px; height: 65px; flex-basis: 65px; }
+  .items-and-question.geometry-question { grid-template-columns: minmax(240px, .8fr) 1.2fr; }
+  .geometry-display { min-height: 220px; }
+}
+
+@media (max-width: 900px) and (max-height: 520px) {
+  .practice-badge { right: 14px; max-width: 118px; padding: 2px 5px; font-size: .52rem; }
+}
+
+@media (max-width: 640px) {
+  .geometry-level-screen { min-height: calc(100vh - 12px); padding: 10px; }
+  .geometry-level-grid { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .geometry-level-card { min-height: 112px; }
+  .geometry-menu-icon { width: 56px; height: 56px; flex-basis: 56px; }
+  .items-and-question.geometry-question { grid-template-columns: minmax(0, 1fr); width: 100%; min-width: 0; padding: 8px; gap: 9px; overflow: hidden; }
+  .items-and-question.geometry-question > * { width: 100%; min-width: 0; max-width: 100%; }
+  .geometry-display { min-height: 150px; padding: 7px; border-width: 3px; border-radius: 17px; }
+  .geometry-display > strong { font-size: .92rem; }
+  .geometry-display > .geometry-svg { width: 112px; max-height: 112px; }
+  .geometry-shelf span { width: 44px; height: 44px; font-size: 1.45rem; }
+  .geometry-compare .geometry-svg { width: 92px; max-height: 96px; }
+  .items-and-question.geometry-question .answers { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+  .items-and-question.geometry-question .answer-button { width: 100%; min-width: 0; min-height: 58px; padding: 5px 3px; font-size: 1rem; }
+  .geometry-answer-visual .geometry-svg, .geometry-answer-visual .geometry-object-illustration .geometry-svg { width: 54px; height: 46px; }
+  .geometry-answer-visual .geometry-solid-object .geometry-svg { width: 58px; height: 44px; }
+  .geometry-answer-visual strong, .geometry-solid-object strong { font-size: .68rem; }
+  html.text-large .items-and-question.geometry-question .answer-button { font-size: .96rem; }
+}
 .items-and-question.fraction-question { grid-template-columns: minmax(300px, .9fr) 1.1fr; }
 .items-and-question.fraction-question .items-list { display: block; min-width: 0; }
 .fraction-display {

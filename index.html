@@ -130,6 +130,7 @@
           <button class="hub-category-card time-hub-card" id="time-category-button" type="button"><img data-src="assets/menu/icon-time.webp" alt="Ikon Masa dan Jam"><span><strong>Masa &amp; Jam</strong><small>10 misi waktu kedai</small><small class="category-star-total" id="time-star-total">⭐ 0/30</small></span></button>
           <button class="hub-category-card measurement-hub-card" id="measurement-category-button" type="button"><img data-src="assets/menu/icon-measurement.webp" alt="Ikon Ukuran"><span><strong>Ukuran</strong><small>10 misi ukuran kedai</small><small class="category-star-total" id="measurement-star-total">⭐ 0/30</small></span></button>
           <button class="hub-category-card fraction-hub-card" id="fraction-category-button" type="button"><img data-src="assets/menu/icon-fraction.webp" alt="Ikon Pecahan"><span><strong>Pecahan</strong><small>10 misi pecahan kedai</small><small class="category-star-total" id="fraction-star-total">⭐ 0/30</small></span></button>
+          <button class="hub-category-card geometry-hub-card" id="geometry-category-button" type="button"><span class="geometry-menu-icon" aria-hidden="true"><svg viewBox="0 0 96 96"><circle cx="28" cy="29" r="18"/><path d="M53 48 74 13l18 35Z"/><rect x="10" y="58" width="35" height="28" rx="3"/><rect x="55" y="57" width="36" height="29" rx="3"/></svg></span><span><strong>Bentuk &amp; Ruang</strong><small>3 misi asas bentuk</small><small class="category-star-total" id="geometry-star-total">⭐ 0/9</small></span></button>
         </section>
 
         <nav class="hub-support-grid" aria-label="Menu sokongan">
@@ -151,7 +152,7 @@
           <h3 id="how-to-title">CARA MAIN</h3>
           <p class="how-to-intro">Pilih modul, jawab soalan dan kumpulkan bintang. Cuba latihan dan cabaran untuk berlatih lagi!</p>
           <div class="how-to-grid">
-            <p><span aria-hidden="true">📚</span><strong>Pilih Modul</strong><small>Belajar Wang, Masa, Ukuran atau Pecahan.</small></p>
+            <p><span aria-hidden="true">📚</span><strong>Pilih Modul</strong><small>Belajar Wang, Masa, Ukuran, Pecahan atau Bentuk &amp; Ruang.</small></p>
             <p><span aria-hidden="true">⭐</span><strong>Kumpul Bintang</strong><small>Jawab 10 soalan. Lagi banyak jawapan betul, lagi banyak bintang.</small></p>
             <p><span aria-hidden="true">🔓</span><strong>Buka Misi</strong><small>Dapat sekurang-kurangnya 8/10 untuk membuka misi seterusnya.</small></p>
             <p><span aria-hidden="true">📝</span><strong>Mod Latihan</strong><small>Berlatih bebas tanpa menambah bintang atau membuka misi.</small></p>
@@ -374,6 +375,15 @@
       <div class="level-grid fraction-level-grid" id="fraction-level-grid"></div>
     </section>
 
+    <section class="geometry-level-screen hidden" id="geometry-level-screen" aria-labelledby="geometry-level-title">
+      <div class="screen-heading">
+        <button class="back-button" id="geometry-level-back-button" type="button">← Main Menu</button>
+        <div><p class="eyebrow">Cari bentuk di dalam kedai</p><h2 id="geometry-level-title">MISI BENTUK &amp; RUANG</h2></div>
+      </div>
+      <p class="level-notice" id="geometry-level-notice" role="status" aria-live="polite"></p>
+      <div class="level-grid geometry-level-grid" id="geometry-level-grid"></div>
+    </section>
+
     <section class="level-screen hidden" id="level-screen" aria-labelledby="level-screen-title">
       <div class="screen-heading">
         <button class="back-button" id="back-to-menu-button" type="button" aria-label="Kembali ke Main Menu">← Main Menu</button>
@@ -547,6 +557,7 @@
   <script src="money.js"></script>
   <script src="measurement.js"></script>
   <script src="fraction.js"></script>
+  <script src="geometry.js"></script>
   <script src="game.js"></script>
 </body>
 </html>
