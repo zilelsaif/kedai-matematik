@@ -1598,6 +1598,7 @@ html.visual-help-on .money-cents { text-decoration: underline 3px #ffd84d; text-
 .time-hub-card { background: #9ee6f8; }
 .measurement-hub-card { background: #bdeba9; }
 .fraction-hub-card { background: #ffe0ea; }
+.geometry-hub-card { width: calc(50% - 7px); grid-column: 1 / -1; justify-self: center; background: #eef8ff; border-color: #8dc7eb; }
 .hub-category-card img { width: 90px; height: 90px; flex: 0 0 90px; object-fit: contain; }
 .hub-category-emoji { display: grid; width: 90px; height: 90px; flex: 0 0 90px; place-items: center; font-size: 4.1rem; line-height: 1; }
 .hub-category-card span { display: grid; gap: 4px; }
@@ -2057,8 +2058,11 @@ html.text-large .main-hub-panel { overflow: auto; }
 }
 /* Telefon portrait: kandungan mengecil mengikut viewport tanpa scroll mendatar. */
 @media (max-width: 600px) and (orientation: portrait) {
-  html, body { max-width: 100%; overflow-x: hidden; }
-  .game-shell { width: calc(100% - 12px); padding: 6px 0 12px; }
+  html, body { min-width: 0; max-width: 100%; overflow-x: hidden; }
+  .game-shell { width: calc(100% - 12px); max-width: 100%; padding: 6px 0 12px; }
+  .top-bar, .shop-scene { width: 100%; min-width: 0; }
+  .game-stats { min-width: 0; }
+  .stat-card, .progress-card { min-width: 0; }
 
   .main-hub-screen {
     min-height: calc(100vh - 12px);
@@ -2143,6 +2147,12 @@ html.text-large .main-hub-panel { overflow: auto; }
 }
 
 @media (max-width: 400px) and (orientation: portrait) {
+  .shop-header-logo { width: 46px; height: 46px; }
+  h1 { font-size: 1.25rem; }
+  .game-stats { gap: 6px; }
+  .stat-card { gap: 4px; padding-inline: 6px; }
+  .stat-card > span { font-size: 1.25rem; }
+  .stat-card strong { max-width: 100%; font-size: .78rem; line-height: 1.05; overflow-wrap: anywhere; }
   .main-hub-screen { padding: 6px; }
   .main-hub-panel { padding: 9px; }
   .main-hub-header { grid-template-columns: minmax(0, .9fr) minmax(0, 1.4fr); }
@@ -2390,8 +2400,6 @@ html.text-large .measurement-copy b,
 
 /* Bentuk & Ruang — asas geometri menggunakan rajah SVG ringan. */
 .geometry-hub-card { background: #eef8ff; border-color: #8dc7eb; }
-.geometry-menu-icon { display: grid; place-items: center; width: 90px; height: 90px; flex: 0 0 90px; }
-.geometry-menu-icon svg { width: 100%; height: 100%; overflow: visible; fill: #ffd84f; stroke: #362276; stroke-width: 5; stroke-linejoin: round; filter: drop-shadow(0 4px 0 rgba(54,34,118,.12)); }
 .geometry-level-grid { grid-template-columns: repeat(3, minmax(180px, 1fr)); max-width: 930px; margin-inline: auto; }
 .geometry-level-card { border-color: #8dc7eb; background: #f4fbff; }
 .geometry-level-card .level-character { color: #27506f; font-size: .82rem; font-weight: 850; }
@@ -2401,6 +2409,10 @@ html.text-large .measurement-copy b,
 .geometry-display > strong { font-size: 1.1rem; }
 .geometry-svg { width: min(190px, 72%); max-height: 190px; overflow: visible; }
 .geometry-object-illustration, .geometry-solid-object { display: grid; place-items: center; gap: 3px; min-width: 0; }
+.geometry-product-image, .geometry-product-fallback { grid-area: 1 / 1; }
+.geometry-product-image { display: block; width: 112px; height: 112px; object-fit: contain; filter: drop-shadow(0 4px 4px rgba(48,35,96,.18)); }
+.geometry-product-image.hidden, .geometry-product-fallback.hidden { display: none; }
+.geometry-product-fallback { display: grid; place-items: center; margin: 0; }
 .geometry-object-illustration .geometry-svg { width: 112px; height: 112px; }
 .geometry-object-illustration > span { margin-top: -36px; z-index: 1; color: #382073; font-weight: 950; }
 .geometry-solid-object .geometry-svg { width: 130px; height: 110px; }
@@ -2414,13 +2426,57 @@ html.text-large .measurement-copy b,
 .geometry-answer-visual { display: grid; place-items: center; gap: 2px; line-height: 1.05; }
 .geometry-answer-visual .geometry-svg { width: 72px; height: 62px; max-height: 62px; }
 .geometry-answer-visual .geometry-object-illustration .geometry-svg { width: 72px; height: 62px; }
+.geometry-answer-visual .geometry-product-image { width: 72px; height: 62px; }
 .geometry-answer-visual .geometry-object-illustration > span { margin-top: -23px; font-size: .75rem; }
 .geometry-answer-visual .geometry-solid-object .geometry-svg { width: 76px; height: 58px; }
 .geometry-answer-visual strong, .geometry-solid-object strong { font-size: .82rem; }
+.geometry-product-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; width: 100%; }
+.geometry-product-choice, .geometry-choice { min-width: 0; border: 3px solid #826bc5; border-radius: 17px; background: #fff; color: var(--purple-dark); cursor: pointer; font: inherit; font-weight: 850; box-shadow: 0 4px 0 rgba(73,49,157,.14); }
+.geometry-product-choice { display: grid; place-items: center; gap: 2px; min-height: 122px; padding: 5px; }
+.geometry-product-choice .geometry-object-illustration .geometry-svg { width: 78px; height: 72px; }
+.geometry-product-choice .geometry-product-image { width: 88px; height: 76px; }
+.geometry-product-choice strong { font-size: .78rem; line-height: 1.1; }
+.geometry-choice:hover:not(:disabled), .geometry-rack-cell:hover:not(:disabled), .geometry-symmetry-cell:hover:not(:disabled) { transform: translateY(-2px); border-color: #ff9f2d; }
+.geometry-choice:focus-visible, .geometry-rack-cell:focus-visible, .geometry-symmetry-cell:focus-visible, .geometry-grid-actions button:focus-visible { outline: 4px solid #ffca28; outline-offset: 2px; }
+.geometry-choice.is-selected, .geometry-rack-cell.is-selected, .geometry-symmetry-cell.is-selected { border-color: #ff9f2d; background: #fff2ae; box-shadow: 0 0 0 4px rgba(255,159,45,.28); }
+.geometry-solid-focus { display: grid; place-items: center; gap: 2px; }
+.geometry-solid-focus .geometry-svg { width: 175px; max-height: 165px; }
+.geometry-visual-options { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; width: min(360px,100%); }
+.geometry-visual-options .geometry-choice { min-height: 48px; padding: 7px; }
+.geometry-rack { display: grid; grid-template-columns: repeat(var(--rack-cols),1fr); gap: 5px; width: min(350px,100%); padding: 12px; border: 8px solid #a96331; border-radius: 16px; background: #d98b48; box-shadow: inset 0 0 0 3px #6c341b; }
+.geometry-rack-cell { display: grid; place-items: center; aspect-ratio: 1.22; min-width: 0; border: 3px solid #74401f; border-radius: 8px; background: #fff4d2; cursor: pointer; font-size: 2rem; }
+.geometry-pattern { display: flex; flex-wrap: wrap; justify-content: center; gap: 7px; width: 100%; }
+.geometry-pattern span { display: grid; place-items: center; width: 52px; height: 52px; border: 3px solid #49319d; border-radius: 10px; background: #fff; color: #f45b69; font-size: 1.8rem; font-weight: 950; }
+.geometry-pattern span:nth-child(3n+2) { color: #168bd2; }
+.geometry-pattern .is-missing { border-style: dashed; background: #fff6bd; color: #49319d; }
+.geometry-pattern-answer { font-size: 2rem; color: #f45b69; }
+.geometry-symmetry-wrap { display: grid; gap: 8px; place-items: center; width: 100%; }
+.geometry-symmetry-grid { position: relative; display: grid; grid-template-columns: repeat(var(--grid-size),1fr); width: min(320px,72vw); aspect-ratio: 1; border: 4px solid #49319d; background: #fff; }
+.geometry-symmetry-grid.axis-vertical::after, .geometry-symmetry-grid.axis-horizontal::after { content: ""; position: absolute; z-index: 2; pointer-events: none; background: #ef3340; }
+.geometry-symmetry-grid.axis-vertical::after { inset: 0 auto 0 50%; width: 4px; transform: translateX(-2px); }
+.geometry-symmetry-grid.axis-horizontal::after { inset: 50% 0 auto; height: 4px; transform: translateY(-2px); }
+.geometry-symmetry-cell { min-width: 0; padding: 0; border: 1px solid #a9b5d0; background: #f8fbff; cursor: pointer; }
+.geometry-symmetry-cell.is-source { background: #6045ae; box-shadow: inset 0 0 0 4px #ffd84f; cursor: default; }
+.geometry-symmetry-cell.is-selected { background: #ffd84f; }
+.geometry-grid-actions { display: flex; gap: 9px; }
+.geometry-grid-actions button { min-height: 44px; padding: 7px 13px; border: 3px solid #49319d; border-radius: 13px; background: #fff; color: #49319d; font: inherit; font-weight: 900; cursor: pointer; }
+.geometry-grid-actions .geometry-check-button { background: #65d36e; }
+.geometry-math-svg { width: min(420px, 96%); max-height: 245px; overflow: visible; }
+.geometry-math-svg text { fill: #49319d; font-family: inherit; font-size: 19px; font-weight: 900; }
+.geometry-dimension line { stroke: #ef4e62; stroke-width: 3; marker-start: none; marker-end: none; }
+.geometry-boundary-ticks path { fill: none; stroke: #ff9d2e; stroke-width: 4; stroke-linecap: round; }
+.perimeter-svg { filter: drop-shadow(0 5px 0 rgba(73,49,157,.12)); }
+.area-svg { max-width: 360px; }
+.geometry-finale { display: grid; place-items: center; gap: 5px; margin: 10px auto; padding: 12px; border: 4px solid #ffd84f; border-radius: 22px; background: linear-gradient(145deg,#e8fbff,#fff7c7); box-shadow: 0 6px 0 rgba(73,49,157,.16); }
+.geometry-finale.hidden { display: none; }
+.geometry-finale-art { display: flex; align-items: end; justify-content: center; gap: 4px; min-height: 82px; }
+.geometry-finale-art img:first-child { width: 82px; height: 82px; object-fit: contain; }
+.geometry-finale-art img:last-child { width: 94px; height: 94px; object-fit: contain; margin-left: -18px; }
+.geometry-finale h3 { margin: 0; color: #49319d; font-size: 1.3rem; }
+.geometry-finale p { margin: 0; color: #365268; font-weight: 800; }
 .practice-badge.hidden { display: none; }
 
 @media (max-width: 900px) {
-  .geometry-menu-icon { width: 65px; height: 65px; flex-basis: 65px; }
   .items-and-question.geometry-question { grid-template-columns: minmax(240px, .8fr) 1.2fr; }
   .geometry-display { min-height: 220px; }
 }
@@ -2433,7 +2489,6 @@ html.text-large .measurement-copy b,
   .geometry-level-screen { min-height: calc(100vh - 12px); padding: 10px; }
   .geometry-level-grid { grid-template-columns: minmax(0, 1fr); gap: 8px; }
   .geometry-level-card { min-height: 112px; }
-  .geometry-menu-icon { width: 56px; height: 56px; flex-basis: 56px; }
   .items-and-question.geometry-question { grid-template-columns: minmax(0, 1fr); width: 100%; min-width: 0; padding: 8px; gap: 9px; overflow: hidden; }
   .items-and-question.geometry-question > * { width: 100%; min-width: 0; max-width: 100%; }
   .geometry-display { min-height: 150px; padding: 7px; border-width: 3px; border-radius: 17px; }
@@ -2444,8 +2499,24 @@ html.text-large .measurement-copy b,
   .items-and-question.geometry-question .answers { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
   .items-and-question.geometry-question .answer-button { width: 100%; min-width: 0; min-height: 58px; padding: 5px 3px; font-size: 1rem; }
   .geometry-answer-visual .geometry-svg, .geometry-answer-visual .geometry-object-illustration .geometry-svg { width: 54px; height: 46px; }
+  .geometry-answer-visual .geometry-product-image { width: 58px; height: 48px; }
   .geometry-answer-visual .geometry-solid-object .geometry-svg { width: 58px; height: 44px; }
   .geometry-answer-visual strong, .geometry-solid-object strong { font-size: .68rem; }
+  .geometry-product-choice { min-height: 88px; }
+  .geometry-product-choice .geometry-object-illustration .geometry-svg { width: 58px; height: 52px; }
+  .geometry-product-choice .geometry-product-image { width: 66px; height: 54px; }
+  .geometry-solid-focus .geometry-svg { width: 115px; max-height: 108px; }
+  .geometry-rack { width: min(285px,100%); padding: 7px; border-width: 6px; }
+  .geometry-rack-cell { font-size: 1.5rem; }
+  .geometry-pattern span { width: 40px; height: 40px; font-size: 1.35rem; }
+  .geometry-symmetry-grid { width: min(235px,70vw); }
+  .geometry-grid-actions button { min-height: 40px; padding: 5px 9px; font-size: .82rem; }
+  .geometry-math-svg { width: min(330px, 96%); max-height: 205px; }
+  .geometry-math-svg text { font-size: 17px; }
+  .geometry-finale { padding: 8px; }
+  .geometry-finale-art { min-height: 64px; }
+  .geometry-finale-art img:first-child { width: 64px; height: 64px; }
+  .geometry-finale-art img:last-child { width: 72px; height: 72px; }
   html.text-large .items-and-question.geometry-question .answer-button { font-size: .96rem; }
 }
 .items-and-question.fraction-question { grid-template-columns: minmax(300px, .9fr) 1.1fr; }
@@ -2712,6 +2783,7 @@ html.text-large .measurement-copy b,
   .profile-create-actions { bottom: -12px; margin-bottom: -4px; }
   .parent-overview { grid-template-columns: 1fr; }
   .parent-module-grid, .parent-detail-grid { grid-template-columns: 1fr; }
+  .geometry-hub-card { width: 100%; grid-column: auto; }
   .parent-profile-select { align-items: stretch; flex-direction: column; }
 }
 
@@ -2757,4 +2829,6 @@ html.text-large .measurement-copy b,
   #parent-report { display: grid !important; width: 100%; max-height: none; overflow: visible; border: 0; box-shadow: none; }
   #parent-report::before { content: "Kedai Matematik — Laporan Pembelajaran"; color: #35206f; font-size: 24pt; font-weight: 900; text-align: center; }
   .parent-overview, .parent-module-grid article, .parent-insights, .parent-detail-grid article, .parent-achievement-summary { break-inside: avoid; page-break-inside: avoid; }
+  .parent-module-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .parent-module-grid article { padding: 8px; font-size: 9pt; }
 }

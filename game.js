@@ -1,12 +1,17 @@
 "use strict";
 
-const GAME_VERSION = "1.9.5";
+const GAME_VERSION = "1.10.1";
 const STORAGE_KEY = "kedaiMatematikProgress";
 const PROFILES_STORAGE_KEY = "kedaiMatematikProfiles";
 const MAX_PROFILES = 6;
 const SOUND_STORAGE_KEY = "kedaiMatematikSoundEnabled";
 const LEGACY_SOUND_STORAGE_KEY = "kedaiMatematikSound";
 const totalCustomers = 10;
+const ACADEMIC_MODULE_COUNT = 5;
+const MISSIONS_PER_MODULE = 10;
+const STARS_PER_MISSION = 3;
+const ACADEMIC_MISSION_COUNT = ACADEMIC_MODULE_COUNT * MISSIONS_PER_MODULE;
+const ACADEMIC_STAR_MAX = ACADEMIC_MISSION_COUNT * STARS_PER_MISSION;
 const SUPPORT_DEV_PREVIEW = false;
 
 const audioFiles = {
@@ -83,7 +88,14 @@ const practiceTypes = [
   { id: "fraction-10", name: "Kedai Sibuk: Pecahan", category: "fraction", fractionLevel: 10 },
   { id: "geometry-1", name: "Latihan Bentuk 2D", category: "geometry", geometryLevel: 1 },
   { id: "geometry-2", name: "Latihan Bentuk Objek", category: "geometry", geometryLevel: 2 },
-  { id: "geometry-3", name: "Latihan Bentuk 3D", category: "geometry", geometryLevel: 3 }
+  { id: "geometry-3", name: "Latihan Bentuk 3D", category: "geometry", geometryLevel: 3 },
+  { id: "geometry-4", name: "Latihan Ciri Bentuk", category: "geometry", geometryLevel: 4 },
+  { id: "geometry-5", name: "Latihan Kedudukan Rak", category: "geometry", geometryLevel: 5 },
+  { id: "geometry-6", name: "Latihan Pola", category: "geometry", geometryLevel: 6 },
+  { id: "geometry-7", name: "Latihan Simetri", category: "geometry", geometryLevel: 7 },
+  { id: "geometry-8", name: "Latihan Keliling", category: "geometry", geometryLevel: 8 },
+  { id: "geometry-9", name: "Latihan Luas", category: "geometry", geometryLevel: 9 },
+  { id: "geometry-10", name: "Latihan Geometri Campuran", category: "geometry", geometryLevel: 10 }
 ];
 
 const timeMissions = [
@@ -259,6 +271,7 @@ const missionSevenItems = shopItems.map((item) => ({
 
 // Kekalkan objek Image ini supaya ikon yang telah dipreload kekal dalam cache browser.
 const itemImagePreloadCache = [];
+const geometryImagePreloadCache = [];
 
 function preloadItemImages() {
   if (itemImagePreloadCache.length > 0) return;
@@ -268,6 +281,16 @@ function preloadItemImages() {
     image.decoding = "async";
     image.src = item.image;
     itemImagePreloadCache.push(image);
+  });
+}
+
+function preloadGeometryImages() {
+  if (geometryImagePreloadCache.length > 0) return;
+  GeometryModule.assetPaths.forEach((path) => {
+    const image = new Image();
+    image.decoding = "async";
+    image.src = path;
+    geometryImagePreloadCache.push(image);
   });
 }
 
@@ -305,6 +328,7 @@ function prepareGameplayAssets() {
   });
   preloadCustomerAvatars();
   preloadItemImages();
+  preloadGeometryImages();
 }
 
 const mainMenuAssetPreloadCache = [];
@@ -517,6 +541,7 @@ const elements = {
   finalBest: document.querySelector("#final-best"),
   finalRating: document.querySelector("#final-rating"),
   levelUnlocked: document.querySelector("#level-unlocked"),
+  geometryFinale: document.querySelector("#geometry-finale"),
   smartTip: document.querySelector("#smart-tip"),
   smartTipText: document.querySelector("#smart-tip-text"),
   playAgainButton: document.querySelector("#play-again-button"),
@@ -585,6 +610,7 @@ let fractionQuestionPlan = [];
 let currentGeometryLevel = 1;
 let currentGeometrySubSkill = "shape2D";
 let geometryQuestionPlan = [];
+let selectedGeometryCells = new Set();
 let selectedProfileAvatar = "profile-avatar-01";
 let selectedProfileTheme = "purple";
 let selectedNewProfileAvatar = "profile-avatar-01";
@@ -637,7 +663,7 @@ function defaultFractionSkillStats() {
 }
 
 function defaultGeometrySkillStats() {
-  return Object.fromEntries(["shape2D", "objectShape", "solid3D"]
+  return Object.fromEntries(["shape2D", "objectShape", "solid3D", "solidProperties", "position", "pattern", "symmetry", "perimeter", "area"]
     .map((id) => [id, { answered: 0, correct: 0 }]));
 }
 
@@ -1029,7 +1055,7 @@ function loadProgress(savedInput = null) {
       if (!dailyChallenge.scoreDate) dailyChallenge.bestScore = 0;
       if (!dailyChallenge.lastCompletedDate) dailyChallenge.currentStreak = 0;
       if (isValidDateKey(daily.planDate) && Array.isArray(daily.plan) && daily.plan.length === totalCustomers) {
-        const validModules = ["money", "time", "measurement", "fraction"];
+        const validModules = ["money", "time", "measurement", "fraction", "geometry"];
         const validPlan = daily.plan.every((entry) =>
           entry && validModules.includes(entry.module) && Number.isInteger(Number(entry.missionId)) &&
           Number(entry.missionId) >= 1 && Number(entry.missionId) <= 10
@@ -1214,18 +1240,20 @@ function loadProgress(savedInput = null) {
     }
 
     savedStats.totalCorrect = Math.min(savedStats.totalCorrect, savedStats.totalQuestions);
-    savedStats.totalStars = Object.values(savedStars).reduce((total, rating) => total + rating, 0);
+    const legacyMoneyStars = Object.values(savedStars).reduce((total, rating) => total + rating, 0);
+    savedStats.totalStars = [savedStars, timeProgress.stars, measurementProgress.stars, fractionProgress.stars, geometryProgress.stars]
+      .reduce((total, ratings) => total + Object.values(ratings).reduce((sum, rating) => sum + rating, 0), 0);
 
     // Migrasi senyap: data lama yang sudah memenuhi syarat dipaparkan sebagai
     // dibuka tanpa menghasilkan rentetan toast ketika game mula dimuatkan.
-    achievements.firstStar ||= savedStats.totalStars >= 1;
+    achievements.firstStar ||= legacyMoneyStars >= 1;
     achievements.perfectMission ||= Object.values(bestScores).some((score) => score === 10);
     achievements.efficientCashier ||= savedStats.bestStreak >= 10;
     achievements.halfway ||= highestUnlockedLevel >= 5;
     achievements.allMissions ||= highestUnlockedLevel >= levels.length;
     achievements.storeExpert ||= Number(bestScores[10]) >= 8;
-    achievements.starCollector ||= savedStats.totalStars >= 20;
-    achievements.starKing ||= savedStats.totalStars >= 30;
+    achievements.starCollector ||= legacyMoneyStars >= 20;
+    achievements.starKing ||= legacyMoneyStars >= 30;
     achievements.onTime ||= Number(timeProgress.bestScores[1]) >= 8;
     achievements.timeKeeper ||= Number(timeProgress.bestScores[5]) >= 8;
     achievements.fractionHalfway ||= Number(fractionProgress.bestScores[5]) >= 8;
@@ -1276,7 +1304,11 @@ function saveProgress() {
 }
 
 function calculateTotalStars() {
-  return Object.values(progress.stars).reduce((total, rating) => total + rating, 0);
+  return totalAcademicStars(progress);
+}
+
+function calculateMoneyStars(data = progress) {
+  return Object.values(data.stars || {}).reduce((total, rating) => total + (Number(rating) || 0), 0);
 }
 
 function queueAchievementNotification(achievement) {
@@ -1303,20 +1335,20 @@ function showNextAchievementToast() {
 }
 
 function checkAchievements({ missionScore = null, missionLevel = null, missionPassed = false, allowMissionAchievements = false, timeMissionLevel = null, fractionMissionLevel = null, shopChallengeCompleted = false, shopChallengeGold = false } = {}) {
-  const totalStars = calculateTotalStars();
+  const moneyStars = calculateMoneyStars();
   const conditions = {
     efficientCashier: progress.stats.bestStreak >= 10
   };
 
   if (allowMissionAchievements) {
     Object.assign(conditions, {
-      firstStar: totalStars >= 1,
+      firstStar: moneyStars >= 1,
       perfectMission: missionScore === 10,
       halfway: progress.highestUnlockedLevel >= 5,
       allMissions: progress.highestUnlockedLevel >= levels.length,
       storeExpert: missionLevel === 10 && missionPassed,
-      starCollector: totalStars >= 20,
-      starKing: totalStars >= 30
+      starCollector: moneyStars >= 20,
+      starKing: moneyStars >= 30
     });
   }
   if (timeMissionLevel !== null && missionPassed) {
@@ -2263,7 +2295,8 @@ const crossModuleDefinitions = {
   money: { label: "Wang & Kedai", getHighest: () => progress.highestUnlockedLevel },
   time: { label: "Masa & Jam", getHighest: () => progress.timeProgress.highestUnlockedLevel },
   measurement: { label: "Ukuran", getHighest: () => progress.measurementProgress.highestUnlockedLevel },
-  fraction: { label: "Pecahan", getHighest: () => progress.fractionProgress.highestUnlockedLevel }
+  fraction: { label: "Pecahan", getHighest: () => progress.fractionProgress.highestUnlockedLevel },
+  geometry: { label: "Bentuk & Ruang", getHighest: () => progress.geometryProgress.highestUnlockedLevel }
 };
 
 function createCrossModulePlan() {
@@ -2314,11 +2347,16 @@ function generateCrossModuleQuestion(customer) {
     const adapterPlan = Array(totalCustomers);
     adapterPlan[questionIndex] = generatedPlan[0];
     question = MeasurementModule.generate(planEntry.missionId, questionIndex, customer, randomIndex, shuffle, adapterPlan);
-  } else {
+  } else if (planEntry.module === "fraction") {
     const generatedPlan = FractionModule.createPlan(planEntry.missionId, shuffle);
     const adapterPlan = Array(totalCustomers);
     adapterPlan[questionIndex] = generatedPlan[0];
     question = FractionModule.generate(planEntry.missionId, questionIndex, customer, randomIndex, shuffle, adapterPlan);
+  } else {
+    const generatedPlan = GeometryModule.createPlan(planEntry.missionId, shuffle);
+    const adapterPlan = Array(totalCustomers);
+    adapterPlan[questionIndex] = generatedPlan[0];
+    question = GeometryModule.generate(planEntry.missionId, questionIndex, customer, randomIndex, shuffle, adapterPlan);
   }
   return { ...question, sourceModule: planEntry.module, sourceMissionId: planEntry.missionId };
 }
@@ -2398,7 +2436,7 @@ const smartTipLibrary = {
   time: ["Setengah jam ialah 30 minit, manakala suku jam ialah 15 minit.", "Untuk mencari tempoh, kira perjalanan masa dari waktu mula hingga waktu tamat.", "Jarum minit yang panjang membantu membaca minit; jarum jam yang pendek menunjukkan jam."],
   measurement: ["Pilih unit yang sesuai: g atau kg untuk berat, mL atau L untuk minuman.", "Ingat: 1000 g = 1 kg, 1000 mL = 1 L dan 100 cm = 1 m.", "Samakan unit dahulu sebelum menambah ukuran."],
   fraction: ["Pecahan menunjukkan berapa bahagian dipilih daripada bahagian yang sama besar.", "1/2 ialah satu daripada dua bahagian sama besar; 1/4 ialah satu daripada empat.", "Untuk pecahan kumpulan, kira jumlah barang dahulu kemudian cari bahagiannya.", "Pecahan setara kelihatan berbeza tetapi mewakili bahagian yang sama.", "Semasa membanding pecahan, gunakan visual bahagian sama besar untuk membantu."],
-  geometry: ["Perhatikan sisi lurus dan bucu untuk mengenal bentuk 2D.", "Cari bentuk barang, bukan warna atau saiznya.", "Bentuk 3D mempunyai permukaan dan boleh dilihat dari pelbagai arah."]
+  geometry: ["Perhatikan sisi lurus dan bucu untuk mengenal bentuk 2D.", "Cari bentuk barang, bukan warna atau saiznya.", "Bentuk 3D mempunyai permukaan dan boleh dilihat dari pelbagai arah.", "Keliling ialah jumlah panjang semua sisi di sekeliling bentuk.", "Luas ialah jumlah petak unit yang menutupi kawasan."]
 };
 
 function getCurrentSmartTip() {
@@ -2415,7 +2453,7 @@ function getCurrentSmartTip() {
   if (moduleId === "time") return tips[level === 4 || level === 5 || level >= 8 ? 1 : (level <= 3 ? 0 : 2)];
   if (moduleId === "measurement") return tips[[2, 6, 7, 8].includes(level) ? 1 : (level === 9 ? 0 : 2)];
   if (moduleId === "fraction") return tips[level === 5 ? 2 : (level === 6 ? 3 : (level === 7 ? 4 : (level === 2 || level === 3 ? 1 : 0)))];
-  if (moduleId === "geometry") return tips[Math.min(level - 1, tips.length - 1)];
+  if (moduleId === "geometry") return tips[level === 8 ? 3 : (level >= 9 ? 4 : Math.min(level - 1, 2))];
   return tips[0];
 }
 
@@ -2427,7 +2465,10 @@ function renderSmartTip() {
 
 function showScreen(screenName) {
   if (screenName !== "game") stopQuestionTimer();
-  if (screenName === "results") renderSmartTip();
+  if (screenName === "results") {
+    renderSmartTip();
+    elements.geometryFinale.classList.toggle("hidden", !(gameMode === "geometry-mission" && currentGeometryLevel === 10 && stars >= 8));
+  }
 
   const screens = {
     title: elements.titleScreen,
@@ -2677,9 +2718,9 @@ function completeDailyChallenge(score) {
 }
 
 function getAchievementProgress(achievementId) {
-  const totalStars = calculateTotalStars();
-  if (achievementId === "starCollector") return `${Math.min(totalStars, 20)} / 20 bintang`;
-  if (achievementId === "starKing") return `${Math.min(totalStars, 30)} / 30 bintang`;
+  const moneyStars = calculateMoneyStars();
+  if (achievementId === "starCollector") return `${Math.min(moneyStars, 20)} / 20 bintang`;
+  if (achievementId === "starKing") return `${Math.min(moneyStars, 30)} / 30 bintang`;
   if (achievementId === "efficientCashier") return `${Math.min(progress.stats.bestStreak, 10)} / 10 berturut-turut`;
   return "";
 }
@@ -2861,8 +2902,12 @@ function switchProfile(profileId, destination = "menu") {
 }
 
 function totalAcademicStars(data) {
-  return [data.stars, data.timeProgress.stars, data.measurementProgress.stars, data.fractionProgress.stars]
-    .reduce((total, ratings) => total + Object.values(ratings).reduce((sum, value) => sum + (Number(value) || 0), 0), 0);
+  const total = [data.stars, data.timeProgress?.stars, data.measurementProgress?.stars, data.fractionProgress?.stars, data.geometryProgress?.stars]
+    .reduce((sum, ratings) => sum + Object.values(ratings || {}).reduce((ratingSum, value) => {
+      const rating = Number(value);
+      return ratingSum + (Number.isFinite(rating) ? Math.min(Math.max(rating, 0), STARS_PER_MISSION) : 0);
+    }, 0), 0);
+  return Math.min(total, ACADEMIC_STAR_MAX);
 }
 
 function renderProfilePicker() {
@@ -2870,7 +2915,7 @@ function renderProfilePicker() {
     const data = getProfileData(id);
     const avatar = getPlayerAvatar(data.playerProfile.avatar);
     return `<button class="profile-picker-card${id === activeProfileId ? " active" : ""}" type="button" data-profile-id="${id}">
-      <span class="profile-picker-avatar">${playerAvatarMarkup(avatar)}</span><strong>${escapeHtml(data.playerProfile.name)}</strong><small>⭐ ${totalAcademicStars(data)}/120</small>
+      <span class="profile-picker-avatar">${playerAvatarMarkup(avatar)}</span><strong>${escapeHtml(data.playerProfile.name)}</strong><small>⭐ ${totalAcademicStars(data)}/${ACADEMIC_STAR_MAX}</small>
     </button>`;
   }).join("");
   elements.profilePickerGrid.innerHTML = `${cards}<button class="profile-picker-card add-profile-card" id="profile-picker-add" type="button" ${profileStore.order.length >= MAX_PROFILES ? "disabled" : ""}><span aria-hidden="true">＋</span><strong>Tambah Pemain</strong><small>Maksimum 6</small></button>`;
@@ -2942,7 +2987,8 @@ const learningModuleDefinitions = [
   { id: "money", label: "Wang & Kedai", progressKey: null, missions: levels, practiceId: 1 },
   { id: "time", label: "Masa & Jam", progressKey: "timeProgress", missions: timeMissions, practiceId: "time-1" },
   { id: "measurement", label: "Ukuran", progressKey: "measurementProgress", missions: measurementMissions, practiceId: "measurement-1" },
-  { id: "fraction", label: "Pecahan", progressKey: "fractionProgress", missions: fractionMissions, practiceId: "fraction-1" }
+  { id: "fraction", label: "Pecahan", progressKey: "fractionProgress", missions: fractionMissions, practiceId: "fraction-1" },
+  { id: "geometry", label: "Bentuk & Ruang", progressKey: "geometryProgress", missions: geometryMissions, practiceId: "geometry-1" }
 ];
 
 function getModuleProgress(data, module) {
@@ -3003,15 +3049,17 @@ function renderParentDashboard() {
   const data = getProfileData(selectedId);
   const starsTotal = totalAcademicStars(data);
   const accuracy = data.stats.totalQuestions ? Math.round(data.stats.totalCorrect / data.stats.totalQuestions * 100) : 0;
-  elements.parentOverview.innerHTML = `<div class="parent-profile-hero"><span class="parent-profile-avatar">${playerAvatarMarkup(getPlayerAvatar(data.playerProfile.avatar))}</span><div><h3>${escapeHtml(data.playerProfile.name)}</h3><p>⭐ Jumlah Bintang Akademik: ${starsTotal} / 120</p><small>Tarikh laporan: ${new Date().toLocaleDateString("ms-MY")}</small></div></div><div class="parent-overview-grid"><span><small>Selesai</small><strong>${Math.round(starsTotal / 120 * 100)}%</strong></span><span><small>Soalan</small><strong>${data.stats.totalQuestions}</strong></span><span><small>Ketepatan</small><strong>${accuracy}%</strong></span><span><small>Rentetan Terbaik</small><strong>${data.stats.bestStreak}</strong></span><span><small>Sesi</small><strong>${data.stats.missionsPlayed}</strong></span><span><small>Lulus</small><strong>${data.stats.missionsPassed}</strong></span></div>`;
-  const modules = [
-    ["money", "Wang & Kedai", data.stars], ["time", "Masa & Jam", data.timeProgress.stars],
-    ["measurement", "Ukuran", data.measurementProgress.stars], ["fraction", "Pecahan", data.fractionProgress.stars]
-  ];
-  elements.parentModuleGrid.innerHTML = modules.map(([id, label, ratings]) => {
+  elements.parentOverview.innerHTML = `<div class="parent-profile-hero"><span class="parent-profile-avatar">${playerAvatarMarkup(getPlayerAvatar(data.playerProfile.avatar))}</span><div><h3>${escapeHtml(data.playerProfile.name)}</h3><p>⭐ Jumlah Bintang Akademik: ${starsTotal} / ${ACADEMIC_STAR_MAX}</p><small>Tarikh laporan: ${new Date().toLocaleDateString("ms-MY")}</small></div></div><div class="parent-overview-grid"><span><small>Selesai</small><strong>${Math.round(starsTotal / ACADEMIC_STAR_MAX * 100)}%</strong></span><span><small>Soalan</small><strong>${data.stats.totalQuestions}</strong></span><span><small>Ketepatan</small><strong>${accuracy}%</strong></span><span><small>Rentetan Terbaik</small><strong>${data.stats.bestStreak}</strong></span><span><small>Sesi</small><strong>${data.stats.missionsPlayed}</strong></span><span><small>Lulus</small><strong>${data.stats.missionsPassed}</strong></span></div>`;
+  const modules = learningModuleDefinitions.map((module) => {
+    const moduleProgress = getModuleProgress(data, module);
+    return [module.id, module.label, moduleProgress.stars || {}, moduleProgress.bestScores || {}, module.missions.length];
+  });
+  elements.parentModuleGrid.innerHTML = modules.map(([id, label, ratings, bestScores, missionCount]) => {
     const moduleStars = Object.values(ratings).reduce((sum, value) => sum + (Number(value) || 0), 0);
+    const completedMissions = Object.values(bestScores).filter((score) => Number(score) >= 8).length;
     const moduleAccuracy = getModuleAccuracy(data, id);
-    return `<article><h4>${label}</h4><strong>⭐ ${moduleStars}/30</strong><p>Ketepatan ${moduleAccuracy}%</p><div class="parent-progress"><span style="width:${moduleStars / 30 * 100}%"></span></div></article>`;
+    const moduleStarMax = missionCount * STARS_PER_MISSION;
+    return `<article><h4>${label}</h4><strong>⭐ ${moduleStars}/${moduleStarMax}</strong><p>Misi selesai: ${completedMissions}/${missionCount}</p><p>Ketepatan ${moduleAccuracy}%</p><div class="parent-progress"><span style="width:${Math.min(moduleStars / moduleStarMax * 100, 100)}%"></span></div></article>`;
   }).join("");
   const ranked = modules.map(([id, label]) => ({ id, label, accuracy: getModuleAccuracy(data, id), answered: id === "money" ? ["addition", "quantity", "change", "moneyCents", "mixed"].reduce((n, key) => n + data.skillStats[key].answered, 0) : data.skillStats[id].answered })).filter((entry) => entry.answered >= 5).sort((a, b) => b.accuracy - a.accuracy);
   const strongest = ranked[0];
@@ -3151,7 +3199,7 @@ function showStatistics() {
     ? Math.round((stats.totalCorrect / stats.totalQuestions) * 100)
     : 0;
 
-  statElements.totalStars.textContent = `${calculateTotalStars()} / ${levels.length * 3}`;
+  statElements.totalStars.textContent = `${calculateTotalStars()} / ${ACADEMIC_STAR_MAX}`;
   statElements.totalCorrect.textContent = stats.totalCorrect;
   statElements.totalQuestions.textContent = stats.totalQuestions;
   statElements.accuracy.textContent = `${accuracy}%`;
@@ -3236,6 +3284,7 @@ function runMenuRecommendation() {
   if (recommendation.module === "time") return startTimeGame(recommendation.level, "time-mission");
   if (recommendation.module === "measurement") return startMeasurementGame(recommendation.level, "measurement-mission");
   if (recommendation.module === "fraction") return startFractionGame(recommendation.level, "fraction-mission");
+  if (recommendation.module === "geometry") return startGeometryGame(recommendation.level, "geometry-mission");
   startGame(recommendation.level, "mission");
 }
 
@@ -3250,7 +3299,7 @@ function showMainMenu() {
   elements.timeStarTotal.textContent = `⭐ ${Object.values(progress.timeProgress.stars).reduce((sum, value) => sum + (Number(value) || 0), 0)}/30`;
   elements.measurementStarTotal.textContent = `⭐ ${Object.values(progress.measurementProgress.stars).reduce((sum, value) => sum + (Number(value) || 0), 0)}/30`;
   elements.fractionStarTotal.textContent = `⭐ ${Object.values(progress.fractionProgress.stars).reduce((sum, value) => sum + (Number(value) || 0), 0)}/30`;
-  elements.geometryStarTotal.textContent = `⭐ ${Object.values(progress.geometryProgress.stars).reduce((sum, value) => sum + (Number(value) || 0), 0)}/9`;
+  elements.geometryStarTotal.textContent = `⭐ ${Object.values(progress.geometryProgress.stars).reduce((sum, value) => sum + (Number(value) || 0), 0)}/30`;
   elements.menuRecommendationText.textContent = getLearningRecommendation(progress).text;
   applyPlayerTheme(progress.playerProfile.theme);
   elements.menuPlayerAvatar.innerHTML = playerAvatarMarkup(getPlayerAvatar(progress.playerProfile.avatar), "menu-player-avatar-image");
@@ -3283,7 +3332,7 @@ function enterShop() {
 
 const tutorialSteps = [
   { icon: "👋", title: "Selamat Datang!", description: "Mari lihat cara bermain. Hanya tiga langkah mudah!" },
-  { icon: "📚", title: "Pilih Modul", description: "Pilih Wang, Masa, Ukuran atau Pecahan. Setiap modul ada 10 misi." },
+  { icon: "📚", title: "Pilih Modul", description: "Pilih Wang, Masa, Ukuran, Pecahan atau Bentuk & Ruang. Setiap modul ada 10 misi." },
   { icon: "⭐", title: "Jawab & Kumpul Bintang", description: "Jawab 10 soalan. Dapat 8 betul untuk membuka misi seterusnya!" }
 ];
 let tutorialStepIndex = 0;
@@ -3494,6 +3543,13 @@ function renderVisualHelp(question) {
 }
 
 function handleItemImageError(event) {
+  const geometryImage = event.target.closest?.(".geometry-product-image");
+  if (geometryImage) {
+    geometryImage.classList.add("hidden");
+    const fallback = geometryImage.nextElementSibling;
+    if (fallback?.classList.contains("geometry-product-fallback")) fallback.classList.remove("hidden");
+    return;
+  }
   if (event.target.matches?.(".measurement-item-visual img")) {
     event.target.classList.add("hidden");
     return;
@@ -3680,6 +3736,12 @@ function revealCorrectAnswer() {
   elements.answers.querySelectorAll(".answer-button").forEach((button) => {
     if (Number(button.dataset.value) === correctAnswer) button.classList.add("correct-answer-review");
   });
+  if (currentQuestion?.interaction === "visual-single") {
+    elements.itemsList.querySelector(`[data-geometry-value="${String(correctAnswer)}"]`)?.classList.add("correct-answer-review");
+  }
+  if (currentQuestion?.interaction === "multi-select") {
+    currentQuestion.correctCells.forEach((cell) => elements.itemsList.querySelector(`[data-geometry-cell="${cell}"]`)?.classList.add("correct-answer-review"));
+  }
 }
 
 function showWrongAnswerReview(message) {
@@ -3762,6 +3824,7 @@ function newQuestion() {
   stopQuestionTimer();
   questionLocked = true;
   awaitingWrongAdvance = false;
+  selectedGeometryCells = new Set();
   elements.homeGameButton.disabled = true;
   elements.feedback.textContent = "";
   elements.feedback.className = "feedback";
@@ -3830,7 +3893,7 @@ function newQuestion() {
   currentMeasurementDimension = question.measurementDimension || "mass";
   currentMeasurementSubSkill = question.measurementSubSkill || "weight";
   currentFractionSubSkill = question.fractionSubSkill || "visualFraction";
-  currentGeometrySubSkill = question.geometryLevel === 1 ? "shape2D" : (question.geometryLevel === 2 ? "objectShape" : "solid3D");
+  currentGeometrySubSkill = question.geometrySubSkill || (question.geometryLevel === 1 ? "shape2D" : (question.geometryLevel === 2 ? "objectShape" : "solid3D"));
   currentSkillCategory = question.skillCategory || levelSkillCategories[currentLevel] || "mixed";
   if (isCrossModuleSession) {
     const moduleId = question.sourceModule || "money";
@@ -3909,7 +3972,7 @@ function newQuestion() {
     renderMoneyVisual(question);
   }
   renderVisualHelp(question);
-  renderAnswers(question.choices || createAnswerChoices(correctAnswer, question.distractors, question.choiceOffsets));
+  renderAnswers(question.interaction ? [] : (question.choices || createAnswerChoices(correctAnswer, question.distractors, question.choiceOffsets)));
 
   elements.customerPanel.className = "customer-panel";
   void elements.customerPanel.offsetWidth;
@@ -4382,7 +4445,7 @@ function showGeometryGameOver() {
   elements.finalRating.textContent = getRating(stars);
   elements.finalRating.classList.remove("hidden");
   elements.levelUnlocked.textContent = currentGeometryLevel === implementedCount && passed
-    ? "🏆 Hebat! Asas Bentuk & Ruang selesai!"
+    ? "🏆 Kedai Impian Siap! Semua Misi Bentuk & Ruang selesai!"
     : "🎉 Misi Bentuk Baru Dibuka!";
   elements.levelUnlocked.classList.toggle("hidden", !(unlockedNewMission || (currentGeometryLevel === implementedCount && passed)));
   elements.nextLevelButton.textContent = "Misi Bentuk Seterusnya";
@@ -4396,15 +4459,11 @@ function showGeometryGameOver() {
   elements.playAgainButton.focus();
 }
 
-function handleAnswer(event) {
-  const button = event.target.closest(".answer-button");
-  if (!button || questionLocked) return;
-
+function completeAnswer(isCorrect, button = null) {
+  if (questionLocked) return;
   questionLocked = true;
   elements.homeGameButton.disabled = true;
   stopQuestionTimer();
-  const selectedValue = Number(button.dataset.value);
-  const isCorrect = selectedValue === correctAnswer;
   recordQuestionResult(isCorrect);
 
   if (gameMode === "shop-challenge" || gameMode === "daily") {
@@ -4421,21 +4480,58 @@ function handleAnswer(event) {
       sessionBestStreak = Math.max(sessionBestStreak, currentStreak);
     }
     audioManager.play("correct");
-    button.classList.add("correct");
+    button?.classList.add("correct");
     elements.feedback.textContent = praiseMessages[randomIndex(praiseMessages.length)];
     elements.feedback.className = "feedback success";
   } else {
     audioManager.play("wrong");
-    button.classList.add("wrong");
+    button?.classList.add("wrong");
     showWrongAnswerReview(buildWrongAnswerFeedback(currentQuestion));
   }
 
   elements.answers.querySelectorAll("button").forEach((answerButton) => {
     answerButton.disabled = true;
   });
+  elements.itemsList.querySelectorAll("button").forEach((interactiveButton) => {
+    interactiveButton.disabled = true;
+  });
   updateStats();
   elements.customerPanel.classList.remove("customer-active");
   elements.customerPanel.classList.add(isCorrect ? "customer-correct" : "customer-wrong");
+}
+
+function handleAnswer(event) {
+  const button = event.target.closest(".answer-button");
+  if (!button || questionLocked) return;
+  completeAnswer(Number(button.dataset.value) === correctAnswer, button);
+}
+
+function handleGeometryInteraction(event) {
+  if (questionLocked || !currentQuestion?.isGeometry) return;
+  const choice = event.target.closest("[data-geometry-value]");
+  if (choice && currentQuestion.interaction === "visual-single") {
+    const selectedValue = Number(choice.dataset.geometryValue);
+    choice.classList.add("is-selected");
+    completeAnswer(selectedValue === Number(correctAnswer), choice);
+    return;
+  }
+  const cell = event.target.closest("[data-geometry-cell]");
+  if (cell && currentQuestion.interaction === "multi-select" && !cell.classList.contains("is-source")) {
+    const index = Number(cell.dataset.geometryCell);
+    if (selectedGeometryCells.has(index)) selectedGeometryCells.delete(index);
+    else selectedGeometryCells.add(index);
+    cell.classList.toggle("is-selected", selectedGeometryCells.has(index));
+    return;
+  }
+  const action = event.target.closest("[data-geometry-action]")?.dataset.geometryAction;
+  if (action === "clear") {
+    selectedGeometryCells.clear();
+    elements.itemsList.querySelectorAll(".geometry-symmetry-cell.is-selected").forEach((button) => button.classList.remove("is-selected"));
+  } else if (action === "check") {
+    const expected = [...currentQuestion.correctCells].sort((a, b) => a - b).join(",");
+    const selected = [...selectedGeometryCells].sort((a, b) => a - b).join(",");
+    completeAnswer(selected === expected, event.target.closest("button"));
+  }
 }
 
 function startGame(levelId = currentLevel, mode = gameMode) {
@@ -4589,6 +4685,9 @@ function handleCustomerAnimationEnd(event) {
     elements.answers.querySelectorAll("button").forEach((button) => {
       button.disabled = false;
     });
+    elements.itemsList.querySelectorAll("button:not(.is-source)").forEach((button) => {
+      button.disabled = false;
+    });
     questionLocked = false;
     elements.homeGameButton.disabled = false;
     audioManager.play("customerIn");
@@ -4632,6 +4731,7 @@ function cleanupActiveSession() {
   homePausedMilliseconds = 0;
   questionLocked = true;
   awaitingWrongAdvance = false;
+  selectedGeometryCells = new Set();
   stopQuestionTimer();
   audioManager.stopAll();
   elements.homeGameButton.disabled = true;
@@ -4853,9 +4953,11 @@ elements.backToMenuButton.addEventListener("click", showMainMenu);
 elements.levelGrid.addEventListener("click", handleLevelSelection);
 elements.practiceGrid.addEventListener("click", handlePracticeSelection);
 elements.answers.addEventListener("click", handleAnswer);
+elements.itemsList.addEventListener("click", handleGeometryInteraction);
 elements.nextQuestionButton.addEventListener("click", continueAfterWrongFeedback);
 // Acara error imej tidak bubble, jadi gunakan event delegation dalam capture phase.
 elements.itemsList.addEventListener("error", handleItemImageError, true);
+elements.answers.addEventListener("error", handleItemImageError, true);
 elements.playAgainButton.addEventListener("click", () => {
   if (gameMode === "daily") startDailyChallenge();
   else if (gameMode === "shop-challenge") startShopChallenge();

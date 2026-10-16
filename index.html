@@ -6,7 +6,7 @@
   <meta name="description" content="Game matematik kanak-kanak untuk belajar mengira harga, kuantiti, wang dan baki melalui permainan kedai.">
   <meta name="theme-color" content="#6546c7">
   <meta name="application-name" content="Kedai Matematik">
-  <meta name="application-version" content="">
+  <meta name="application-version" content="1.10.1">
   <title>Kedai Matematik</title>
   <script>
     try {
@@ -90,8 +90,8 @@
         <div class="title-actions">
           <button class="enter-shop-button" id="start-menu-button" type="button"><img src="assets/ui/icon-enter-shop.webp" alt=""><span>MASUK KEDAI</span></button>
           <ul class="title-highlights" aria-label="Kandungan permainan">
-            <li><span aria-hidden="true">📚</span><strong>4 Modul</strong></li>
-            <li><span aria-hidden="true">🎯</span><strong>40 Misi</strong></li>
+            <li><span aria-hidden="true">📚</span><strong>5 Modul</strong></li>
+            <li><span aria-hidden="true">🎯</span><strong>50 Misi</strong></li>
             <li><span aria-hidden="true">✨</span><strong>Cabaran Harian</strong></li>
           </ul>
         </div>
@@ -130,7 +130,7 @@
           <button class="hub-category-card time-hub-card" id="time-category-button" type="button"><img data-src="assets/menu/icon-time.webp" alt="Ikon Masa dan Jam"><span><strong>Masa &amp; Jam</strong><small>10 misi waktu kedai</small><small class="category-star-total" id="time-star-total">⭐ 0/30</small></span></button>
           <button class="hub-category-card measurement-hub-card" id="measurement-category-button" type="button"><img data-src="assets/menu/icon-measurement.webp" alt="Ikon Ukuran"><span><strong>Ukuran</strong><small>10 misi ukuran kedai</small><small class="category-star-total" id="measurement-star-total">⭐ 0/30</small></span></button>
           <button class="hub-category-card fraction-hub-card" id="fraction-category-button" type="button"><img data-src="assets/menu/icon-fraction.webp" alt="Ikon Pecahan"><span><strong>Pecahan</strong><small>10 misi pecahan kedai</small><small class="category-star-total" id="fraction-star-total">⭐ 0/30</small></span></button>
-          <button class="hub-category-card geometry-hub-card" id="geometry-category-button" type="button"><span class="geometry-menu-icon" aria-hidden="true"><svg viewBox="0 0 96 96"><circle cx="28" cy="29" r="18"/><path d="M53 48 74 13l18 35Z"/><rect x="10" y="58" width="35" height="28" rx="3"/><rect x="55" y="57" width="36" height="29" rx="3"/></svg></span><span><strong>Bentuk &amp; Ruang</strong><small>3 misi asas bentuk</small><small class="category-star-total" id="geometry-star-total">⭐ 0/9</small></span></button>
+          <button class="hub-category-card geometry-hub-card" id="geometry-category-button" type="button"><img data-src="assets/menu/icon-geometry.webp" alt="Ikon Bentuk dan Ruang"><span><strong>Bentuk &amp; Ruang</strong><small>10 misi bentuk interaktif</small><small class="category-star-total" id="geometry-star-total">⭐ 0/30</small></span></button>
         </section>
 
         <nav class="hub-support-grid" aria-label="Menu sokongan">
@@ -308,7 +308,7 @@
         <p class="eyebrow">Prestasi juruwang</p>
         <h2 id="stats-title">STATISTIK KEDAI</h2>
         <div class="stats-grid">
-          <article class="stats-card stats-stars"><span aria-hidden="true">⭐</span><small>Bintang Wang</small><strong id="stats-total-stars">0 / 30</strong></article>
+          <article class="stats-card stats-stars"><span aria-hidden="true">⭐</span><small>Bintang Akademik</small><strong id="stats-total-stars">0 / 150</strong></article>
           <article class="stats-card"><span aria-hidden="true">✅</span><small>Jawapan Betul</small><strong id="stats-total-correct">0</strong></article>
           <article class="stats-card"><span aria-hidden="true">🧮</span><small>Soalan Dijawab</small><strong id="stats-total-questions">0</strong></article>
           <article class="stats-card"><span aria-hidden="true">🎯</span><small>Ketepatan</small><strong id="stats-accuracy">0%</strong></article>
@@ -452,6 +452,11 @@
         <p class="final-best">Rekod Terbaik: <span id="final-best">0 / 10</span></p>
         <p class="final-rating" id="final-rating">Cuba Lagi!</p>
         <p class="level-unlocked hidden" id="level-unlocked">🎉 Misi Baru Dibuka!</p>
+        <section class="geometry-finale hidden" id="geometry-finale" aria-labelledby="geometry-finale-title">
+          <div class="geometry-finale-art" aria-hidden="true"><img src="assets/branding/logo-icon.webp" alt=""><img src="assets/menu/icon-geometry.webp" alt=""></div>
+          <h3 id="geometry-finale-title">Kedai Impian Siap!</h3>
+          <p>Hebat! Kamu berjaya membantu menyiapkan kedai!</p>
+        </section>
         <aside class="smart-tip hidden" id="smart-tip" aria-labelledby="smart-tip-title">
           <strong id="smart-tip-title">💡 Tip Pintar</strong>
           <span id="smart-tip-text"></span>
