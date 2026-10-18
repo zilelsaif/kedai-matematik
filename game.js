@@ -199,6 +199,31 @@ const achievementDefinitions = [
   { id: "shopChallengeGold", icon: "🏆", name: "Juruwang Serba Boleh", description: "Dapat medal Emas dalam Cabaran Kedai." }
 ];
 
+const achievementPresentation = {
+  firstStar: { category: "general", artwork: "first-star.webp" },
+  perfectMission: { category: "general", artwork: "perfect-mission.webp" },
+  efficientCashier: { category: "general", artwork: "efficient-cashier.webp" },
+  halfway: { category: "money", artwork: "halfway.webp" },
+  allMissions: { category: "money", artwork: "all-missions.webp" },
+  storeExpert: { category: "money", artwork: "store-expert.webp" },
+  starCollector: { category: "money", artwork: "star-collector.webp" },
+  starKing: { category: "money", artwork: "star-king.webp" },
+  onTime: { category: "time", artwork: "on-time.webp" },
+  timeKeeper: { category: "time", artwork: "time-keeper.webp" },
+  fractionHalfway: { category: "fraction", artwork: "fraction-halfway.webp" },
+  fractionExpert: { category: "fraction", artwork: "fraction-expert.webp" },
+  shopChallengeFirst: { category: "shop", artwork: "shop-challenge-first.webp" },
+  shopChallengeGold: { category: "shop", artwork: "shop-challenge-gold.webp" }
+};
+
+const achievementCategoryLabels = {
+  general: "Lencana Umum",
+  money: "Wang & Kedai",
+  time: "Masa & Jam",
+  fraction: "Pecahan",
+  shop: "Cabaran Kedai"
+};
+
 const shopItems = [
   { emoji: "🍞", image: "assets/items/roti.png", name: "Roti", price: 2 },
   { emoji: "🥛", image: "assets/items/susu.png", name: "Susu", price: 4 },
@@ -430,6 +455,24 @@ const elements = {
   achievementsMenuButton: document.querySelector("#achievements-menu-button"),
   achievementsBackButton: document.querySelector("#achievements-back-button"),
   achievementsGrid: document.querySelector("#achievements-grid"),
+  achievementFilters: document.querySelector("#achievement-filters"),
+  achievementUnlockedCount: document.querySelector("#achievement-unlocked-count"),
+  achievementTotalCount: document.querySelector("#achievement-total-count"),
+  achievementSummaryProgress: document.querySelector("#achievement-summary-progress"),
+  achievementSummaryBar: document.querySelector("#achievement-summary-bar"),
+  achievementFeatured: document.querySelector("#achievement-featured"),
+  achievementDetailModal: document.querySelector("#achievement-detail-modal"),
+  achievementDetailClose: document.querySelector("#achievement-detail-close"),
+  achievementDetailArtwork: document.querySelector("#achievement-detail-artwork"),
+  achievementDetailCategory: document.querySelector("#achievement-detail-category"),
+  achievementDetailName: document.querySelector("#achievement-detail-name"),
+  achievementDetailDescription: document.querySelector("#achievement-detail-description"),
+  achievementDetailStatus: document.querySelector("#achievement-detail-status"),
+  achievementDetailProgress: document.querySelector("#achievement-detail-progress"),
+  achievementDetailProgressBar: document.querySelector("#achievement-detail-progress-bar"),
+  achievementDetailProgressText: document.querySelector("#achievement-detail-progress-text"),
+  achievementDetailDate: document.querySelector("#achievement-detail-date"),
+  achievementFeatureButton: document.querySelector("#achievement-feature-button"),
   appVersion: document.querySelector("#app-version"),
   homeGameButton: document.querySelector("#home-game-button"),
   homeModal: document.querySelector("#home-modal"),
@@ -621,6 +664,9 @@ let sessionActive = false;
 let homeModalOpen = false;
 let homePausedMilliseconds = 0;
 let achievementToastTimer = null;
+let activeAchievementFilter = "all";
+let selectedAchievementId = "";
+let achievementImagesPreloaded = false;
 let profileEditorTargetId = "";
 let profileEditorReturnScreen = "menu";
 let activeModal = null;
@@ -2717,31 +2763,164 @@ function completeDailyChallenge(score) {
   return daily;
 }
 
-function getAchievementProgress(achievementId) {
+function achievementProgressData(achievementId) {
   const moneyStars = calculateMoneyStars();
-  if (achievementId === "starCollector") return `${Math.min(moneyStars, 20)} / 20 bintang`;
-  if (achievementId === "starKing") return `${Math.min(moneyStars, 30)} / 30 bintang`;
-  if (achievementId === "efficientCashier") return `${Math.min(progress.stats.bestStreak, 10)} / 10 berturut-turut`;
-  return "";
+  const bestMoneyScore = Math.max(0, ...Object.values(progress.bestScores || {}).map((score) => Number(score) || 0));
+  const values = {
+    firstStar: { current: moneyStars, target: 1, label: `${Math.min(moneyStars, 1)} / 1 bintang` },
+    perfectMission: { current: bestMoneyScore, target: 10, label: `${Math.min(bestMoneyScore, 10)} / 10 skor terbaik` },
+    efficientCashier: { current: progress.stats.bestStreak, target: 10, label: `${Math.min(progress.stats.bestStreak, 10)} / 10 berturut-turut` },
+    halfway: { current: progress.highestUnlockedLevel, target: 5, label: `Misi ${Math.min(progress.highestUnlockedLevel, 5)} / 5` },
+    allMissions: { current: progress.highestUnlockedLevel, target: levels.length, label: `${Math.min(progress.highestUnlockedLevel, levels.length)} / ${levels.length} misi dibuka` },
+    storeExpert: { current: Number(progress.bestScores?.[10]) || 0, target: 8, label: `${Math.min(Number(progress.bestScores?.[10]) || 0, 8)} / 8 untuk lulus Misi 10` },
+    starCollector: { current: moneyStars, target: 20, label: `${Math.min(moneyStars, 20)} / 20 bintang Wang` },
+    starKing: { current: moneyStars, target: 30, label: `${Math.min(moneyStars, 30)} / 30 bintang Wang` },
+    onTime: { current: Number(progress.timeProgress?.bestScores?.[1]) || 0, target: 8, label: `${Math.min(Number(progress.timeProgress?.bestScores?.[1]) || 0, 8)} / 8 untuk lulus Misi Masa 1` },
+    timeKeeper: { current: Number(progress.timeProgress?.bestScores?.[5]) || 0, target: 8, label: `${Math.min(Number(progress.timeProgress?.bestScores?.[5]) || 0, 8)} / 8 untuk lulus Misi Masa 5` },
+    fractionHalfway: { current: Number(progress.fractionProgress?.bestScores?.[5]) || 0, target: 8, label: `${Math.min(Number(progress.fractionProgress?.bestScores?.[5]) || 0, 8)} / 8 untuk lulus Misi Pecahan 5` },
+    fractionExpert: { current: Number(progress.fractionProgress?.bestScores?.[10]) || 0, target: 8, label: `${Math.min(Number(progress.fractionProgress?.bestScores?.[10]) || 0, 8)} / 8 untuk lulus Misi Pecahan 10` },
+    shopChallengeFirst: { current: Number(progress.shopChallenge?.sessionsPlayed) || 0, target: 1, label: `${Math.min(Number(progress.shopChallenge?.sessionsPlayed) || 0, 1)} / 1 cabaran selesai` },
+    shopChallengeGold: { current: Number(progress.shopChallenge?.goldMedals) || 0, target: 1, label: `${Math.min(Number(progress.shopChallenge?.goldMedals) || 0, 1)} / 1 medal Emas` }
+  };
+  const data = values[achievementId] || { current: 0, target: 1, label: "Belum ada kemajuan" };
+  return { ...data, percent: Math.min(100, Math.round((data.current / data.target) * 100)) };
+}
+
+function getAchievementProgress(achievementId) {
+  return achievementProgressData(achievementId).label;
+}
+
+function achievementArtworkMarkup(achievement, className = "") {
+  const presentation = achievementPresentation[achievement.id];
+  const classes = ["achievement-art-image", className].filter(Boolean).join(" ");
+  return `<img class="${classes}" src="assets/achievements/${presentation.artwork}" alt="Lencana ${escapeHtml(achievement.name)}"><span class="achievement-art-fallback" aria-hidden="true">${achievement.icon}</span>`;
+}
+
+function formatAchievementDate(value) {
+  if (!value) return "Dibuka sebelum rekod tarikh tersedia";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Dibuka sebelum rekod tarikh tersedia";
+  return `Dibuka pada ${new Intl.DateTimeFormat("ms-MY", { day: "numeric", month: "long", year: "numeric" }).format(date)}`;
+}
+
+function achievementStatus(achievement) {
+  if (progress.achievements[achievement.id] === true) return "unlocked";
+  return achievementProgressData(achievement.id).current > 0 ? "in-progress" : "locked";
+}
+
+function renderAchievementSummary() {
+  const unlocked = achievementDefinitions.filter((achievement) => progress.achievements[achievement.id] === true);
+  const percent = Math.round((unlocked.length / achievementDefinitions.length) * 100);
+  elements.achievementUnlockedCount.textContent = unlocked.length;
+  elements.achievementTotalCount.textContent = achievementDefinitions.length;
+  elements.achievementSummaryBar.style.width = `${percent}%`;
+  elements.achievementSummaryProgress.setAttribute("aria-valuenow", String(percent));
+
+  const featured = getAchievement(progress.playerProfile.featuredBadge);
+  const featuredIsValid = featured && progress.achievements[featured.id] === true;
+  elements.achievementFeatured.innerHTML = featuredIsValid
+    ? `<div class="achievement-featured-art">${achievementArtworkMarkup(featured)}</div><div><small>BADGE UTAMA</small><strong>${featured.name}</strong><span>Dipamerkan pada profil</span></div>`
+    : `<span class="achievement-featured-empty" aria-hidden="true">◇</span><div><small>BADGE UTAMA</small><strong>Belum dipilih</strong><span>Buka lencana dan pilih kegemaran kamu.</span></div>`;
 }
 
 function renderAchievements() {
-  elements.achievementsGrid.innerHTML = achievementDefinitions.map((achievement) => {
-    const unlocked = progress.achievements[achievement.id] === true;
-    const numericProgress = getAchievementProgress(achievement.id);
+  renderAchievementSummary();
+  const visibleAchievements = achievementDefinitions.filter((achievement) => {
+    const category = achievementPresentation[achievement.id]?.category;
+    return activeAchievementFilter === "all" || category === activeAchievementFilter;
+  });
+
+  elements.achievementsGrid.innerHTML = visibleAchievements.map((achievement) => {
+    const status = achievementStatus(achievement);
+    const presentation = achievementPresentation[achievement.id];
+    const progressData = achievementProgressData(achievement.id);
+    const statusLabel = status === "unlocked" ? "Dibuka" : status === "in-progress" ? "Dalam kemajuan" : "Belum dibuka";
     return `
-      <article class="achievement-card ${unlocked ? "unlocked" : "locked"}">
-        <span class="achievement-icon" aria-hidden="true">${unlocked ? achievement.icon : "🔒"}</span>
-        <h3>${achievement.name}</h3>
-        <p>${achievement.description}</p>
-        ${numericProgress ? `<small>${numericProgress}</small>` : ""}
-        <strong>${unlocked ? "✅ Dibuka" : "Belum dibuka"}</strong>
-      </article>
+      <button class="achievement-card ${status}" type="button" data-achievement-id="${achievement.id}" aria-label="${escapeHtml(achievement.name)}. ${statusLabel}. Buka butiran.">
+        <span class="achievement-card-art" aria-hidden="true">
+          ${achievementArtworkMarkup(achievement)}
+          ${status === "locked" ? '<span class="achievement-card-lock">🔒</span>' : ""}
+        </span>
+        <span class="achievement-card-category">${achievementCategoryLabels[presentation.category]}</span>
+        <strong class="achievement-card-name">${achievement.name}</strong>
+        ${status === "in-progress" ? `<span class="achievement-card-mini-progress"><i style="width:${progressData.percent}%"></i></span><small>${progressData.label}</small>` : ""}
+        <span class="achievement-card-status ${status}">${status === "unlocked" ? "✓ Dibuka" : status === "in-progress" ? "Dalam kemajuan" : "🔒 Belum dibuka"}</span>
+      </button>
     `;
   }).join("");
 }
 
+function preloadAchievementImages() {
+  if (achievementImagesPreloaded) return;
+  achievementImagesPreloaded = true;
+  achievementDefinitions.forEach((achievement) => {
+    const image = new Image();
+    image.src = `assets/achievements/${achievementPresentation[achievement.id].artwork}`;
+  });
+}
+
+function showAchievementDetails(achievementId) {
+  const achievement = getAchievement(achievementId);
+  if (!achievement) return;
+  selectedAchievementId = achievement.id;
+  const status = achievementStatus(achievement);
+  const progressData = achievementProgressData(achievement.id);
+  const presentation = achievementPresentation[achievement.id];
+  const unlocked = status === "unlocked";
+
+  elements.achievementDetailArtwork.className = `achievement-detail-artwork ${status}`;
+  elements.achievementDetailArtwork.innerHTML = `${achievementArtworkMarkup(achievement)}${status === "locked" ? '<span class="achievement-detail-lock" aria-hidden="true">🔒</span>' : ""}`;
+  elements.achievementDetailCategory.textContent = achievementCategoryLabels[presentation.category];
+  elements.achievementDetailName.textContent = achievement.name;
+  elements.achievementDetailDescription.textContent = achievement.description;
+  elements.achievementDetailStatus.textContent = unlocked ? "✓ Lencana telah dibuka" : status === "in-progress" ? "Dalam kemajuan" : "Belum dibuka";
+  elements.achievementDetailStatus.className = `achievement-detail-status ${status}`;
+  elements.achievementDetailProgress.classList.toggle("hidden", unlocked);
+  elements.achievementDetailProgressBar.style.width = `${progressData.percent}%`;
+  elements.achievementDetailProgressText.textContent = progressData.label;
+  elements.achievementDetailDate.textContent = unlocked ? formatAchievementDate(progress.achievementUnlockedAt?.[achievement.id]) : `Cara membuka: ${achievement.description}`;
+  elements.achievementFeatureButton.classList.toggle("hidden", !unlocked);
+  elements.achievementFeatureButton.textContent = progress.playerProfile.featuredBadge === achievement.id ? "✓ Badge Utama Dipilih" : "Jadikan Badge Utama";
+  elements.achievementFeatureButton.disabled = progress.playerProfile.featuredBadge === achievement.id;
+  openAccessibleModal(elements.achievementDetailModal, elements.achievementDetailClose, closeAchievementDetails);
+}
+
+function closeAchievementDetails() {
+  selectedAchievementId = "";
+  closeAccessibleModal();
+}
+
+function featureSelectedAchievement() {
+  const achievement = getAchievement(selectedAchievementId);
+  if (!achievement || progress.achievements[achievement.id] !== true) return;
+  progress.playerProfile.featuredBadge = achievement.id;
+  saveProgress();
+  renderAchievementSummary();
+  elements.achievementFeatureButton.textContent = "✓ Badge Utama Dipilih";
+  elements.achievementFeatureButton.disabled = true;
+}
+
+function handleAchievementFilter(event) {
+  const button = event.target.closest("[data-achievement-filter]");
+  if (!button) return;
+  activeAchievementFilter = button.dataset.achievementFilter;
+  elements.achievementFilters.querySelectorAll("[data-achievement-filter]").forEach((filterButton) => {
+    const selected = filterButton === button;
+    filterButton.classList.toggle("active", selected);
+    filterButton.setAttribute("aria-pressed", String(selected));
+  });
+  renderAchievements();
+}
+
+function handleAchievementImageError(event) {
+  const image = event.target;
+  if (!(image instanceof HTMLImageElement) || !image.classList.contains("achievement-art-image")) return;
+  image.classList.add("hidden");
+  image.nextElementSibling?.classList.add("is-visible");
+}
+
 function showAchievements() {
+  preloadAchievementImages();
   renderAchievements();
   showScreen("achievements");
   elements.achievementsBackButton.focus();
@@ -4912,6 +5091,16 @@ elements.avatarOptions.addEventListener("click", handleAvatarSelection);
 elements.themeOptions.addEventListener("click", handleThemeSelection);
 elements.achievementsMenuButton.addEventListener("click", showAchievements);
 elements.achievementsBackButton.addEventListener("click", showMainMenu);
+elements.achievementFilters.addEventListener("click", handleAchievementFilter);
+elements.achievementsGrid.addEventListener("click", (event) => {
+  const card = event.target.closest("[data-achievement-id]");
+  if (card) showAchievementDetails(card.dataset.achievementId);
+});
+elements.achievementDetailClose.addEventListener("click", closeAchievementDetails);
+elements.achievementFeatureButton.addEventListener("click", featureSelectedAchievement);
+elements.achievementDetailModal.addEventListener("click", (event) => {
+  if (event.target === elements.achievementDetailModal) closeAchievementDetails();
+});
 elements.homeGameButton.addEventListener("click", openHomeConfirmation);
 elements.homeConfirmButton.addEventListener("click", exitCurrentSession);
 elements.homeContinueButton.addEventListener("click", continueCurrentSession);
@@ -4928,6 +5117,7 @@ document.addEventListener("fullscreenchange", updateFullscreenButton);
 document.addEventListener("keydown", handleModalKeyboard);
 document.addEventListener("keydown", closeHowToWithEscape);
 document.addEventListener("error", (event) => {
+  handleAchievementImageError(event);
   if (!(event.target instanceof HTMLImageElement) || !event.target.classList.contains("player-avatar-image")) return;
   event.target.classList.add("hidden");
   event.target.nextElementSibling?.classList.add("is-visible");

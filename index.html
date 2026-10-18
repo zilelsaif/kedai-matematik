@@ -260,8 +260,26 @@
       <div class="achievements-panel">
         <div class="screen-heading">
           <button class="back-button" id="achievements-back-button" type="button">← Menu Utama</button>
-          <div><p class="eyebrow">Koleksi kejayaan kamu</p><h2 id="achievements-title">PENCAPAIAN</h2></div>
+          <div><p class="eyebrow">Koleksi kejayaan kamu</p><h2 id="achievements-title">GALERI LENCANA</h2></div>
         </div>
+        <section class="achievement-collection-summary" aria-labelledby="achievement-summary-title">
+          <div class="achievement-summary-copy">
+            <p class="achievement-summary-kicker">Koleksi kamu</p>
+            <h3 id="achievement-summary-title"><span id="achievement-unlocked-count">0</span> daripada <span id="achievement-total-count">0</span> lencana dibuka</h3>
+            <div class="achievement-summary-track" role="progressbar" aria-label="Kemajuan koleksi lencana" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="achievement-summary-progress">
+              <span id="achievement-summary-bar"></span>
+            </div>
+          </div>
+          <div class="achievement-featured" id="achievement-featured" aria-live="polite"></div>
+        </section>
+        <nav class="achievement-filters" id="achievement-filters" aria-label="Tapis lencana mengikut kategori">
+          <button class="achievement-filter active" type="button" data-achievement-filter="all" aria-pressed="true">Semua</button>
+          <button class="achievement-filter" type="button" data-achievement-filter="general" aria-pressed="false">Umum</button>
+          <button class="achievement-filter" type="button" data-achievement-filter="money" aria-pressed="false">Wang</button>
+          <button class="achievement-filter" type="button" data-achievement-filter="time" aria-pressed="false">Masa</button>
+          <button class="achievement-filter" type="button" data-achievement-filter="fraction" aria-pressed="false">Pecahan</button>
+          <button class="achievement-filter" type="button" data-achievement-filter="shop" aria-pressed="false">Cabaran</button>
+        </nav>
         <div class="achievements-grid" id="achievements-grid"></div>
       </div>
     </section>
@@ -550,6 +568,23 @@
       <button class="support-qr-lightbox-close" id="support-qr-lightbox-close" type="button" aria-label="Tutup paparan QR">×</button>
       <img class="support-qr-large" id="support-qr-large" data-src="assets/support/support-qr.webp" alt="QR sokongan pembangunan Kedai Matematik dalam paparan besar">
       <button class="secondary-button" id="support-qr-lightbox-done" type="button">Tutup</button>
+    </div>
+  </div>
+
+  <div class="achievement-detail-modal hidden" id="achievement-detail-modal" role="dialog" aria-modal="true" aria-labelledby="achievement-detail-name" aria-describedby="achievement-detail-description">
+    <div class="achievement-detail-card">
+      <button class="achievement-detail-close" id="achievement-detail-close" type="button" aria-label="Tutup butiran lencana">×</button>
+      <div class="achievement-detail-artwork" id="achievement-detail-artwork"></div>
+      <p class="achievement-detail-category" id="achievement-detail-category"></p>
+      <h2 id="achievement-detail-name">Lencana</h2>
+      <p id="achievement-detail-description"></p>
+      <div class="achievement-detail-status" id="achievement-detail-status" role="status"></div>
+      <div class="achievement-detail-progress hidden" id="achievement-detail-progress">
+        <div class="achievement-detail-progress-track" aria-hidden="true"><span id="achievement-detail-progress-bar"></span></div>
+        <strong id="achievement-detail-progress-text"></strong>
+      </div>
+      <p class="achievement-detail-date" id="achievement-detail-date"></p>
+      <button class="play-again-button hidden" id="achievement-feature-button" type="button">Jadikan Badge Utama</button>
     </div>
   </div>
 
