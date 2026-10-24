@@ -72,14 +72,16 @@ Game direka untuk:
 
 ## 📦 Versi
 
-**v1.10.1 — Bentuk & Ruang**
+**v1.10.3 — Bentuk & Ruang**
 
-### Ringkasan v1.10.1
+### Ringkasan v1.10.3
 
 - Menambah Modul 5 — Bentuk & Ruang dengan 10 misi dan 10 latihan.
 - Menambah aktiviti bentuk 2D/3D, kedudukan, pola, simetri, keliling dan luas.
 - Mengintegrasikan Bentuk & Ruang dengan statistik, profil, laporan Ibu Bapa/Guru, Cabaran Harian dan Cabaran Kedai.
 - Menambah aset geometri WebP yang ringan serta paparan responsif untuk desktop dan telefon.
+- Memperkemas Galeri Lencana, Statistik dan laporan Ibu Bapa/Guru dengan paparan premium yang konsisten.
+- Menambah kemasan visual global dan penambahbaikan pengalaman bermain pada telefon serta tablet.
 - Mengekalkan migrasi selamat untuk profil dan kemajuan daripada versi terdahulu.
 
 ## 👨‍💻 Pembangunan

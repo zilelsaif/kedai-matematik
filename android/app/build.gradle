@@ -14,8 +14,8 @@ android {
         applicationId "com.zilelsaif.kedaimatematik"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 4
-        versionName "1.9.2"
+        versionCode 5
+        versionName "1.10.3"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -34,6 +34,10 @@ signingConfigs {
     }
 }
     buildTypes {
+        debug {
+            applicationIdSuffix ".qa"
+            versionNameSuffix "-qa"
+        }
         release {
             signingConfig signingConfigs.release
             minifyEnabled false

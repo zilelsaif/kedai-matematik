@@ -1,6 +1,6 @@
 "use strict";
 
-const GAME_VERSION = "1.10.1";
+const GAME_VERSION = "1.10.3";
 const STORAGE_KEY = "kedaiMatematikProgress";
 const PROFILES_STORAGE_KEY = "kedaiMatematikProfiles";
 const MAX_PROFILES = 6;
@@ -13,6 +13,9 @@ const STARS_PER_MISSION = 3;
 const ACADEMIC_MISSION_COUNT = ACADEMIC_MODULE_COUNT * MISSIONS_PER_MODULE;
 const ACADEMIC_STAR_MAX = ACADEMIC_MISSION_COUNT * STARS_PER_MISSION;
 const SUPPORT_DEV_PREVIEW = false;
+// Enable only after the QR recipient, 100% creator allocation and eWallet terms
+// have been verified for the intended Google Play release.
+const ANDROID_SUPPORT_APPROVED = false;
 
 const audioFiles = {
   buttonClick: "assets/audio/button-click.mp3",
@@ -915,12 +918,23 @@ function handleModalKeyboard(event) {
   }
 }
 
-function isWebSupportEnabled() {
-  return SUPPORT_DEV_PREVIEW || window.location.hostname === "kedai-matematik.pages.dev";
+function isAndroidNativePlatform() {
+  const capacitor = window.Capacitor;
+  if (!capacitor || typeof capacitor.getPlatform !== "function") return false;
+  const isNative = typeof capacitor.isNativePlatform === "function"
+    ? capacitor.isNativePlatform()
+    : true;
+  return isNative && capacitor.getPlatform() === "android";
+}
+
+function isSupportEnabled() {
+  const isCloudflareProduction = window.location.hostname === "kedai-matematik.pages.dev";
+  const isApprovedAndroid = ANDROID_SUPPORT_APPROVED && isAndroidNativePlatform();
+  return SUPPORT_DEV_PREVIEW || isCloudflareProduction || isApprovedAndroid;
 }
 
 function initializeWebSupport() {
-  const enabled = isWebSupportEnabled();
+  const enabled = isSupportEnabled();
   elements.parentSupportCard.classList.toggle("hidden", !enabled);
   if (!enabled) {
     elements.supportQrImage.removeAttribute("src");
@@ -932,7 +946,7 @@ function initializeWebSupport() {
 }
 
 function openSupportModal() {
-  if (!isWebSupportEnabled()) return;
+  if (!isSupportEnabled()) return;
   openAccessibleModal(elements.supportModal, elements.supportCloseButton, closeSupportModal);
 }
 
@@ -941,7 +955,7 @@ function closeSupportModal() {
 }
 
 function openSupportQrLightbox() {
-  if (!isWebSupportEnabled()) return;
+  if (!isSupportEnabled()) return;
   closeAccessibleModal(false);
   openAccessibleModal(elements.supportQrLightbox, elements.supportQrLightboxClose, closeSupportQrLightbox);
 }
@@ -3163,11 +3177,11 @@ function getModuleAccuracy(data, moduleId) {
 }
 
 const learningModuleDefinitions = [
-  { id: "money", label: "Wang & Kedai", progressKey: null, missions: levels, practiceId: 1 },
-  { id: "time", label: "Masa & Jam", progressKey: "timeProgress", missions: timeMissions, practiceId: "time-1" },
-  { id: "measurement", label: "Ukuran", progressKey: "measurementProgress", missions: measurementMissions, practiceId: "measurement-1" },
-  { id: "fraction", label: "Pecahan", progressKey: "fractionProgress", missions: fractionMissions, practiceId: "fraction-1" },
-  { id: "geometry", label: "Bentuk & Ruang", progressKey: "geometryProgress", missions: geometryMissions, practiceId: "geometry-1" }
+  { id: "money", label: "Wang & Kedai", icon: "assets/menu/icon-money-shop.webp", progressKey: null, missions: levels, practiceId: 1 },
+  { id: "time", label: "Masa & Jam", icon: "assets/menu/icon-time.webp", progressKey: "timeProgress", missions: timeMissions, practiceId: "time-1" },
+  { id: "measurement", label: "Ukuran", icon: "assets/menu/icon-measurement.webp", progressKey: "measurementProgress", missions: measurementMissions, practiceId: "measurement-1" },
+  { id: "fraction", label: "Pecahan", icon: "assets/menu/icon-fraction.webp", progressKey: "fractionProgress", missions: fractionMissions, practiceId: "fraction-1" },
+  { id: "geometry", label: "Bentuk & Ruang", icon: "assets/menu/icon-geometry.webp", progressKey: "geometryProgress", missions: geometryMissions, practiceId: "geometry-1" }
 ];
 
 function getModuleProgress(data, module) {
@@ -3228,23 +3242,32 @@ function renderParentDashboard() {
   const data = getProfileData(selectedId);
   const starsTotal = totalAcademicStars(data);
   const accuracy = data.stats.totalQuestions ? Math.round(data.stats.totalCorrect / data.stats.totalQuestions * 100) : 0;
-  elements.parentOverview.innerHTML = `<div class="parent-profile-hero"><span class="parent-profile-avatar">${playerAvatarMarkup(getPlayerAvatar(data.playerProfile.avatar))}</span><div><h3>${escapeHtml(data.playerProfile.name)}</h3><p>⭐ Jumlah Bintang Akademik: ${starsTotal} / ${ACADEMIC_STAR_MAX}</p><small>Tarikh laporan: ${new Date().toLocaleDateString("ms-MY")}</small></div></div><div class="parent-overview-grid"><span><small>Selesai</small><strong>${Math.round(starsTotal / ACADEMIC_STAR_MAX * 100)}%</strong></span><span><small>Soalan</small><strong>${data.stats.totalQuestions}</strong></span><span><small>Ketepatan</small><strong>${accuracy}%</strong></span><span><small>Rentetan Terbaik</small><strong>${data.stats.bestStreak}</strong></span><span><small>Sesi</small><strong>${data.stats.missionsPlayed}</strong></span><span><small>Lulus</small><strong>${data.stats.missionsPassed}</strong></span></div>`;
+  elements.parentOverview.innerHTML = `<div class="parent-profile-hero"><span class="parent-profile-avatar">${playerAvatarMarkup(getPlayerAvatar(data.playerProfile.avatar))}</span><div><p class="parent-report-label">LAPORAN MURID</p><h3>${escapeHtml(data.playerProfile.name)}</h3><p>⭐ Bintang Akademik <strong>${starsTotal} / ${ACADEMIC_STAR_MAX}</strong></p><small>Tarikh laporan: ${new Date().toLocaleDateString("ms-MY")}</small></div></div><div class="parent-overview-grid"><span><small>Kemajuan Bintang</small><strong>${Math.round(starsTotal / ACADEMIC_STAR_MAX * 100)}%</strong></span><span><small>Soalan Dijawab</small><strong>${data.stats.totalQuestions}</strong></span><span><small>Ketepatan</small><strong>${accuracy}%</strong></span><span><small>Rentetan Terbaik</small><strong>${data.stats.bestStreak}</strong></span><span><small>Sesi Dimainkan</small><strong>${data.stats.missionsPlayed}</strong></span><span><small>Sesi Lulus</small><strong>${data.stats.missionsPassed}</strong></span></div>`;
   const modules = learningModuleDefinitions.map((module) => {
     const moduleProgress = getModuleProgress(data, module);
-    return [module.id, module.label, moduleProgress.stars || {}, moduleProgress.bestScores || {}, module.missions.length];
+    return [module.id, module.label, module.icon, moduleProgress.stars || {}, moduleProgress.bestScores || {}, module.missions.length];
   });
-  elements.parentModuleGrid.innerHTML = modules.map(([id, label, ratings, bestScores, missionCount]) => {
+  elements.parentModuleGrid.innerHTML = modules.map(([id, label, icon, ratings, bestScores, missionCount]) => {
     const moduleStars = Object.values(ratings).reduce((sum, value) => sum + (Number(value) || 0), 0);
     const completedMissions = Object.values(bestScores).filter((score) => Number(score) >= 8).length;
     const moduleAccuracy = getModuleAccuracy(data, id);
     const moduleStarMax = missionCount * STARS_PER_MISSION;
-    return `<article><h4>${label}</h4><strong>⭐ ${moduleStars}/${moduleStarMax}</strong><p>Misi selesai: ${completedMissions}/${missionCount}</p><p>Ketepatan ${moduleAccuracy}%</p><div class="parent-progress"><span style="width:${Math.min(moduleStars / moduleStarMax * 100, 100)}%"></span></div></article>`;
+    const hasAccuracy = id === "money"
+      ? ["addition", "quantity", "change", "moneyCents", "mixed"].some((key) => (data.skillStats[key]?.answered || 0) > 0)
+      : (data.skillStats[id]?.answered || 0) > 0;
+    return `<article class="parent-module-card"><header><img src="${icon}" alt=""><div><h4>${label}</h4><strong>⭐ ${moduleStars}/${moduleStarMax}</strong></div></header><div class="parent-module-metric"><span>Misi selesai</span><b>${completedMissions}/${missionCount}</b></div><div class="parent-progress" role="progressbar" aria-label="Misi ${label} selesai" aria-valuemin="0" aria-valuemax="${missionCount}" aria-valuenow="${completedMissions}"><span style="width:${Math.min(completedMissions / missionCount * 100, 100)}%"></span></div><div class="parent-module-metric"><span>Ketepatan</span><b>${hasAccuracy ? `${moduleAccuracy}%` : "Belum ada data"}</b></div></article>`;
   }).join("");
   const ranked = modules.map(([id, label]) => ({ id, label, accuracy: getModuleAccuracy(data, id), answered: id === "money" ? ["addition", "quantity", "change", "moneyCents", "mixed"].reduce((n, key) => n + data.skillStats[key].answered, 0) : data.skillStats[id].answered })).filter((entry) => entry.answered >= 5).sort((a, b) => b.accuracy - a.accuracy);
   const strongest = ranked[0];
   const needsPractice = ranked.at(-1);
   const recommendation = getLearningRecommendation(data);
-  elements.parentInsights.innerHTML = ranked.length ? `<p><strong>✅ Paling Kuat:</strong> ${strongest.label} — ${strongest.accuracy}%</p><p><strong>📚 Perlu lebih latihan:</strong> ${needsPractice.label} — ${needsPractice.accuracy}%</p><p class="parent-recommendation">Cadangan: ${recommendation.text}.</p>` : `<p class="parent-recommendation">Cadangan: ${recommendation.text}.</p>`;
+  if (ranked.length >= 2) {
+    elements.parentInsights.innerHTML = `<article class="parent-insight-card strength"><span aria-hidden="true">💪</span><div><small>KEKUATAN</small><strong>${strongest.label}</strong><p>${strongest.accuracy}% ketepatan daripada ${strongest.answered} soalan.</p></div></article><article class="parent-insight-card practice"><span aria-hidden="true">📚</span><div><small>PERLU LATIHAN</small><strong>${needsPractice.label}</strong><p>${needsPractice.accuracy}% ketepatan daripada ${needsPractice.answered} soalan.</p></div></article><article class="parent-insight-card next"><span aria-hidden="true">✨</span><div><small>CADANGAN SETERUSNYA</small><strong>${recommendation.text}</strong><p>Berdasarkan kemajuan dan latihan yang tersedia.</p></div></article>`;
+  } else if (ranked.length === 1) {
+    elements.parentInsights.innerHTML = `<article class="parent-insight-card strength"><span aria-hidden="true">💪</span><div><small>KEKUATAN SEMASA</small><strong>${strongest.label}</strong><p>${strongest.accuracy}% ketepatan daripada ${strongest.answered} soalan.</p></div></article><article class="parent-insight-card practice"><span aria-hidden="true">📚</span><div><small>PERLU LATIHAN</small><strong>Belum cukup data</strong><p>Main modul lain untuk membuat perbandingan yang adil.</p></div></article><article class="parent-insight-card next"><span aria-hidden="true">✨</span><div><small>CADANGAN SETERUSNYA</small><strong>${recommendation.text}</strong><p>Berdasarkan kemajuan dan latihan yang tersedia.</p></div></article>`;
+  } else {
+    elements.parentInsights.innerHTML = `<article class="parent-insight-card next"><span aria-hidden="true">🌱</span><div><small>CADANGAN SETERUSNYA</small><strong>${recommendation.text}</strong><p>Main beberapa soalan lagi untuk melihat kekuatan dan kemahiran yang perlu dilatih.</p></div></article>`;
+  }
   const shop = data.shopChallenge;
   elements.parentShopSummary.innerHTML = `<h3>🏪 Cabaran Kedai</h3><p>Sesi: ${shop.sessionsPlayed}</p><p>Skor terbaik: ${shop.bestScore.toLocaleString("ms-MY")}</p><p>Betul terbaik: ${shop.bestCorrect}/10</p><p>Emas: ${shop.goldMedals}</p>`;
   const todayRecord = data.dailyChallenge.history[getLocalDateKey()];
@@ -3422,7 +3445,7 @@ function renderSkillStatistics() {
       : `<span aria-hidden="true">${skill.icon}</span>`;
     card.innerHTML = `
       <div class="skill-stat-heading">${skillIcon}<strong>${skill.name}</strong></div>
-      <div class="skill-stat-score">${accuracy}%</div>
+      <div class="skill-stat-score">${record.answered ? `${accuracy}%` : "—"}</div>
       <div class="skill-progress" role="progressbar" aria-label="Ketepatan ${skill.name}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${accuracy}">
         <span style="width: ${accuracy}%"></span>
       </div>
@@ -3444,7 +3467,7 @@ function renderSkillStatistics() {
     return;
   }
 
-  statElements.skillRecommendation.textContent = `Cadangan hari ini: Latihan ${recommendation.name}`;
+  statElements.skillRecommendation.textContent = `Latihan ${recommendation.name} dicadangkan kerana ketepatan semasa ${recommendation.accuracy}% daripada ${recommendation.answered} soalan.`;
   statElements.skillRecommendationButton.textContent = `Latihan ${recommendation.name}`;
   statElements.skillRecommendationButton.dataset.practice = recommendation.practiceId;
   statElements.skillRecommendationButton.classList.remove("hidden");

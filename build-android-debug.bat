@@ -19,6 +19,7 @@ copy /Y "game.js" "www\game.js" >nul
 copy /Y "money.js" "www\money.js" >nul
 copy /Y "measurement.js" "www\measurement.js" >nul
 copy /Y "fraction.js" "www\fraction.js" >nul
+copy /Y "geometry.js" "www\geometry.js" >nul
 
 if exist "favicon.svg" (
     copy /Y "favicon.svg" "www\favicon.svg" >nul
@@ -30,6 +31,15 @@ robocopy "assets" "www\assets" /MIR /XD "%CD%\assets\support" >nul
 if errorlevel 8 (
     echo.
     echo ERROR: Gagal sync folder assets.
+    pause
+    exit /b 1
+)
+
+if not exist "www\assets\support" mkdir "www\assets\support"
+copy /Y "assets\support\support-qr.webp" "www\assets\support\support-qr.webp" >nul
+if errorlevel 1 (
+    echo.
+    echo ERROR: Gagal menyalin aset QR sokongan Android.
     pause
     exit /b 1
 )

@@ -6,7 +6,7 @@
   <meta name="description" content="Game matematik kanak-kanak untuk belajar mengira harga, kuantiti, wang dan baki melalui permainan kedai.">
   <meta name="theme-color" content="#6546c7">
   <meta name="application-name" content="Kedai Matematik">
-  <meta name="application-version" content="1.10.1">
+  <meta name="application-version" content="1.10.3">
   <title>Kedai Matematik</title>
   <script>
     try {
@@ -178,13 +178,13 @@
         <div class="screen-heading"><button class="back-button" id="parent-back-button" type="button">← Main Menu</button><div><p class="eyebrow">Laporan pembelajaran lokal</p><h2 id="parent-title">IBU BAPA / GURU</h2></div></div>
         <label class="parent-profile-select">Pilih Profil <select id="parent-profile-select"></select></label>
         <section class="parent-overview" id="parent-overview"></section>
-        <section><h3>KEMAJUAN MODUL</h3><div class="parent-module-grid" id="parent-module-grid"></div></section>
-        <section class="parent-insights" id="parent-insights"></section>
-        <section class="parent-detail-grid"><article id="parent-shop-summary"></article><article id="parent-daily-summary"></article><article id="parent-achievement-summary"></article></section>
+        <section class="parent-module-section"><div class="dashboard-section-heading"><span aria-hidden="true">📚</span><div><h3>KEMAJUAN MODUL</h3><p>Bintang, misi selesai dan ketepatan bagi setiap modul.</p></div></div><div class="parent-module-grid" id="parent-module-grid"></div></section>
+        <section class="parent-insights" id="parent-insights" aria-label="Dapatan pembelajaran"></section>
+        <section class="parent-detail-grid" aria-label="Ringkasan aktiviti"><article id="parent-shop-summary"></article><article id="parent-daily-summary"></article><article id="parent-achievement-summary"></article></section>
         <section class="parent-support-card hidden" id="parent-support-card" aria-labelledby="parent-support-title">
           <div>
             <h3 id="parent-support-title">❤️ Sokong Pembangunan</h3>
-            <p>Kedai Matematik disediakan secara percuma. Jika anda menghargai projek ini, anda boleh membantu pembangunan dan penyelenggaraannya secara sukarela.</p>
+            <p>Kedai Matematik dibangunkan sebagai permainan pendidikan percuma. Sumbangan anda membantu usaha pembangunan dan penambahbaikan permainan.</p>
           </div>
           <button class="secondary-button" id="support-open-button" type="button">Lihat QR Sokongan</button>
         </section>
@@ -323,8 +323,10 @@
 
     <section class="stats-screen hidden" id="stats-screen" aria-labelledby="stats-title">
       <div class="stats-panel">
-        <p class="eyebrow">Prestasi juruwang</p>
-        <h2 id="stats-title">STATISTIK KEDAI</h2>
+        <header class="stats-hero">
+          <div class="stats-hero-icon" aria-hidden="true">📊</div>
+          <div><p class="eyebrow">Prestasi pembelajaran</p><h2 id="stats-title">STATISTIK KEDAI</h2><p>Jejak usaha, kemajuan dan kemahiran matematik kamu.</p></div>
+        </header>
         <div class="stats-grid">
           <article class="stats-card stats-stars"><span aria-hidden="true">⭐</span><small>Bintang Akademik</small><strong id="stats-total-stars">0 / 150</strong></article>
           <article class="stats-card"><span aria-hidden="true">✅</span><small>Jawapan Betul</small><strong id="stats-total-correct">0</strong></article>
@@ -335,13 +337,16 @@
           <article class="stats-card"><span aria-hidden="true">🏆</span><small>Sesi Lulus</small><strong id="stats-missions-passed">0</strong></article>
         </div>
         <section class="skill-performance" aria-labelledby="skill-performance-title">
-          <h3 id="skill-performance-title">PRESTASI MENGIKUT KEMAHIRAN</h3>
+          <div class="dashboard-section-heading"><span aria-hidden="true">🎯</span><div><h3 id="skill-performance-title">PRESTASI MENGIKUT KEMAHIRAN</h3><p>Ketepatan berdasarkan soalan yang sudah dijawab.</p></div></div>
           <div class="skill-stats-grid" id="skill-stats-grid"></div>
-          <p class="skill-recommendation" id="skill-recommendation">Main beberapa misi lagi untuk dapat cadangan latihan.</p>
-          <button class="secondary-button skill-recommendation-button hidden" id="skill-recommendation-button" type="button"></button>
+          <aside class="skill-recommendation-panel" aria-labelledby="skill-recommendation-title">
+            <span class="skill-recommendation-icon" aria-hidden="true">✨</span>
+            <div><h4 id="skill-recommendation-title">CADANGAN HARI INI</h4><p class="skill-recommendation" id="skill-recommendation">Main beberapa misi lagi untuk dapat cadangan latihan.</p></div>
+            <button class="secondary-button skill-recommendation-button hidden" id="skill-recommendation-button" type="button"></button>
+          </aside>
         </section>
         <section class="shop-challenge-stats" aria-labelledby="shop-challenge-stats-title">
-          <h3 id="shop-challenge-stats-title">🏪 CABARAN KEDAI</h3>
+          <div class="dashboard-section-heading compact"><span aria-hidden="true">🏪</span><div><h3 id="shop-challenge-stats-title">CABARAN KEDAI</h3><p>Rekod terbaik semasa melayan pelanggan.</p></div></div>
           <div class="shop-challenge-stats-grid">
             <span><small>Sesi</small><strong id="shop-challenge-sessions">0</strong></span>
             <span><small>Skor Terbaik</small><strong id="shop-challenge-best-score">0</strong></span>
@@ -546,18 +551,17 @@
   <div class="support-modal hidden" id="support-modal" role="dialog" aria-modal="true" aria-labelledby="support-modal-title">
     <div class="support-modal-card">
       <h2 id="support-modal-title">❤️ Sokong Pembangunan Kedai Matematik</h2>
-      <p>Kedai Matematik dibangunkan dan disediakan secara percuma untuk pembelajaran kanak-kanak.</p>
-      <p>Jika anda menghargai projek ini dan ingin membantu pembangunan, penyelenggaraan serta penambahan kandungan pada masa hadapan, anda boleh memberi sokongan secara sukarela melalui QR di bawah.</p>
+      <p>Kedai Matematik dibangunkan sebagai permainan pendidikan percuma. Sumbangan anda membantu usaha pembangunan dan penambahbaikan permainan.</p>
       <div class="support-disclaimer">
-        <strong>Sokongan ini adalah sumbangan sukarela sahaja.</strong>
-        <p>Ia tidak membuka kandungan premium, ciri tambahan atau kelebihan khas.</p>
-        <p>Semua kandungan Kedai Matematik kekal boleh digunakan secara percuma.</p>
+        <strong>Sumbangan adalah sukarela.</strong>
+        <p>Semua kandungan permainan kekal percuma dan tiada ganjaran diberikan sebagai balasan.</p>
+        <p>Pembayaran diproses oleh aplikasi perbankan atau eWallet anda, bukan oleh Kedai Matematik. Permainan tidak menyimpan atau menjejak transaksi.</p>
       </div>
       <button class="support-qr-preview" id="support-qr-enlarge" type="button" aria-label="Besarkan QR sokongan">
         <img class="support-qr-image" id="support-qr-image" data-src="assets/support/support-qr.webp" alt="QR sokongan pembangunan Kedai Matematik">
       </button>
       <small class="support-qr-hint">Tekan QR untuk besarkan</small>
-      <p class="support-scan-note">Imbas menggunakan aplikasi perbankan atau eWallet yang menyokong QR.</p>
+      <p class="support-scan-note">Imbas menggunakan peranti kedua. Semak nama penerima dan jumlah dengan teliti sebelum mengesahkan transaksi.</p>
       <button class="secondary-button" id="support-close-button" type="button">Tutup</button>
     </div>
   </div>

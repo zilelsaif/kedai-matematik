@@ -17,6 +17,7 @@ copy /Y "style.css" "www\style.css" >nul
 copy /Y "game.js" "www\game.js" >nul
 copy /Y "measurement.js" "www\measurement.js" >nul
 copy /Y "fraction.js" "www\fraction.js" >nul
+copy /Y "geometry.js" "www\geometry.js" >nul
 copy /Y "money.js" "www\money.js" >nul
 
 if exist "privacy.html" (
