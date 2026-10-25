@@ -43,9 +43,17 @@
   <link rel="preload" as="image" href="assets/decor/mascot-shop.webp" type="image/webp">
   <link rel="preload" as="image" href="assets/decor/deco-star.webp" type="image/webp">
   <link rel="preload" as="image" href="assets/decor/deco-sparkle.webp" type="image/webp">
+  <link rel="preload" as="image" href="assets/branding/zilteroka-logo.webp" type="image/webp">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div class="brand-intro" id="brand-intro" role="dialog" aria-modal="true" aria-label="Intro ZilTeroka">
+    <button class="brand-intro-skip" id="brand-intro-skip" type="button" aria-label="Langkau intro ZilTeroka">Langkau</button>
+    <div class="brand-intro-stage" aria-label="ZilTeroka, EduGame Percuma MY, mempersembahkan Kedai Matematik">
+      <img src="assets/branding/zilteroka-logo.webp" alt="ZilTeroka — EduGame Percuma MY" width="512" height="512">
+      <p>MEMPERSEMBAHKAN</p>
+    </div>
+  </div>
   <main class="game-shell">
     <header class="top-bar hidden" id="game-header">
       <div class="brand">
@@ -98,6 +106,10 @@
         <div class="title-mascot" aria-hidden="true">
           <span class="title-mascot-bubble" id="helper-message">Jom buka kedai!</span>
           <img src="assets/decor/mascot-shop.webp" alt="">
+        </div>
+        <div class="title-family-brand" aria-label="Sebahagian daripada ZilTeroka">
+          <img src="assets/branding/zilteroka-icon.webp" alt="" aria-hidden="true" width="256" height="256">
+          <span>Sebahagian daripada <strong>ZilTeroka</strong></span>
         </div>
       </div>
       <small class="title-version" id="app-version"></small>
@@ -181,6 +193,49 @@
         <section class="parent-module-section"><div class="dashboard-section-heading"><span aria-hidden="true">📚</span><div><h3>KEMAJUAN MODUL</h3><p>Bintang, misi selesai dan ketepatan bagi setiap modul.</p></div></div><div class="parent-module-grid" id="parent-module-grid"></div></section>
         <section class="parent-insights" id="parent-insights" aria-label="Dapatan pembelajaran"></section>
         <section class="parent-detail-grid" aria-label="Ringkasan aktiviti"><article id="parent-shop-summary"></article><article id="parent-daily-summary"></article><article id="parent-achievement-summary"></article></section>
+        <section class="zilteroka-family" aria-labelledby="zilteroka-family-title">
+          <header class="zilteroka-family-header">
+            <img src="assets/branding/zilteroka-icon.webp" alt="" aria-hidden="true" width="256" height="256">
+            <div>
+              <p class="eyebrow">Keluarga EduGame Percuma MY</p>
+              <h3 id="zilteroka-family-title">Kenali ZilTeroka</h3>
+              <p>ZilTeroka menghimpunkan permainan pendidikan percuma untuk kanak-kanak.</p>
+              <p>Kedai Matematik ialah sebahagian daripada keluarga permainan ZilTeroka yang menggabungkan pembelajaran, penerokaan dan aktiviti interaktif.</p>
+            </div>
+          </header>
+          <div class="zilteroka-game-gallery" aria-label="Permainan dalam keluarga ZilTeroka">
+            <article class="zilteroka-game-card">
+              <img src="assets/branding/zilteroka-games/makmal-cilik.webp" alt="Ilustrasi Makmal Cilik" loading="lazy" decoding="async">
+              <div><span class="zilteroka-status available">Tersedia</span><h4>Makmal Cilik</h4><p>Eksperimen dan penerokaan Sains bersama PICO.</p></div>
+            </article>
+            <article class="zilteroka-game-card">
+              <img src="assets/branding/zilteroka-games/detektif-bahasa.webp" alt="Ilustrasi Detektif Bahasa" loading="lazy" decoding="async">
+              <div><span class="zilteroka-status available">Tersedia</span><h4>Detektif Bahasa</h4><p>Misteri Bahasa Melayu di Bayuraya.</p></div>
+            </article>
+            <article class="zilteroka-game-card">
+              <img src="assets/branding/zilteroka-games/mata-helang.webp" alt="Ilustrasi Mata Helang Cari Kata" loading="lazy" decoding="async">
+              <div><span class="zilteroka-status beta">Beta</span><h4>Mata Helang: Cari Kata</h4><p>Cabaran mencari perkataan bersama Raka.</p></div>
+            </article>
+            <article class="zilteroka-game-card">
+              <img src="assets/branding/zilteroka-games/kubikata.webp" alt="Ilustrasi KubiKata" loading="lazy" decoding="async">
+              <div><span class="zilteroka-status development">Dalam Pembangunan</span><h4>KubiKata</h4><p>Aktiviti literasi awal bersama Kubi.</p></div>
+            </article>
+            <article class="zilteroka-game-card">
+              <img src="assets/branding/zilteroka-games/sirah-quest.webp" alt="Ilustrasi Sirah Quest" loading="lazy" decoding="async">
+              <div><span class="zilteroka-status development">Dalam Pembangunan</span><h4>Sirah Quest</h4><p>Pengembaraan pembelajaran Sirah yang interaktif.</p></div>
+            </article>
+          </div>
+          <aside class="zilteroka-discover" aria-labelledby="zilteroka-discover-title">
+            <div>
+              <h4 id="zilteroka-discover-title">Ketahui lebih lanjut tentang ZilTeroka</h4>
+              <strong class="zilteroka-address">zilteroka.pages.dev</strong>
+              <p>Imbas QR menggunakan telefon untuk melihat laman utama ZilTeroka.</p>
+            </div>
+            <button class="zilteroka-qr-preview" id="zilteroka-qr-enlarge" type="button" aria-label="Besarkan QR laman utama ZilTeroka">
+              <img src="assets/branding/zilteroka-qr.webp" alt="QR ke laman utama ZilTeroka" width="768" height="768" loading="lazy" decoding="async">
+            </button>
+          </aside>
+        </section>
         <section class="parent-support-card hidden" id="parent-support-card" aria-labelledby="parent-support-title">
           <div>
             <h3 id="parent-support-title">❤️ Sokong Pembangunan</h3>
@@ -572,6 +627,18 @@
       <button class="support-qr-lightbox-close" id="support-qr-lightbox-close" type="button" aria-label="Tutup paparan QR">×</button>
       <img class="support-qr-large" id="support-qr-large" data-src="assets/support/support-qr.webp" alt="QR sokongan pembangunan Kedai Matematik dalam paparan besar">
       <button class="secondary-button" id="support-qr-lightbox-done" type="button">Tutup</button>
+    </div>
+  </div>
+
+  <div class="zilteroka-qr-lightbox hidden" id="zilteroka-qr-lightbox" role="dialog" aria-modal="true" aria-labelledby="zilteroka-qr-lightbox-title" aria-describedby="zilteroka-qr-lightbox-description">
+    <div class="zilteroka-qr-lightbox-card">
+      <button class="zilteroka-qr-lightbox-close" id="zilteroka-qr-lightbox-close" type="button" aria-label="Tutup paparan QR ZilTeroka">×</button>
+      <img src="assets/branding/zilteroka-icon.webp" alt="" aria-hidden="true" class="zilteroka-lightbox-brand" width="256" height="256">
+      <h2 id="zilteroka-qr-lightbox-title">ZilTeroka</h2>
+      <p id="zilteroka-qr-lightbox-description">Imbas menggunakan telefon untuk melihat laman utama pendidikan ZilTeroka.</p>
+      <img class="zilteroka-qr-large" src="assets/branding/zilteroka-qr.webp" alt="QR ke https://zilteroka.pages.dev/" width="768" height="768">
+      <strong class="zilteroka-address">zilteroka.pages.dev</strong>
+      <button class="secondary-button" id="zilteroka-qr-lightbox-done" type="button">Tutup</button>
     </div>
   </div>
 

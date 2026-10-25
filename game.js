@@ -381,6 +381,8 @@ const helperMessages = [
 ];
 
 const elements = {
+  brandIntro: document.querySelector("#brand-intro"),
+  brandIntroSkip: document.querySelector("#brand-intro-skip"),
   gameHeader: document.querySelector("#game-header"),
   titleScreen: document.querySelector("#title-screen"),
   mainMenuScreen: document.querySelector("#main-menu-screen"),
@@ -538,6 +540,10 @@ const elements = {
   supportQrLarge: document.querySelector("#support-qr-large"),
   supportQrLightboxClose: document.querySelector("#support-qr-lightbox-close"),
   supportQrLightboxDone: document.querySelector("#support-qr-lightbox-done"),
+  zilterokaQrEnlarge: document.querySelector("#zilteroka-qr-enlarge"),
+  zilterokaQrLightbox: document.querySelector("#zilteroka-qr-lightbox"),
+  zilterokaQrLightboxClose: document.querySelector("#zilteroka-qr-lightbox-close"),
+  zilterokaQrLightboxDone: document.querySelector("#zilteroka-qr-lightbox-done"),
   settingsForm: document.querySelector("#accessibility-form"),
   settingsSaveButton: document.querySelector("#settings-save-button"),
   settingsBackButton: document.querySelector("#settings-back-button"),
@@ -681,6 +687,8 @@ let sessionBestStreak = 0;
 let sessionModuleResults = {};
 let sessionQuestionKeys = new Set();
 let parentGateExpectedAnswer = 0;
+let brandIntroTimer = null;
+let brandIntroDismissed = false;
 const achievementToastQueue = [];
 const audioManager = createAudioManager();
 applyAccessibilitySettings(progress.accessibilitySettings);
@@ -964,6 +972,40 @@ function closeSupportQrLightbox() {
   closeAccessibleModal(false);
   openSupportModal();
   elements.supportQrEnlarge.focus();
+}
+
+function openZilterokaQrLightbox() {
+  openAccessibleModal(elements.zilterokaQrLightbox, elements.zilterokaQrLightboxClose, closeZilterokaQrLightbox);
+}
+
+function closeZilterokaQrLightbox() {
+  closeAccessibleModal();
+}
+
+function dismissBrandIntro() {
+  if (brandIntroDismissed) return;
+  brandIntroDismissed = true;
+  if (brandIntroTimer !== null) clearTimeout(brandIntroTimer);
+  brandIntroTimer = null;
+  elements.brandIntro.classList.add("is-leaving");
+  const finish = () => {
+    elements.brandIntro.classList.add("hidden");
+    elements.brandIntro.classList.remove("is-leaving");
+    elements.brandIntro.setAttribute("aria-hidden", "true");
+    document.querySelector("main")?.removeAttribute("inert");
+    elements.startMenuButton.focus({ preventScroll: true });
+  };
+  if (document.documentElement.classList.contains("reduce-motion")) finish();
+  else window.setTimeout(finish, 220);
+}
+
+function startBrandIntro() {
+  if (brandIntroDismissed) return;
+  const reducedMotion = document.documentElement.classList.contains("reduce-motion");
+  elements.brandIntro.classList.toggle("is-static", reducedMotion);
+  document.querySelector("main")?.setAttribute("inert", "");
+  elements.brandIntroSkip.focus({ preventScroll: true });
+  brandIntroTimer = window.setTimeout(dismissBrandIntro, reducedMotion ? 350 : 1650);
 }
 
 function getAchievement(achievementId) {
@@ -5082,6 +5124,16 @@ elements.supportQrLightboxDone.addEventListener("click", closeSupportQrLightbox)
 elements.supportQrLightbox.addEventListener("click", (event) => {
   if (event.target === elements.supportQrLightbox) closeSupportQrLightbox();
 });
+elements.zilterokaQrEnlarge.addEventListener("click", openZilterokaQrLightbox);
+elements.zilterokaQrLightboxClose.addEventListener("click", closeZilterokaQrLightbox);
+elements.zilterokaQrLightboxDone.addEventListener("click", closeZilterokaQrLightbox);
+elements.zilterokaQrLightbox.addEventListener("click", (event) => {
+  if (event.target === elements.zilterokaQrLightbox) closeZilterokaQrLightbox();
+});
+elements.brandIntroSkip.addEventListener("click", dismissBrandIntro);
+elements.brandIntro.addEventListener("click", (event) => {
+  if (event.target !== elements.brandIntroSkip) dismissBrandIntro();
+});
 elements.moneyCategoryButton.addEventListener("click", () => showLevelSelect());
 elements.timeCategoryButton.addEventListener("click", () => showTimeLevelSelect());
 elements.measurementCategoryButton.addEventListener("click", () => showMeasurementLevelSelect());
@@ -5152,7 +5204,7 @@ document.addEventListener("click", (event) => {
     "#achievements-menu-button, #achievements-back-button, #home-game-button, " +
     "#home-confirm-button, #home-continue-button, " +
     "#daily-menu-button, #daily-start-button, #daily-back-button, #shop-challenge-menu-button, #parent-menu-button, " +
-    "#profile-picker-back, #profile-picker-add, .profile-picker-card, #parent-back-button, #parent-print-report, #support-open-button, #support-close-button, " +
+    "#profile-picker-back, #profile-picker-add, .profile-picker-card, #parent-back-button, #parent-print-report, #support-open-button, #support-close-button, #zilteroka-qr-enlarge, #zilteroka-qr-lightbox-close, #zilteroka-qr-lightbox-done, " +
     "#settings-menu-button, #settings-save-button, #settings-back-button, #tutorial-open-button, #tutorial-skip-button, #tutorial-back-button, #tutorial-next-button, " +
     "#skill-recommendation-button, #menu-recommendation, " +
     "#money-category-button, #time-category-button, #measurement-category-button, #fraction-category-button, #geometry-category-button, " +
@@ -5214,3 +5266,4 @@ updateFullscreenButton();
 initializeWebSupport();
 renderLevelCards();
 showTitleScreen();
+startBrandIntro();
